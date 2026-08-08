@@ -17,9 +17,11 @@ h1{text-align:center;color:#4caf50;margin:10px 0;font-size:1.4em}
 .bar input:focus{outline:1px solid #4caf50}
 .bar button{padding:8px 14px;border-radius:18px;border:none;background:#4caf50;color:#000;font-weight:bold;font-size:13px;cursor:pointer;transition:0.2s}
 .bar button:hover{background:#66bb6a}
-.bar select{padding:8px 12px;border-radius:18px;border:1.5px solid #4caf50;background:#111;color:#eee;font-size:13px;cursor:pointer}
-.bar select:focus{outline:1px solid #4caf50}
-.bar label{color:#888;font-size:13px}
+.bar .tz-group{display:flex;align-items:center;gap:4px;background:#1a1a1a;border-radius:18px;padding:3px;border:1px solid #333}
+.bar .tz-group button{background:transparent;border:none;color:#4caf50;padding:4px 10px;border-radius:14px;font-size:13px;cursor:pointer;font-weight:bold}
+.bar .tz-group button:hover{background:#2a2a2a}
+.bar .tz-group button.active{background:#4caf50;color:#000}
+.bar .tz-label{color:#888;font-size:12px;margin-right:2px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
 .card{background:#111;border-radius:10px;padding:12px;border:1px solid #222;transition:0.2s}
 .card:hover{border-color:#4caf50}
@@ -64,34 +66,13 @@ details summary:hover{color:#66bb6a}
 <div class="bar">
 <input id="s" placeholder="搜索球队..." oninput="fil()">
 <button onclick="ld()">🔄 刷新</button>
-<label>⏰ 时区：</label>
-<select id="tzSelect" onchange="ld()">
-  <option value="-12">UTC-12</option>
-  <option value="-11">UTC-11</option>
-  <option value="-10">UTC-10</option>
-  <option value="-9">UTC-9</option>
-  <option value="-8">UTC-8</option>
-  <option value="-7">UTC-7</option>
-  <option value="-6">UTC-6</option>
-  <option value="-5">UTC-5</option>
-  <option value="-4">UTC-4</option>
-  <option value="-3">UTC-3</option>
-  <option value="-2">UTC-2</option>
-  <option value="-1">UTC-1</option>
-  <option value="0">UTC+0</option>
-  <option value="1">UTC+1</option>
-  <option value="2">UTC+2</option>
-  <option value="3">UTC+3</option>
-  <option value="4">UTC+4</option>
-  <option value="5">UTC+5</option>
-  <option value="6">UTC+6</option>
-  <option value="7">UTC+7</option>
-  <option value="8" selected>UTC+8（北京时间）</option>
-  <option value="9">UTC+9</option>
-  <option value="10">UTC+10</option>
-  <option value="11">UTC+11</option>
-  <option value="12">UTC+12</option>
-</select>
+<span class="tz-label">⏰ 时区：</span>
+<div class="tz-group">
+  <button onclick="adjustGlobal(-1)">−1</button>
+  <button onclick="adjustGlobal(1)">+1</button>
+  <button onclick="resetGlobal()" style="color:#666;font-size:11px;">重置</button>
+</div>
+<span id="tzDisplay" style="color:#ffd740;font-size:12px;min-width:50px;">+0h</span>
 </div>
 
 <div id="main"><div class="ld">加载中...</div></div>
@@ -109,10 +90,7 @@ window.onscroll = function() {
 };
 
 var lg='bl1', d={};
-
-function getTZ() {
-  return parseInt(document.getElementById('tzSelect').value) || 8;
-}
+var globalOffset = 0; // 全局时区偏移（小时）
 
 function set(l) {
   lg = l;
@@ -149,15 +127,38 @@ async function ld() {
   }
 }
 
-// ---- 格式化时间：根据选择的时区 ----
-function formatTime(dateStr) {
+// ---- 全局调整时区 ----
+function adjustGlobal(delta) {
+  globalOffset += delta;
+  updateTzDisplay();
+  if (lg === 'UCL' || lg === 'UEL') renE();
+  else renG();
+}
+
+function resetGlobal() {
+  globalOffset = 0;
+  updateTzDisplay();
+  if (lg === 'UCL' || lg === 'UEL') renE();
+  else renG();
+}
+
+function updateTzDisplay() {
+  var el = document.getElementById('tzDisplay');
+  if (globalOffset === 0) el.textContent = '+0h';
+  else if (globalOffset > 0) el.textContent = '+' + globalOffset + 'h';
+  else el.textContent = globalOffset + 'h';
+}
+
+// ---- 格式化时间：UTC + 全局偏移 ----
+function formatTimeWithOffset(dateStr) {
   var dt = new Date(dateStr);
-  var tz = getTZ();
-  var h = (dt.getUTCHours() + tz) % 24;
+  var offset = globalOffset;
+  var h = (dt.getUTCHours() + offset) % 24;
+  if (h < 0) h += 24;
   var m = dt.getUTCMinutes();
   var month = String(dt.getUTCMonth() + 1).padStart(2, '0');
   var day = String(dt.getUTCDate()).padStart(2, '0');
-  var hours = String(h).padStart(2, '0');
+  var hours = String(Math.floor(h)).padStart(2, '0');
   var minutes = String(m).padStart(2, '0');
   return { date: month + '/' + day, time: hours + ':' + minutes };
 }
@@ -196,6 +197,7 @@ function renG() {
 
 function cardG(m) {
   var dt = new Date(m.matchDateTime);
+  // 德甲数据用本地时间显示（因为 API 返回的已经是本地时间）
   var ds = dt.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
   var ts = dt.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
   var live = !m.matchIsFinished && m.matchResults && m.matchResults.length > 0;
@@ -287,8 +289,7 @@ function cardE(m) {
   var live = m.status && m.status.type && m.status.type.state === 'in';
   var done = m.status && m.status.type && m.status.type.state === 'post';
   
-  // ---- 使用用户选择的时区 ----
-  var ft = formatTime(m.date);
+  var ft = formatTimeWithOffset(m.date);
   var ds = ft.date;
   var ts = ft.time;
   
