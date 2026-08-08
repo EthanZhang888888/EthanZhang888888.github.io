@@ -195,7 +195,7 @@ function cardG(m) {
   return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
-// ========== 欧冠 / 欧联（修复点球比分） ==========
+// ========== 欧冠 / 欧联（修复时区 + 点球胜者） ==========
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
@@ -242,26 +242,20 @@ function cardE(m) {
   var hh = c.competitors[0], aa = c.competitors[1];
   var live = m.status && m.status.type && m.status.type.state === 'in';
   var done = m.status && m.status.type && m.status.type.state === 'post';
+  
+  // ---- 修复时区：转为北京时间 (UTC+8) ----
   var dt = new Date(m.date);
-  var ds = dt.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
+  var beijingTime = new Date(dt.getTime() + 8 * 60 * 60 * 1000);
+  var ds = beijingTime.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
+  var ts = beijingTime.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
   
-  // ---- 提取比分：优先使用 value（数值型），兜底用 displayValue ----
-  var hs = (hh.score && hh.score.value !== undefined && hh.score.value !== null) 
-           ? String(hh.score.value) 
-           : (hh.score ? hh.score.displayValue || '0' : '0');
-  var as = (aa.score && aa.score.value !== undefined && aa.score.value !== null) 
-           ? String(aa.score.value) 
-           : (aa.score ? aa.score.displayValue || '0' : '0');
-  
-  // 如果 value 是 0 但 displayValue 有值（比如 "1"），用 displayValue 解析
-  if (hs === '0' && hh.score && hh.score.displayValue) {
-    var parsed1 = parseInt(hh.score.displayValue);
-    if (!isNaN(parsed1)) hs = String(parsed1);
-  }
-  if (as === '0' && aa.score && aa.score.displayValue) {
-    var parsed2 = parseInt(aa.score.displayValue);
-    if (!isNaN(parsed2)) as = String(parsed2);
-  }
+  // ---- 提取比分：使用 displayValue 解析 ----
+  var hsRaw = hh.score ? hh.score.displayValue || '0' : '0';
+  var asRaw = aa.score ? aa.score.displayValue || '0' : '0';
+  var hScore = parseInt(hsRaw) || 0;
+  var aScore = parseInt(asRaw) || 0;
+  var hs = String(hScore);
+  var as = String(aScore);
   
   var sc = done || live ? hs + '-' + as : 'VS';
   
@@ -276,23 +270,21 @@ function cardE(m) {
   
   // ---- 判断是否有点球决胜 ----
   var isPenalty = false;
+  var detailStr = '';
   if (m.status && m.status.type && m.status.type.detail) {
-    var detail = m.status.type.detail.toLowerCase();
-    if (detail.indexOf('penalty') !== -1) {
+    detailStr = m.status.type.detail;
+    if (detailStr.toLowerCase().indexOf('penalty') !== -1) {
       isPenalty = true;
     }
   }
   if (!isPenalty && c && c.status && c.status.type && c.status.type.detail) {
-    var detail2 = c.status.type.detail.toLowerCase();
-    if (detail2.indexOf('penalty') !== -1) {
+    detailStr = c.status.type.detail;
+    if (detailStr.toLowerCase().indexOf('penalty') !== -1) {
       isPenalty = true;
     }
   }
   
   if (done) {
-    var hScore = parseInt(hs) || 0;
-    var aScore = parseInt(as) || 0;
-    
     if (hScore > aScore) {
       var winTag = isPenalty ? ' ⚽ PK ✔' : ' ✔';
       display1 = '<span class="win">' + logo1 + ' ' + name1 + winTag + '</span>';
@@ -300,7 +292,7 @@ function cardE(m) {
       cl = 'color:#4caf50';
     } else if (hScore < aScore) {
       var winTag2 = isPenalty ? ' ⚽ PK ✔' : ' ✔';
-      display1 = '<span class="lose">' + logo1 + ' ' + name1 + '</span>';
+      display1 = '<span class="lose">' + name1 + ' ' + logo1 + '</span>';
       display2 = '<span class="win">' + name2 + ' ' + logo2 + winTag2 + '</span>';
       cl = 'color:#ff5252';
     } else {
@@ -309,8 +301,6 @@ function cardE(m) {
       cl = 'color:#ffd740';
     }
   } else if (live) {
-    var hScore = parseInt(hs) || 0;
-    var aScore = parseInt(as) || 0;
     cl = hScore > aScore ? 'color:#4caf50' : hScore < aScore ? 'color:#ff5252' : 'color:#ffd740';
   }
   
@@ -319,7 +309,7 @@ function cardE(m) {
     botText += ' ⚽ 点球决胜';
   }
   
-  return '<div class="card"><div class="top">' + ds + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
+  return '<div class="card"><div class="top">' + ds + ' ' + ts + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
 function fil() {
