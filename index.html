@@ -25,7 +25,13 @@ h1{text-align:center;color:#4caf50;margin:10px 0;font-size:1.4em}
 .card .side{flex:1;font-weight:bold;font-size:14px;display:flex;align-items:center;gap:5px}
 .card .side img{width:20px;height:20px;border-radius:50%;object-fit:contain}
 .card .side.r{justify-content:flex-end;text-align:right}
+.card .side .win{color:#4caf50;font-weight:bold}
+.card .side .lose{color:#888;font-weight:normal}
+.card .side .draw{color:#ffd740;font-weight:bold}
 .card .mid{font-size:1.3em;font-weight:bold;color:#4caf50;min-width:45px;text-align:center}
+.card .mid.win{color:#4caf50}
+.card .mid.lose{color:#ff5252}
+.card .mid.draw{color:#ffd740}
 .card .bot{font-size:11px;color:#666;text-align:center;margin-top:4px}
 .live{color:#ff5252;animation:blink 1s infinite}
 @keyframes blink{50%{opacity:0.4}}
@@ -40,9 +46,11 @@ details summary:hover{color:#66bb6a}
 .group-title{color:#ffd740;margin:12px 0 6px;font-weight:bold;font-size:14px}
 .section-title{margin:12px 0 6px;font-weight:bold;font-size:14px}
 
-/* 返回顶部按钮 */
 #backTop{position:fixed;bottom:20px;right:20px;background:#4caf50;border:none;border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.5);color:#000;transition:0.3s;display:none;z-index:999}
 #backTop:hover{transform:scale(1.1);background:#66bb6a}
+
+/* 点球标记小标签 */
+.pk-tag{font-size:10px;background:#ffd740;color:#000;border-radius:10px;padding:1px 6px;margin-left:4px;font-weight:bold}
 </style>
 </head>
 <body>
@@ -64,11 +72,9 @@ details summary:hover{color:#66bb6a}
 
 <div id="main"><div class="ld">加载中...</div></div>
 
-<!-- 返回顶部按钮 -->
 <button id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script>
-// 滚动时显示/隐藏返回顶部按钮
 window.onscroll = function() {
   var btn = document.getElementById('backTop');
   if (document.documentElement.scrollTop > 300) {
@@ -126,7 +132,6 @@ function renG() {
   }
   var h = '';
   
-  // 积分榜
   if (t.length) {
     h += '<details open><summary>📈 积分榜</summary><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
     for (var i = 0; i < t.length; i++) {
@@ -155,17 +160,46 @@ function cardG(m) {
   var live = !m.matchIsFinished && m.matchResults && m.matchResults.length > 0;
   var done = m.matchIsFinished;
   var sc = 'VS', cl = '';
-  if (done || live) {
-    var r = m.matchResults.find(function(x) { return x.resultName === 'Endergebnis'; }) || m.matchResults[0];
-    var hs = r ? r.pointsTeam1 || 0 : 0, as = r ? r.pointsTeam2 || 0 : 0;
-    sc = hs + '-' + as;
-    cl = hs > as ? 'color:#4caf50' : hs < as ? 'color:#ff5252' : 'color:#ffd740';
-  }
+  
+  var name1 = m.team1 ? m.team1.teamName : '?';
+  var name2 = m.team2 ? m.team2.teamName : '?';
   var icon1 = m.team1 && m.team1.teamIconUrl ? '<img src="' + m.team1.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
   var icon2 = m.team2 && m.team2.teamIconUrl ? '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
-  return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + icon1 + ' ' + (m.team1 ? m.team1.teamName : '?') + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + (m.team2 ? m.team2.teamName : '?') + ' ' + icon2 + '</div></div><div class="bot">' + (live ? '<span class="live">● LIVE</span>' : done ? '🏁 结束' : '') + '</div></div>';
+  
+  var display1 = icon1 + ' ' + name1;
+  var display2 = name2 + ' ' + icon2;
+  
+  if (done || live) {
+    var r = m.matchResults.find(function(x) { return x.resultName === 'Endergebnis'; }) || m.matchResults[0];
+    var hs = r ? r.pointsTeam1 || 0 : 0;
+    var as = r ? r.pointsTeam2 || 0 : 0;
+    sc = hs + '-' + as;
+    
+    if (done) {
+      if (hs > as) {
+        display1 = '<span class="win">' + icon1 + ' ' + name1 + ' ✔</span>';
+        display2 = '<span class="lose">' + name2 + ' ' + icon2 + '</span>';
+        cl = 'color:#4caf50';
+      } else if (hs < as) {
+        display1 = '<span class="lose">' + icon1 + ' ' + name1 + '</span>';
+        display2 = '<span class="win">' + name2 + ' ' + icon2 + ' ✔</span>';
+        cl = 'color:#ff5252';
+      } else {
+        display1 = '<span class="draw">' + icon1 + ' ' + name1 + '</span>';
+        display2 = '<span class="draw">' + name2 + ' ' + icon2 + '</span>';
+        cl = 'color:#ffd740';
+      }
+    } else {
+      cl = hs > as ? 'color:#4caf50' : hs < as ? 'color:#ff5252' : 'color:#ffd740';
+    }
+  }
+  
+  var botText = live ? '<span class="live">● LIVE</span>' : done ? '🏁 结束' : '';
+  
+  return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
+// ========== 欧冠 / 欧联（支持点球决胜） ==========
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
@@ -179,7 +213,6 @@ function renE() {
   }
   var h = '';
   
-  // 积分榜
   if (t.length) {
     h += '<details open><summary>📈 积分榜</summary>';
     for (var gi = 0; gi < t.length; gi++) {
@@ -215,12 +248,71 @@ function cardE(m) {
   var done = m.status && m.status.type && m.status.type.state === 'post';
   var dt = new Date(m.date);
   var ds = dt.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
+  
+  // ---- 提取比分 ----
   var hs = hh.score ? hh.score.displayValue || '0' : '0';
   var as = aa.score ? aa.score.displayValue || '0' : '0';
   var sc = done || live ? hs + '-' + as : 'VS';
+  
+  var name1 = hh.team.shortDisplayName;
+  var name2 = aa.team.shortDisplayName;
   var logo1 = hh.team.logo ? '<img src="' + hh.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
   var logo2 = aa.team.logo ? '<img src="' + aa.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
-  return '<div class="card"><div class="top">' + ds + '</div><div class="row"><div class="side">' + logo1 + ' ' + hh.team.shortDisplayName + '</div><div class="mid">' + sc + '</div><div class="side r">' + aa.team.shortDisplayName + ' ' + logo2 + '</div></div><div class="bot">' + (live ? '<span class="live">● LIVE</span>' : done ? '🏁 结束' : '') + '</div></div>';
+  
+  var display1 = logo1 + ' ' + name1;
+  var display2 = name2 + ' ' + logo2;
+  var cl = '';
+  
+  // ---- 判断是否有点球决胜 ----
+  var isPenalty = false;
+  if (m.status && m.status.type && m.status.type.detail) {
+    var detail = m.status.type.detail.toLowerCase();
+    if (detail.indexOf('penalty') !== -1) {
+      isPenalty = true;
+    }
+  }
+  // 备用：有些数据在 competition 层级
+  if (!isPenalty && c && c.status && c.status.type && c.status.type.detail) {
+    var detail2 = c.status.type.detail.toLowerCase();
+    if (detail2.indexOf('penalty') !== -1) {
+      isPenalty = true;
+    }
+  }
+  
+  if (done) {
+    var hScore = parseInt(hs) || 0;
+    var aScore = parseInt(as) || 0;
+    
+    // ---- 点球决胜：按最终比分判定胜者，但显示PK标记 ----
+    if (hScore > aScore) {
+      var winTag = isPenalty ? ' ⚽ PK ✔' : ' ✔';
+      display1 = '<span class="win">' + logo1 + ' ' + name1 + winTag + '</span>';
+      display2 = '<span class="lose">' + name2 + ' ' + logo2 + '</span>';
+      cl = 'color:#4caf50';
+    } else if (hScore < aScore) {
+      var winTag2 = isPenalty ? ' ⚽ PK ✔' : ' ✔';
+      display1 = '<span class="lose">' + logo1 + ' ' + name1 + '</span>';
+      display2 = '<span class="win">' + name2 + ' ' + logo2 + winTag2 + '</span>';
+      cl = 'color:#ff5252';
+    } else {
+      // 理论上点球决胜不会平局，但兜底
+      display1 = '<span class="draw">' + logo1 + ' ' + name1 + '</span>';
+      display2 = '<span class="draw">' + name2 + ' ' + logo2 + '</span>';
+      cl = 'color:#ffd740';
+    }
+  } else if (live) {
+    var hScore = parseInt(hs) || 0;
+    var aScore = parseInt(as) || 0;
+    cl = hScore > aScore ? 'color:#4caf50' : hScore < aScore ? 'color:#ff5252' : 'color:#ffd740';
+  }
+  
+  // ---- 底部显示点球标记 ----
+  var botText = live ? '<span class="live">● LIVE</span>' : done ? '🏁 结束' : '';
+  if (done && isPenalty) {
+    botText += ' ⚽ 点球决胜';
+  }
+  
+  return '<div class="card"><div class="top">' + ds + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
 function fil() {
@@ -228,7 +320,6 @@ function fil() {
   else renG();
 }
 
-// 自动加载
 ld();
 </script>
 
