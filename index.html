@@ -195,7 +195,7 @@ function cardG(m) {
   return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
-// ========== 欧冠 / 欧联（修复时区 + 点球胜者） ==========
+// ========== 欧冠 / 欧联（手动格式化北京时间 + 24小时制 + 点球胜者） ==========
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
@@ -243,11 +243,19 @@ function cardE(m) {
   var live = m.status && m.status.type && m.status.type.state === 'in';
   var done = m.status && m.status.type && m.status.type.state === 'post';
   
-  // ---- 修复时区：转为北京时间 (UTC+8) ----
+  // ---- 手动格式化北京时间（24小时制，不依赖设备设置） ----
   var dt = new Date(m.date);
-  var beijingTime = new Date(dt.getTime() + 8 * 60 * 60 * 1000);
-  var ds = beijingTime.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
-  var ts = beijingTime.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+  // 获取 UTC 时间戳，手动加 8 小时得到北京时间
+  var beijingMs = dt.getTime() + 8 * 60 * 60 * 1000;
+  var bj = new Date(beijingMs);
+  
+  // 手动拼接日期和时间，强制 24 小时制，两位数补零
+  var month = String(bj.getUTCMonth() + 1).padStart(2, '0');
+  var day = String(bj.getUTCDate()).padStart(2, '0');
+  var hours = String(bj.getUTCHours()).padStart(2, '0');
+  var minutes = String(bj.getUTCMinutes()).padStart(2, '0');
+  var ds = month + '/' + day;
+  var ts = hours + ':' + minutes;
   
   // ---- 提取比分：使用 displayValue 解析 ----
   var hsRaw = hh.score ? hh.score.displayValue || '0' : '0';
