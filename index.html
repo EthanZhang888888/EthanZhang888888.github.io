@@ -45,12 +45,8 @@ details summary{color:#4caf50;cursor:pointer;padding:8px 0;font-size:14px;font-w
 details summary:hover{color:#66bb6a}
 .group-title{color:#ffd740;margin:12px 0 6px;font-weight:bold;font-size:14px}
 .section-title{margin:12px 0 6px;font-weight:bold;font-size:14px}
-
 #backTop{position:fixed;bottom:20px;right:20px;background:#4caf50;border:none;border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.5);color:#000;transition:0.3s;display:none;z-index:999}
 #backTop:hover{transform:scale(1.1);background:#66bb6a}
-
-/* 点球标记小标签 */
-.pk-tag{font-size:10px;background:#ffd740;color:#000;border-radius:10px;padding:1px 6px;margin-left:4px;font-weight:bold}
 </style>
 </head>
 <body>
@@ -199,7 +195,7 @@ function cardG(m) {
   return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
-// ========== 欧冠 / 欧联（支持点球决胜） ==========
+// ========== 欧冠 / 欧联（修复点球比分） ==========
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
@@ -249,9 +245,24 @@ function cardE(m) {
   var dt = new Date(m.date);
   var ds = dt.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
   
-  // ---- 提取比分 ----
-  var hs = hh.score ? hh.score.displayValue || '0' : '0';
-  var as = aa.score ? aa.score.displayValue || '0' : '0';
+  // ---- 提取比分：优先使用 value（数值型），兜底用 displayValue ----
+  var hs = (hh.score && hh.score.value !== undefined && hh.score.value !== null) 
+           ? String(hh.score.value) 
+           : (hh.score ? hh.score.displayValue || '0' : '0');
+  var as = (aa.score && aa.score.value !== undefined && aa.score.value !== null) 
+           ? String(aa.score.value) 
+           : (aa.score ? aa.score.displayValue || '0' : '0');
+  
+  // 如果 value 是 0 但 displayValue 有值（比如 "1"），用 displayValue 解析
+  if (hs === '0' && hh.score && hh.score.displayValue) {
+    var parsed1 = parseInt(hh.score.displayValue);
+    if (!isNaN(parsed1)) hs = String(parsed1);
+  }
+  if (as === '0' && aa.score && aa.score.displayValue) {
+    var parsed2 = parseInt(aa.score.displayValue);
+    if (!isNaN(parsed2)) as = String(parsed2);
+  }
+  
   var sc = done || live ? hs + '-' + as : 'VS';
   
   var name1 = hh.team.shortDisplayName;
@@ -271,7 +282,6 @@ function cardE(m) {
       isPenalty = true;
     }
   }
-  // 备用：有些数据在 competition 层级
   if (!isPenalty && c && c.status && c.status.type && c.status.type.detail) {
     var detail2 = c.status.type.detail.toLowerCase();
     if (detail2.indexOf('penalty') !== -1) {
@@ -283,7 +293,6 @@ function cardE(m) {
     var hScore = parseInt(hs) || 0;
     var aScore = parseInt(as) || 0;
     
-    // ---- 点球决胜：按最终比分判定胜者，但显示PK标记 ----
     if (hScore > aScore) {
       var winTag = isPenalty ? ' ⚽ PK ✔' : ' ✔';
       display1 = '<span class="win">' + logo1 + ' ' + name1 + winTag + '</span>';
@@ -295,7 +304,6 @@ function cardE(m) {
       display2 = '<span class="win">' + name2 + ' ' + logo2 + winTag2 + '</span>';
       cl = 'color:#ff5252';
     } else {
-      // 理论上点球决胜不会平局，但兜底
       display1 = '<span class="draw">' + logo1 + ' ' + name1 + '</span>';
       display2 = '<span class="draw">' + name2 + ' ' + logo2 + '</span>';
       cl = 'color:#ffd740';
@@ -306,7 +314,6 @@ function cardE(m) {
     cl = hScore > aScore ? 'color:#4caf50' : hScore < aScore ? 'color:#ff5252' : 'color:#ffd740';
   }
   
-  // ---- 底部显示点球标记 ----
   var botText = live ? '<span class="live">● LIVE</span>' : done ? '🏁 结束' : '';
   if (done && isPenalty) {
     botText += ' ⚽ 点球决胜';
