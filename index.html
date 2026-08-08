@@ -70,7 +70,6 @@ details summary:hover{color:#66bb6a}
 <button onclick="ld()">🔄 刷新</button>
 </div>
 
-<!-- 双时区控制条 -->
 <div class="tz-row">
   <span class="tz-label">🇩🇪 德甲/德乙/德丙：</span>
   <div class="tz-group">
@@ -106,8 +105,8 @@ window.onscroll = function() {
 };
 
 var lg='bl1', d={};
-var offsetG = 0; // 德甲/德乙/德丙偏移
-var offsetE = 0; // 欧冠/欧联偏移
+var offsetG = 0;
+var offsetE = 0;
 
 function set(l) {
   lg = l;
@@ -144,7 +143,6 @@ async function ld() {
   }
 }
 
-// ---- 德甲/德乙/德丙 时区控制 ----
 function adjustG(delta) {
   offsetG += delta;
   updateDisplay('tzDisplayG', offsetG);
@@ -157,7 +155,6 @@ function resetG() {
   if (lg !== 'UCL' && lg !== 'UEL') renG();
 }
 
-// ---- 欧冠/欧联 时区控制 ----
 function adjustE(delta) {
   offsetE += delta;
   updateDisplay('tzDisplayE', offsetE);
@@ -177,20 +174,17 @@ function updateDisplay(id, val) {
   else el.textContent = val + 'h';
 }
 
-// ---- 通用时间格式化 ----
+// ---- 修复：直接加偏移毫秒，自动处理日期进位 ----
 function formatTimeWithOffset(dateStr, offset) {
   var dt = new Date(dateStr);
-  var h = (dt.getUTCHours() + offset) % 24;
-  if (h < 0) h += 24;
-  var m = dt.getUTCMinutes();
-  var month = String(dt.getUTCMonth() + 1).padStart(2, '0');
-  var day = String(dt.getUTCDate()).padStart(2, '0');
-  var hours = String(Math.floor(h)).padStart(2, '0');
-  var minutes = String(m).padStart(2, '0');
+  var adjusted = new Date(dt.getTime() + offset * 60 * 60 * 1000);
+  var month = String(adjusted.getUTCMonth() + 1).padStart(2, '0');
+  var day = String(adjusted.getUTCDate()).padStart(2, '0');
+  var hours = String(adjusted.getUTCHours()).padStart(2, '0');
+  var minutes = String(adjusted.getUTCMinutes()).padStart(2, '0');
   return { date: month + '/' + day, time: hours + ':' + minutes };
 }
 
-// ---- 德甲/德乙/德丙 ----
 function renG() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
@@ -270,7 +264,6 @@ function cardG(m) {
   return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
-// ---- 欧冠 / 欧联 ----
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
