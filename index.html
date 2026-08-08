@@ -12,11 +12,14 @@ h1{text-align:center;color:#4caf50;margin:10px 0;font-size:1.4em}
 .nav button{padding:7px 12px;border-radius:18px;border:1.5px solid #4caf50;background:#0d1a0d;color:#4caf50;font-size:13px;cursor:pointer;transition:0.2s}
 .nav button:hover{background:#1a3a1a}
 .nav button.on{background:#4caf50;color:#000;font-weight:bold}
-.bar{display:flex;gap:8px;margin:10px 0}
-.bar input{flex:1;padding:8px 12px;border-radius:18px;border:1.5px solid #4caf50;background:#111;color:#eee;font-size:13px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0;align-items:center}
+.bar input{flex:1;padding:8px 12px;border-radius:18px;border:1.5px solid #4caf50;background:#111;color:#eee;font-size:13px;min-width:120px}
 .bar input:focus{outline:1px solid #4caf50}
 .bar button{padding:8px 14px;border-radius:18px;border:none;background:#4caf50;color:#000;font-weight:bold;font-size:13px;cursor:pointer;transition:0.2s}
 .bar button:hover{background:#66bb6a}
+.bar select{padding:8px 12px;border-radius:18px;border:1.5px solid #4caf50;background:#111;color:#eee;font-size:13px;cursor:pointer}
+.bar select:focus{outline:1px solid #4caf50}
+.bar label{color:#888;font-size:13px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
 .card{background:#111;border-radius:10px;padding:12px;border:1px solid #222;transition:0.2s}
 .card:hover{border-color:#4caf50}
@@ -29,9 +32,6 @@ h1{text-align:center;color:#4caf50;margin:10px 0;font-size:1.4em}
 .card .side .lose{color:#888;font-weight:normal}
 .card .side .draw{color:#ffd740;font-weight:bold}
 .card .mid{font-size:1.3em;font-weight:bold;color:#4caf50;min-width:45px;text-align:center}
-.card .mid.win{color:#4caf50}
-.card .mid.lose{color:#ff5252}
-.card .mid.draw{color:#ffd740}
 .card .bot{font-size:11px;color:#666;text-align:center;margin-top:4px}
 .live{color:#ff5252;animation:blink 1s infinite}
 @keyframes blink{50%{opacity:0.4}}
@@ -64,6 +64,34 @@ details summary:hover{color:#66bb6a}
 <div class="bar">
 <input id="s" placeholder="搜索球队..." oninput="fil()">
 <button onclick="ld()">🔄 刷新</button>
+<label>⏰ 时区：</label>
+<select id="tzSelect" onchange="ld()">
+  <option value="-12">UTC-12</option>
+  <option value="-11">UTC-11</option>
+  <option value="-10">UTC-10</option>
+  <option value="-9">UTC-9</option>
+  <option value="-8">UTC-8</option>
+  <option value="-7">UTC-7</option>
+  <option value="-6">UTC-6</option>
+  <option value="-5">UTC-5</option>
+  <option value="-4">UTC-4</option>
+  <option value="-3">UTC-3</option>
+  <option value="-2">UTC-2</option>
+  <option value="-1">UTC-1</option>
+  <option value="0">UTC+0</option>
+  <option value="1">UTC+1</option>
+  <option value="2">UTC+2</option>
+  <option value="3">UTC+3</option>
+  <option value="4">UTC+4</option>
+  <option value="5">UTC+5</option>
+  <option value="6">UTC+6</option>
+  <option value="7">UTC+7</option>
+  <option value="8" selected>UTC+8（北京时间）</option>
+  <option value="9">UTC+9</option>
+  <option value="10">UTC+10</option>
+  <option value="11">UTC+11</option>
+  <option value="12">UTC+12</option>
+</select>
 </div>
 
 <div id="main"><div class="ld">加载中...</div></div>
@@ -81,6 +109,10 @@ window.onscroll = function() {
 };
 
 var lg='bl1', d={};
+
+function getTZ() {
+  return parseInt(document.getElementById('tzSelect').value) || 8;
+}
 
 function set(l) {
   lg = l;
@@ -115,6 +147,19 @@ async function ld() {
   } catch(e) {
     document.getElementById('main').innerHTML = '<div class="ld">❌ 错误: ' + e.message + '<br><button onclick="ld()" style="margin-top:8px;padding:6px 14px;background:#4caf50;border:none;border-radius:12px;color:#000;cursor:pointer">🔄 重试</button></div>';
   }
+}
+
+// ---- 格式化时间：根据选择的时区 ----
+function formatTime(dateStr) {
+  var dt = new Date(dateStr);
+  var tz = getTZ();
+  var h = (dt.getUTCHours() + tz) % 24;
+  var m = dt.getUTCMinutes();
+  var month = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  var day = String(dt.getUTCDate()).padStart(2, '0');
+  var hours = String(h).padStart(2, '0');
+  var minutes = String(m).padStart(2, '0');
+  return { date: month + '/' + day, time: hours + ':' + minutes };
 }
 
 function renG() {
@@ -195,7 +240,6 @@ function cardG(m) {
   return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
-// ========== 欧冠 / 欧联（手动格式化北京时间 + 24小时制 + 点球胜者） ==========
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
@@ -243,21 +287,11 @@ function cardE(m) {
   var live = m.status && m.status.type && m.status.type.state === 'in';
   var done = m.status && m.status.type && m.status.type.state === 'post';
   
-  // ---- 手动格式化北京时间（24小时制，不依赖设备设置） ----
-  var dt = new Date(m.date);
-  // 获取 UTC 时间戳，手动加 8 小时得到北京时间
-  var beijingMs = dt.getTime() + 8 * 60 * 60 * 1000;
-  var bj = new Date(beijingMs);
+  // ---- 使用用户选择的时区 ----
+  var ft = formatTime(m.date);
+  var ds = ft.date;
+  var ts = ft.time;
   
-  // 手动拼接日期和时间，强制 24 小时制，两位数补零
-  var month = String(bj.getUTCMonth() + 1).padStart(2, '0');
-  var day = String(bj.getUTCDate()).padStart(2, '0');
-  var hours = String(bj.getUTCHours()).padStart(2, '0');
-  var minutes = String(bj.getUTCMinutes()).padStart(2, '0');
-  var ds = month + '/' + day;
-  var ts = hours + ':' + minutes;
-  
-  // ---- 提取比分：使用 displayValue 解析 ----
   var hsRaw = hh.score ? hh.score.displayValue || '0' : '0';
   var asRaw = aa.score ? aa.score.displayValue || '0' : '0';
   var hScore = parseInt(hsRaw) || 0;
@@ -276,32 +310,22 @@ function cardE(m) {
   var display2 = name2 + ' ' + logo2;
   var cl = '';
   
-  // ---- 判断是否有点球决胜 ----
   var isPenalty = false;
-  var detailStr = '';
   if (m.status && m.status.type && m.status.type.detail) {
-    detailStr = m.status.type.detail;
-    if (detailStr.toLowerCase().indexOf('penalty') !== -1) {
-      isPenalty = true;
-    }
+    if (m.status.type.detail.toLowerCase().indexOf('penalty') !== -1) isPenalty = true;
   }
   if (!isPenalty && c && c.status && c.status.type && c.status.type.detail) {
-    detailStr = c.status.type.detail;
-    if (detailStr.toLowerCase().indexOf('penalty') !== -1) {
-      isPenalty = true;
-    }
+    if (c.status.type.detail.toLowerCase().indexOf('penalty') !== -1) isPenalty = true;
   }
   
   if (done) {
     if (hScore > aScore) {
-      var winTag = isPenalty ? ' ⚽ PK ✔' : ' ✔';
-      display1 = '<span class="win">' + logo1 + ' ' + name1 + winTag + '</span>';
+      display1 = '<span class="win">' + logo1 + ' ' + name1 + (isPenalty ? ' ⚽PK✔' : ' ✔') + '</span>';
       display2 = '<span class="lose">' + name2 + ' ' + logo2 + '</span>';
       cl = 'color:#4caf50';
     } else if (hScore < aScore) {
-      var winTag2 = isPenalty ? ' ⚽ PK ✔' : ' ✔';
       display1 = '<span class="lose">' + name1 + ' ' + logo1 + '</span>';
-      display2 = '<span class="win">' + name2 + ' ' + logo2 + winTag2 + '</span>';
+      display2 = '<span class="win">' + name2 + ' ' + logo2 + (isPenalty ? ' ⚽PK✔' : ' ✔') + '</span>';
       cl = 'color:#ff5252';
     } else {
       display1 = '<span class="draw">' + logo1 + ' ' + name1 + '</span>';
@@ -313,9 +337,7 @@ function cardE(m) {
   }
   
   var botText = live ? '<span class="live">● LIVE</span>' : done ? '🏁 结束' : '';
-  if (done && isPenalty) {
-    botText += ' ⚽ 点球决胜';
-  }
+  if (done && isPenalty) botText += ' ⚽点球';
   
   return '<div class="card"><div class="top">' + ds + ' ' + ts + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
