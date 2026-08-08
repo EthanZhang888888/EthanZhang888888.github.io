@@ -1,11 +1,236 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>我的新网站</title>
-  </head>
-  <body>
-    <h1>🚀 你好，世界！</h1>
-    <p>这是我的第一个GitHub Pages网站。</p>
-  </body>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>足球数据中心</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:Arial,Helvetica,sans-serif;background:#0d1a0d;color:#eee;padding:10px}
+h1{text-align:center;color:#4caf50;margin:10px 0;font-size:1.4em}
+.nav{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:10px 0}
+.nav button{padding:7px 12px;border-radius:18px;border:1.5px solid #4caf50;background:#0d1a0d;color:#4caf50;font-size:13px;cursor:pointer;transition:0.2s}
+.nav button:hover{background:#1a3a1a}
+.nav button.on{background:#4caf50;color:#000;font-weight:bold}
+.bar{display:flex;gap:8px;margin:10px 0}
+.bar input{flex:1;padding:8px 12px;border-radius:18px;border:1.5px solid #4caf50;background:#111;color:#eee;font-size:13px}
+.bar input:focus{outline:1px solid #4caf50}
+.bar button{padding:8px 14px;border-radius:18px;border:none;background:#4caf50;color:#000;font-weight:bold;font-size:13px;cursor:pointer;transition:0.2s}
+.bar button:hover{background:#66bb6a}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.card{background:#111;border-radius:10px;padding:12px;border:1px solid #222;transition:0.2s}
+.card:hover{border-color:#4caf50}
+.card .top{color:#888;font-size:11px;margin-bottom:6px}
+.card .row{display:flex;align-items:center;gap:6px}
+.card .side{flex:1;font-weight:bold;font-size:14px;display:flex;align-items:center;gap:5px}
+.card .side img{width:20px;height:20px;border-radius:50%;object-fit:contain}
+.card .side.r{justify-content:flex-end;text-align:right}
+.card .mid{font-size:1.3em;font-weight:bold;color:#4caf50;min-width:45px;text-align:center}
+.card .bot{font-size:11px;color:#666;text-align:center;margin-top:4px}
+.live{color:#ff5252;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:0.4}}
+table{width:100%;border-collapse:collapse;font-size:13px;margin:8px 0}
+th{background:#1a3a1a;padding:6px 8px;text-align:left;color:#4caf50;font-size:11px}
+td{padding:6px 8px;border-bottom:1px solid #1a1a1a}
+td img{vertical-align:middle;margin-right:4px;border-radius:50%;width:16px;height:16px;object-fit:contain}
+.ld{text-align:center;padding:40px;color:#888}
+details{margin:6px 0}
+details summary{color:#4caf50;cursor:pointer;padding:8px 0;font-size:14px;font-weight:bold}
+details summary:hover{color:#66bb6a}
+.group-title{color:#ffd740;margin:12px 0 6px;font-weight:bold;font-size:14px}
+.section-title{margin:12px 0 6px;font-weight:bold;font-size:14px}
+
+/* 返回顶部按钮 */
+#backTop{position:fixed;bottom:20px;right:20px;background:#4caf50;border:none;border-radius:50%;width:44px;height:44px;font-size:22px;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,0.5);color:#000;transition:0.3s;display:none;z-index:999}
+#backTop:hover{transform:scale(1.1);background:#66bb6a}
+</style>
+</head>
+<body>
+
+<h1>⚽ 足球数据中心</h1>
+
+<div class="nav" id="nav">
+<button class="on" onclick="set('bl1')">德甲</button>
+<button onclick="set('bl2')">德乙</button>
+<button onclick="set('bl3')">德丙</button>
+<button onclick="set('UCL')">欧冠</button>
+<button onclick="set('UEL')">欧联</button>
+</div>
+
+<div class="bar">
+<input id="s" placeholder="搜索球队..." oninput="fil()">
+<button onclick="ld()">🔄 刷新</button>
+</div>
+
+<div id="main"><div class="ld">加载中...</div></div>
+
+<!-- 返回顶部按钮 -->
+<button id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<script>
+// 滚动时显示/隐藏返回顶部按钮
+window.onscroll = function() {
+  var btn = document.getElementById('backTop');
+  if (document.documentElement.scrollTop > 300) {
+    btn.style.display = 'block';
+  } else {
+    btn.style.display = 'none';
+  }
+};
+
+var lg='bl1', d={};
+
+function set(l) {
+  lg = l;
+  var bs = document.querySelectorAll('#nav button');
+  var nameMap = {'UCL':'欧冠','UEL':'欧联'};
+  for(var i=0;i<bs.length;i++) {
+    var label = bs[i].textContent.replace(/^\S+ /,'');
+    bs[i].className = (label === l || (nameMap[l] && label === nameMap[l])) ? 'on' : '';
+  }
+  document.getElementById('s').value = '';
+  ld();
+}
+
+async function ld() {
+  document.getElementById('main').innerHTML = '<div class="ld">⏳ 加载中...</div>';
+  try {
+    if (lg === 'UCL' || lg === 'UEL') {
+      var lk = lg === 'UCL' ? 'UEFA.CHAMPIONS' : 'UEFA.EUROPA';
+      var r1 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lk + '/scoreboard');
+      var r2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lk + '/standings');
+      d.m = (await r1.json()).events || [];
+      d.t = (await r2.json()).children || [];
+      renE();
+    } else {
+      var year = new Date().getFullYear();
+      var r1 = await fetch('https://api.openligadb.de/getmatchdata/' + lg);
+      var r2 = await fetch('https://api.openligadb.de/getbltable/' + lg + '/' + year);
+      d.m = await r1.json();
+      d.t = await r2.json();
+      renG();
+    }
+  } catch(e) {
+    document.getElementById('main').innerHTML = '<div class="ld">❌ 错误: ' + e.message + '<br><button onclick="ld()" style="margin-top:8px;padding:6px 14px;background:#4caf50;border:none;border-radius:12px;color:#000;cursor:pointer">🔄 重试</button></div>';
+  }
+}
+
+function renG() {
+  var s = document.getElementById('s').value.toLowerCase();
+  var m = d.m || [], t = d.t || [];
+  if (s) {
+    m = m.filter(function(x) {
+      return (x.team1 && x.team1.teamName || '').toLowerCase().indexOf(s) !== -1 ||
+             (x.team2 && x.team2.teamName || '').toLowerCase().indexOf(s) !== -1;
+    });
+  }
+  var h = '';
+  
+  // 积分榜
+  if (t.length) {
+    h += '<details open><summary>📈 积分榜</summary><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
+    for (var i = 0; i < t.length; i++) {
+      var r = t[i];
+      var icon = r.teamIconUrl ? '<img src="' + r.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+      h += '<tr><td>' + (i + 1) + '</td><td>' + icon + '<b>' + r.teamName + '</b></td><td>' + r.matches + '</td><td>' + r.won + '</td><td>' + r.draw + '</td><td>' + r.lost + '</td><td>' + r.goals + '</td><td>' + r.opponentGoals + '</td><td style="color:' + (r.goalDiff > 0 ? '#4caf50' : r.goalDiff < 0 ? '#ff5252' : '#eee') + '">' + (r.goalDiff > 0 ? '+' : '') + r.goalDiff + '</td><td style="font-weight:bold;color:#4caf50">' + r.points + '</td></tr>';
+    }
+    h += '</table></details>';
+  }
+  
+  var live = m.filter(function(x) { return !x.matchIsFinished && x.matchResults && x.matchResults.length > 0; });
+  var done = m.filter(function(x) { return x.matchIsFinished; });
+  var up = m.filter(function(x) { return !x.matchIsFinished && (!x.matchResults || x.matchResults.length === 0); });
+  
+  if (live.length) h += '<div class="section-title" style="color:#ff5252">🔴 进行中</div><div class="grid">' + live.map(cardG).join('') + '</div>';
+  if (up.length) h += '<div class="section-title" style="color:#4caf50">⏰ 即将开始</div><div class="grid">' + up.slice(0, 12).map(cardG).join('') + '</div>';
+  if (done.length) h += '<div class="section-title" style="color:#888">✅ 已结束</div><div class="grid">' + done.slice(-12).map(cardG).join('') + '</div>';
+  
+  document.getElementById('main').innerHTML = h || '<div class="ld">📭 暂无数据</div>';
+}
+
+function cardG(m) {
+  var dt = new Date(m.matchDateTime);
+  var ds = dt.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
+  var ts = dt.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+  var live = !m.matchIsFinished && m.matchResults && m.matchResults.length > 0;
+  var done = m.matchIsFinished;
+  var sc = 'VS', cl = '';
+  if (done || live) {
+    var r = m.matchResults.find(function(x) { return x.resultName === 'Endergebnis'; }) || m.matchResults[0];
+    var hs = r ? r.pointsTeam1 || 0 : 0, as = r ? r.pointsTeam2 || 0 : 0;
+    sc = hs + '-' + as;
+    cl = hs > as ? 'color:#4caf50' : hs < as ? 'color:#ff5252' : 'color:#ffd740';
+  }
+  var icon1 = m.team1 && m.team1.teamIconUrl ? '<img src="' + m.team1.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+  var icon2 = m.team2 && m.team2.teamIconUrl ? '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+  return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + icon1 + ' ' + (m.team1 ? m.team1.teamName : '?') + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + (m.team2 ? m.team2.teamName : '?') + ' ' + icon2 + '</div></div><div class="bot">' + (live ? '<span class="live">● LIVE</span>' : done ? '🏁 结束' : '') + '</div></div>';
+}
+
+function renE() {
+  var s = document.getElementById('s').value.toLowerCase();
+  var m = d.m || [], t = d.t || [];
+  if (s) {
+    m = m.filter(function(x) {
+      var c = x.competitions ? x.competitions[0] : null;
+      if (!c || !c.competitors || c.competitors.length < 2) return false;
+      return c.competitors[0].team.shortDisplayName.toLowerCase().indexOf(s) !== -1 ||
+             c.competitors[1].team.shortDisplayName.toLowerCase().indexOf(s) !== -1;
+    });
+  }
+  var h = '';
+  
+  // 积分榜
+  if (t.length) {
+    h += '<details open><summary>📈 积分榜</summary>';
+    for (var gi = 0; gi < t.length; gi++) {
+      var g = t[gi];
+      h += '<div class="group-title">' + g.name + '</div><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
+      var es = g.standings ? g.standings.entries || [] : [];
+      for (var i = 0; i < es.length; i++) {
+        var e = es[i], st = e.stats || [];
+        var gd = parseInt(st[8] ? st[8].value : 0) || 0;
+        h += '<tr><td>' + (i + 1) + '</td><td><b>' + e.team.shortDisplayName + '</b></td><td>' + (st[0] ? st[0].displayValue : '-') + '</td><td>' + (st[1] ? st[1].displayValue : '-') + '</td><td>' + (st[2] ? st[2].displayValue : '-') + '</td><td>' + (st[3] ? st[3].displayValue : '-') + '</td><td>' + (st[4] ? st[4].displayValue : '-') + '</td><td>' + (st[5] ? st[5].displayValue : '-') + '</td><td style="color:' + (gd > 0 ? '#4caf50' : gd < 0 ? '#ff5252' : '#eee') + '">' + (gd > 0 ? '+' : '') + gd + '</td><td style="font-weight:bold;color:#4caf50">' + (st[6] ? st[6].displayValue : '-') + '</td></tr>';
+      }
+      h += '</table>';
+    }
+    h += '</details>';
+  }
+  
+  var live = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'in'; });
+  var done = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'post'; });
+  var up = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'pre'; });
+  
+  if (live.length) h += '<div class="section-title" style="color:#ff5252">🔴 进行中</div><div class="grid">' + live.map(cardE).join('') + '</div>';
+  if (up.length) h += '<div class="section-title" style="color:#4caf50">⏰ 即将开始</div><div class="grid">' + up.slice(0, 12).map(cardE).join('') + '</div>';
+  if (done.length) h += '<div class="section-title" style="color:#888">✅ 已结束</div><div class="grid">' + done.slice(-12).map(cardE).join('') + '</div>';
+  
+  document.getElementById('main').innerHTML = h || '<div class="ld">📭 暂无数据</div>';
+}
+
+function cardE(m) {
+  var c = m.competitions ? m.competitions[0] : null;
+  if (!c || !c.competitors || c.competitors.length < 2) return '';
+  var hh = c.competitors[0], aa = c.competitors[1];
+  var live = m.status && m.status.type && m.status.type.state === 'in';
+  var done = m.status && m.status.type && m.status.type.state === 'post';
+  var dt = new Date(m.date);
+  var ds = dt.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
+  var hs = hh.score ? hh.score.displayValue || '0' : '0';
+  var as = aa.score ? aa.score.displayValue || '0' : '0';
+  var sc = done || live ? hs + '-' + as : 'VS';
+  var logo1 = hh.team.logo ? '<img src="' + hh.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+  var logo2 = aa.team.logo ? '<img src="' + aa.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+  return '<div class="card"><div class="top">' + ds + '</div><div class="row"><div class="side">' + logo1 + ' ' + hh.team.shortDisplayName + '</div><div class="mid">' + sc + '</div><div class="side r">' + aa.team.shortDisplayName + ' ' + logo2 + '</div></div><div class="bot">' + (live ? '<span class="live">● LIVE</span>' : done ? '🏁 结束' : '') + '</div></div>';
+}
+
+function fil() {
+  if (lg === 'UCL' || lg === 'UEL') renE();
+  else renG();
+}
+
+// 自动加载
+ld();
+</script>
+
+</body>
 </html>
