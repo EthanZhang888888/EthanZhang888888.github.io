@@ -195,7 +195,7 @@ function cardG(m) {
   return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
-// ========== 欧冠 / 欧联（自动时区 + 24小时制 + 点球胜者） ==========
+// ========== 欧冠 / 欧联 ==========
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
@@ -243,12 +243,12 @@ function cardE(m) {
   var live = m.status && m.status.type && m.status.type.state === 'in';
   var done = m.status && m.status.type && m.status.type.state === 'post';
   
-  // ---- 自动时区（浏览器转换），强制 24 小时制 ----
+  // ---- 强制北京时间（UTC+8），24小时制 ----
   var dt = new Date(m.date);
-  var month = String(dt.getMonth() + 1).padStart(2, '0');
-  var day = String(dt.getDate()).padStart(2, '0');
-  var hours = String(dt.getHours()).padStart(2, '0');
-  var minutes = String(dt.getMinutes()).padStart(2, '0');
+  var month = String(dt.getUTCMonth() + 1).padStart(2, '0');
+  var day = String(dt.getUTCDate()).padStart(2, '0');
+  var hours = String((dt.getUTCHours() + 8) % 24).padStart(2, '0');
+  var minutes = String(dt.getUTCMinutes()).padStart(2, '0');
   var ds = month + '/' + day;
   var ts = hours + ':' + minutes;
   
