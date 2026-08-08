@@ -90,7 +90,7 @@ window.onscroll = function() {
 };
 
 var lg='bl1', d={};
-var globalOffset = 0; // 全局时区偏移（小时）
+var globalOffset = 0;
 
 function set(l) {
   lg = l;
@@ -127,10 +127,10 @@ async function ld() {
   }
 }
 
-// ---- 全局调整时区 ----
 function adjustGlobal(delta) {
   globalOffset += delta;
   updateTzDisplay();
+  // 无论当前哪个联赛，都重新渲染
   if (lg === 'UCL' || lg === 'UEL') renE();
   else renG();
 }
@@ -149,7 +149,7 @@ function updateTzDisplay() {
   else el.textContent = globalOffset + 'h';
 }
 
-// ---- 格式化时间：UTC + 全局偏移 ----
+// ---- 通用时间格式化：UTC + 全局偏移 ----
 function formatTimeWithOffset(dateStr) {
   var dt = new Date(dateStr);
   var offset = globalOffset;
@@ -163,6 +163,7 @@ function formatTimeWithOffset(dateStr) {
   return { date: month + '/' + day, time: hours + ':' + minutes };
 }
 
+// ---- 德甲/德乙/德丙 ----
 function renG() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
@@ -196,10 +197,11 @@ function renG() {
 }
 
 function cardG(m) {
-  var dt = new Date(m.matchDateTime);
-  // 德甲数据用本地时间显示（因为 API 返回的已经是本地时间）
-  var ds = dt.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
-  var ts = dt.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+  // 德甲数据用 UTC + 全局偏移
+  var ft = formatTimeWithOffset(m.matchDateTime);
+  var ds = ft.date;
+  var ts = ft.time;
+  
   var live = !m.matchIsFinished && m.matchResults && m.matchResults.length > 0;
   var done = m.matchIsFinished;
   var sc = 'VS', cl = '';
@@ -242,6 +244,7 @@ function cardG(m) {
   return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
+// ---- 欧冠 / 欧联 ----
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
