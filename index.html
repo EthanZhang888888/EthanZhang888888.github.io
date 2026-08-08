@@ -243,11 +243,10 @@ function cardE(m) {
   var live = m.status && m.status.type && m.status.type.state === 'in';
   var done = m.status && m.status.type && m.status.type.state === 'post';
   
-  // ---- 修复时区：转为北京时间 (UTC+8) ----
+  // ---- 直接使用本地时区（浏览器自动转换） ----
   var dt = new Date(m.date);
-  var beijingTime = new Date(dt.getTime() + 8 * 60 * 60 * 1000);
-  var ds = beijingTime.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
-  var ts = beijingTime.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
+  var ds = dt.toLocaleDateString('zh-CN', {month:'short', day:'numeric'});
+  var ts = dt.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
   
   // ---- 提取比分：使用 displayValue 解析 ----
   var hsRaw = hh.score ? hh.score.displayValue || '0' : '0';
