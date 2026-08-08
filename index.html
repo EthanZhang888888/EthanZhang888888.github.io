@@ -29,9 +29,6 @@ h1{text-align:center;color:#4caf50;margin:10px 0;font-size:1.4em}
 .card .side .lose{color:#888;font-weight:normal}
 .card .side .draw{color:#ffd740;font-weight:bold}
 .card .mid{font-size:1.3em;font-weight:bold;color:#4caf50;min-width:45px;text-align:center}
-.card .mid.win{color:#4caf50}
-.card .mid.lose{color:#ff5252}
-.card .mid.draw{color:#ffd740}
 .card .bot{font-size:11px;color:#666;text-align:center;margin-top:4px}
 .live{color:#ff5252;animation:blink 1s infinite}
 @keyframes blink{50%{opacity:0.4}}
@@ -195,7 +192,6 @@ function cardG(m) {
   return '<div class="card"><div class="top">' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
-// ========== 欧冠 / 欧联 ==========
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
   var m = d.m || [], t = d.t || [];
@@ -243,16 +239,16 @@ function cardE(m) {
   var live = m.status && m.status.type && m.status.type.state === 'in';
   var done = m.status && m.status.type && m.status.type.state === 'post';
   
-  // ---- 强制北京时间（UTC+8），24小时制 ----
+  // ---- 时间：直接从 date 字段提取，浏览器自动转本地时区 ----
   var dt = new Date(m.date);
-  var month = String(dt.getUTCMonth() + 1).padStart(2, '0');
-  var day = String(dt.getUTCDate()).padStart(2, '0');
-  var hours = String((dt.getUTCHours() + 8) % 24).padStart(2, '0');
-  var minutes = String(dt.getUTCMinutes()).padStart(2, '0');
+  var month = String(dt.getMonth() + 1).padStart(2, '0');
+  var day = String(dt.getDate()).padStart(2, '0');
+  var hours = String(dt.getHours()).padStart(2, '0');
+  var minutes = String(dt.getMinutes()).padStart(2, '0');
   var ds = month + '/' + day;
   var ts = hours + ':' + minutes;
   
-  // ---- 提取比分：使用 displayValue 解析 ----
+  // ---- 比分 ----
   var hsRaw = hh.score ? hh.score.displayValue || '0' : '0';
   var asRaw = aa.score ? aa.score.displayValue || '0' : '0';
   var hScore = parseInt(hsRaw) || 0;
@@ -271,32 +267,23 @@ function cardE(m) {
   var display2 = name2 + ' ' + logo2;
   var cl = '';
   
-  // ---- 判断是否有点球决胜 ----
+  // ---- 点球判断 ----
   var isPenalty = false;
-  var detailStr = '';
   if (m.status && m.status.type && m.status.type.detail) {
-    detailStr = m.status.type.detail;
-    if (detailStr.toLowerCase().indexOf('penalty') !== -1) {
-      isPenalty = true;
-    }
+    if (m.status.type.detail.toLowerCase().indexOf('penalty') !== -1) isPenalty = true;
   }
   if (!isPenalty && c && c.status && c.status.type && c.status.type.detail) {
-    detailStr = c.status.type.detail;
-    if (detailStr.toLowerCase().indexOf('penalty') !== -1) {
-      isPenalty = true;
-    }
+    if (c.status.type.detail.toLowerCase().indexOf('penalty') !== -1) isPenalty = true;
   }
   
   if (done) {
     if (hScore > aScore) {
-      var winTag = isPenalty ? ' ⚽ PK ✔' : ' ✔';
-      display1 = '<span class="win">' + logo1 + ' ' + name1 + winTag + '</span>';
+      display1 = '<span class="win">' + logo1 + ' ' + name1 + (isPenalty ? ' ⚽PK✔' : ' ✔') + '</span>';
       display2 = '<span class="lose">' + name2 + ' ' + logo2 + '</span>';
       cl = 'color:#4caf50';
     } else if (hScore < aScore) {
-      var winTag2 = isPenalty ? ' ⚽ PK ✔' : ' ✔';
       display1 = '<span class="lose">' + name1 + ' ' + logo1 + '</span>';
-      display2 = '<span class="win">' + name2 + ' ' + logo2 + winTag2 + '</span>';
+      display2 = '<span class="win">' + name2 + ' ' + logo2 + (isPenalty ? ' ⚽PK✔' : ' ✔') + '</span>';
       cl = 'color:#ff5252';
     } else {
       display1 = '<span class="draw">' + logo1 + ' ' + name1 + '</span>';
@@ -308,9 +295,7 @@ function cardE(m) {
   }
   
   var botText = live ? '<span class="live">● LIVE</span>' : done ? '🏁 结束' : '';
-  if (done && isPenalty) {
-    botText += ' ⚽ 点球决胜';
-  }
+  if (done && isPenalty) botText += ' ⚽点球';
   
   return '<div class="card"><div class="top">' + ds + ' ' + ts + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
