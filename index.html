@@ -187,6 +187,16 @@ h1 {
   color: #ffd740;
   font-weight: bold;
 }
+.card .side .team-link {
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-color: #4caf50;
+  text-decoration-thickness: 1px;
+}
+.card .side .team-link:hover {
+  color: #66bb6a;
+}
 .card .mid {
   font-size: 1.3em;
   font-weight: bold;
@@ -321,7 +331,7 @@ details summary:hover {
   background: #1a1a1a;
   border: 1px solid #4caf50;
   border-radius: 16px;
-  max-width: 600px;
+  max-width: 500px;
   width: 100%;
   max-height: 80vh;
   overflow-y: auto;
@@ -346,6 +356,23 @@ details summary:hover {
 }
 .modal-box .close:hover {
   color: #fff;
+}
+.modal-box .info-item {
+  padding: 6px 0;
+  border-bottom: 1px solid #222;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal-box .info-item .label {
+  color: #888;
+  min-width: 60px;
+}
+.modal-box .info-item img {
+  border-radius: 6px;
+  max-width: 64px;
+  max-height: 64px;
 }
 .modal-box .player-item {
   padding: 4px 0;
@@ -419,7 +446,7 @@ function showModal(title, html) {
 }
 
 // ============================================================
-// 数据扩展模块（只用于欧冠/欧联阵容）
+// 数据模块
 // ============================================================
 var footballData = {
   _cache: {},
@@ -455,6 +482,35 @@ async function showRoster(league, teamId, teamName) {
     html += '<div class="player-item"><span class="num">#' + num + '</span>' + name + '<span class="pos">' + pos + '</span></div>';
   });
   showModal('📋 ' + teamName + ' 阵容', html);
+}
+
+// ---- 显示德甲球队资料（从积分榜缓存中获取） ----
+function showTeamInfo(teamId, teamName) {
+  // 从 d.t 积分榜数据中查找
+  var table = d.t || [];
+  var found = null;
+  for (var i = 0; i < table.length; i++) {
+    if (table[i].teamId == teamId) {
+      found = table[i];
+      break;
+    }
+  }
+  if (!found) {
+    showModal('ℹ️ ' + teamName, '<div style="color:#888;">暂无球队资料</div>');
+    return;
+  }
+  var html = '';
+  html += '<div class="info-item"><span class="label">🏷️ 名称</span>' + (found.teamName || '未知') + '</div>';
+  if (found.teamIconUrl) {
+    html += '<div class="info-item"><span class="label">🖼️ 队徽</span><img src="' + found.teamIconUrl + '" onerror="this.style.display=\'none\'"></div>';
+  }
+  html += '<div class="info-item"><span class="label">📊 排名</span>' + (found.teamInfoId || i + 1) + '</div>';
+  html += '<div class="info-item"><span class="label">🏟️ 场次</span>' + found.matches + ' 场</div>';
+  html += '<div class="info-item"><span class="label">⚽ 进球</span>' + found.goals + '</div>';
+  html += '<div class="info-item"><span class="label">🥅 失球</span>' + found.opponentGoals + '</div>';
+  html += '<div class="info-item"><span class="label">📈 净胜球</span>' + (found.goalDiff > 0 ? '+' : '') + found.goalDiff + '</div>';
+  html += '<div class="info-item"><span class="label">🏆 积分</span>' + found.points + '</div>';
+  showModal('ℹ️ ' + teamName, html);
 }
 
 // ============================================================
@@ -560,7 +616,7 @@ function fmt(dateStr, offset) {
 }
 
 // ============================================================
-// 德甲渲染（无球队资料插件）
+// 德甲渲染（带球队资料，从积分榜缓存读取）
 // ============================================================
 function renG() {
   var s = document.getElementById('s').value.toLowerCase();
@@ -607,11 +663,14 @@ function cardG(m) {
 
   var name1 = m.team1 ? m.team1.teamName : '?';
   var name2 = m.team2 ? m.team2.teamName : '?';
+  var teamId1 = m.team1 ? m.team1.teamId : null;
+  var teamId2 = m.team2 ? m.team2.teamId : null;
   var icon1 = m.team1 && m.team1.teamIconUrl ? '<img src="' + m.team1.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
   var icon2 = m.team2 && m.team2.teamIconUrl ? '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
 
-  var display1 = icon1 + ' ' + name1;
-  var display2 = icon2 + ' ' + name2;
+  // 德甲：球队名可点击查看资料（从积分榜缓存读取）
+  var display1 = icon1 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>';
+  var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>';
 
   if (done || live) {
     var r = m.matchResults.find(function(x) { return x.resultName === 'Endergebnis'; }) || m.matchResults[0];
@@ -621,16 +680,16 @@ function cardG(m) {
 
     if (done) {
       if (hs > as) {
-        display1 = icon1 + ' <span style="color:#4caf50;font-weight:bold;">' + name1 + ' ✔</span>';
+        display1 = icon1 + ' <span class="team-link" style="color:#4caf50;font-weight:bold;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ✔ ℹ️</span>';
         display2 = icon2 + ' <span style="color:#888;">' + name2 + '</span>';
         cl = 'color:#4caf50';
       } else if (hs < as) {
         display1 = icon1 + ' <span style="color:#888;">' + name1 + '</span>';
-        display2 = icon2 + ' <span style="color:#4caf50;font-weight:bold;">' + name2 + ' ✔</span>';
+        display2 = icon2 + ' <span class="team-link" style="color:#4caf50;font-weight:bold;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ✔ ℹ️</span>';
         cl = 'color:#ff5252';
       } else {
-        display1 = icon1 + ' <span style="color:#ffd740;font-weight:bold;">' + name1 + '</span>';
-        display2 = icon2 + ' <span style="color:#ffd740;font-weight:bold;">' + name2 + '</span>';
+        display1 = icon1 + ' <span class="team-link" style="color:#ffd740;font-weight:bold;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>';
+        display2 = icon2 + ' <span class="team-link" style="color:#ffd740;font-weight:bold;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>';
         cl = 'color:#ffd740';
       }
     } else {
@@ -644,7 +703,7 @@ function cardG(m) {
 }
 
 // ============================================================
-// 欧冠/欧联渲染（带阵容查看）
+// 欧冠/欧联渲染
 // ============================================================
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
