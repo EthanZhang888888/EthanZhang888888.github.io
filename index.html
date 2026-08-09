@@ -361,15 +361,6 @@ details summary:hover {
   margin-left: 8px;
   font-size: 11px;
 }
-.modal-box .team-info-item {
-  padding: 4px 0;
-  font-size: 13px;
-  border-bottom: 1px solid #222;
-}
-.modal-box .team-info-item .label {
-  color: #888;
-  margin-right: 8px;
-}
 </style>
 </head>
 <body>
@@ -428,43 +419,12 @@ function showModal(title, html) {
 }
 
 // ============================================================
-// 数据扩展模块
+// 数据扩展模块（只用于欧冠/欧联阵容）
 // ============================================================
 var footballData = {
   _cache: {},
-  _teamsCache: {},
 
-  // ---- 获取德甲所有球队列表 ----
-  getTeamsList: async function(league, season) {
-    var key = league + '_' + season;
-    if (this._teamsCache[key]) return this._teamsCache[key];
-    try {
-      var r = await fetch('https://api.openligadb.de/api/getteams/' + league + '/' + season);
-      var d = await r.json();
-      this._teamsCache[key] = d;
-      return d;
-    } catch (e) { console.warn('获取球队列表失败:', e); return null; }
-  },
-
-  // ---- 德甲球队资料 ----
-  getTeamInfo: async function(league, season, teamId) {
-    var list = await this.getTeamsList(league, season);
-    if (!list) return null;
-    for (var i = 0; i < list.length; i++) {
-      if (list[i].teamId == teamId) {
-        return list[i];
-      }
-    }
-    return null;
-  },
-
-  // ---- 德甲获取所有球队（用于阵容 - 实际上OpenLigaDB没有球员名单） ----
-  // ---- 这里保留接口，但返回球队信息而不是球员 ----
-  getTeamRoster: async function(league, season, teamId) {
-    return await this.getTeamInfo(league, season, teamId);
-  },
-
-  // ---- 欧冠/欧联球队阵容（所有球员，不区分首发替补） ----
+  // ---- 欧冠/欧联球队阵容（所有球员） ----
   getRoster: async function(league, teamId) {
     var lk = league === 'UCL' ? 'UEFA.CHAMPIONS' : 'UEFA.EUROPA';
     var key = 'roster_' + lk + '_' + teamId;
@@ -478,11 +438,7 @@ var footballData = {
   }
 };
 
-// ============================================================
-// 展示函数
-// ============================================================
-
-// ---- 显示欧冠/欧联球队阵容（显示所有球员） ----
+// ---- 显示欧冠/欧联球队阵容 ----
 async function showRoster(league, teamId, teamName) {
   var data = await footballData.getRoster(league, teamId);
   if (!data || !data.athletes || data.athletes.length === 0) {
@@ -492,33 +448,13 @@ async function showRoster(league, teamId, teamName) {
   var html = '';
   var allPlayers = data.athletes;
   html += '<div style="color:#4caf50;font-weight:bold;margin:6px 0 4px;">👤 球员名单 (' + allPlayers.length + '人)</div>';
-  allPlayers.forEach(a => {
+  allPlayers.forEach(function(a) {
     var num = a.jersey || '?';
     var pos = a.position ? a.position.abbreviation : '';
     var name = a.displayName || a.fullName || '未知';
     html += '<div class="player-item"><span class="num">#' + num + '</span>' + name + '<span class="pos">' + pos + '</span></div>';
   });
   showModal('📋 ' + teamName + ' 阵容', html);
-}
-
-// ---- 显示德甲球队资料 ----
-async function showTeamInfo(league, season, teamId, teamName) {
-  var data = await footballData.getTeamInfo(league, season, teamId);
-  if (!data) {
-    showModal('ℹ️ ' + teamName, '<div style="color:#888;">暂无球队资料</div>');
-    return;
-  }
-  var html = '';
-  html += '<div class="team-info-item"><span class="label">🏷️ 球队名称</span>' + (data.teamName || '未知') + '</div>';
-  html += '<div class="team-info-item"><span class="label">📋 简称</span>' + (data.teamNameShort || data.teamName || '未知') + '</div>';
-  if (data.teamIconUrl) {
-    html += '<div class="team-info-item"><span class="label">🖼️ 队徽</span><img src="' + data.teamIconUrl + '" style="width:48px;height:48px;border-radius:8px;margin-top:4px;"></div>';
-  }
-  html += '<div class="team-info-item"><span class="label">🆔 球队ID</span>' + data.teamId + '</div>';
-  if (data.teamGroupName) {
-    html += '<div class="team-info-item"><span class="label">📂 分组</span>' + data.teamGroupName + '</div>';
-  }
-  showModal('ℹ️ ' + teamName, html);
 }
 
 // ============================================================
@@ -537,7 +473,6 @@ var lg = 'bl1',
   d = {};
 var offsetG = 14;
 var offsetE = 8;
-var currentSeason = new Date().getFullYear();
 
 function set(l) {
   lg = l;
@@ -625,7 +560,7 @@ function fmt(dateStr, offset) {
 }
 
 // ============================================================
-// 德甲渲染
+// 德甲渲染（无球队资料插件）
 // ============================================================
 function renG() {
   var s = document.getElementById('s').value.toLowerCase();
@@ -672,16 +607,11 @@ function cardG(m) {
 
   var name1 = m.team1 ? m.team1.teamName : '?';
   var name2 = m.team2 ? m.team2.teamName : '?';
-  var teamId1 = m.team1 ? m.team1.teamId : null;
-  var teamId2 = m.team2 ? m.team2.teamId : null;
   var icon1 = m.team1 && m.team1.teamIconUrl ? '<img src="' + m.team1.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
   var icon2 = m.team2 && m.team2.teamIconUrl ? '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
 
-  var leagueMap = { 'bl1': 'bl1', 'bl2': 'bl2', 'bl3': 'bl3' };
-  var curLeague = leagueMap[lg] || 'bl1';
-
-  var display1 = icon1 + ' <span style="cursor:pointer;" onclick="showTeamInfo(\'' + curLeague + '\',' + currentSeason + ',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>';
-  var display2 = icon2 + ' <span style="cursor:pointer;" onclick="showTeamInfo(\'' + curLeague + '\',' + currentSeason + ',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>';
+  var display1 = icon1 + ' ' + name1;
+  var display2 = icon2 + ' ' + name2;
 
   if (done || live) {
     var r = m.matchResults.find(function(x) { return x.resultName === 'Endergebnis'; }) || m.matchResults[0];
@@ -691,16 +621,16 @@ function cardG(m) {
 
     if (done) {
       if (hs > as) {
-        display1 = icon1 + ' <span style="cursor:pointer;color:#4caf50;font-weight:bold;" onclick="showTeamInfo(\'' + curLeague + '\',' + currentSeason + ',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ✔ ℹ️</span>';
-        display2 = icon2 + ' <span style="cursor:pointer;color:#888;" onclick="showTeamInfo(\'' + curLeague + '\',' + currentSeason + ',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>';
+        display1 = icon1 + ' <span style="color:#4caf50;font-weight:bold;">' + name1 + ' ✔</span>';
+        display2 = icon2 + ' <span style="color:#888;">' + name2 + '</span>';
         cl = 'color:#4caf50';
       } else if (hs < as) {
-        display1 = icon1 + ' <span style="cursor:pointer;color:#888;" onclick="showTeamInfo(\'' + curLeague + '\',' + currentSeason + ',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>';
-        display2 = icon2 + ' <span style="cursor:pointer;color:#4caf50;font-weight:bold;" onclick="showTeamInfo(\'' + curLeague + '\',' + currentSeason + ',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ✔ ℹ️</span>';
+        display1 = icon1 + ' <span style="color:#888;">' + name1 + '</span>';
+        display2 = icon2 + ' <span style="color:#4caf50;font-weight:bold;">' + name2 + ' ✔</span>';
         cl = 'color:#ff5252';
       } else {
-        display1 = icon1 + ' <span style="cursor:pointer;color:#ffd740;font-weight:bold;" onclick="showTeamInfo(\'' + curLeague + '\',' + currentSeason + ',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>';
-        display2 = icon2 + ' <span style="cursor:pointer;color:#ffd740;font-weight:bold;" onclick="showTeamInfo(\'' + curLeague + '\',' + currentSeason + ',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>';
+        display1 = icon1 + ' <span style="color:#ffd740;font-weight:bold;">' + name1 + '</span>';
+        display2 = icon2 + ' <span style="color:#ffd740;font-weight:bold;">' + name2 + '</span>';
         cl = 'color:#ffd740';
       }
     } else {
@@ -709,16 +639,12 @@ function cardG(m) {
   }
 
   var botText = live ? '<span class="live">● LIVE</span>' : done ? '🏁 结束' : '';
-  var infoBtns = '';
-  if (teamId1 && teamId2) {
-    infoBtns = '<button onclick="showTeamInfo(\'' + curLeague + '\',' + currentSeason + ',\'' + teamId1 + '\',\'' + name1 + '\')">📋 ' + name1 + '</button><button onclick="showTeamInfo(\'' + curLeague + '\',' + currentSeason + ',\'' + teamId2 + '\',\'' + name2 + '\')">📋 ' + name2 + '</button>';
-  }
 
-  return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</span></div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + ' ' + infoBtns + '</div></div>';
+  return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</span></div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
 // ============================================================
-// 欧冠/欧联渲染
+// 欧冠/欧联渲染（带阵容查看）
 // ============================================================
 function renE() {
   var s = document.getElementById('s').value.toLowerCase();
