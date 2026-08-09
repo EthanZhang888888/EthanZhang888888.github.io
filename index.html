@@ -17,6 +17,7 @@ h1 .badge{font-size:12px;background:#1a3a1a;color:#888;padding:2px 10px;border-r
 .league-nav button{padding:7px 12px;border-radius:18px;border:1.5px solid #4caf50;background:#0d1a0d;color:#4caf50;font-size:13px;cursor:pointer;transition:0.2s}
 .league-nav button:hover{background:#1a3a1a}
 .league-nav button.on{background:#4caf50;color:#000;font-weight:bold}
+.league-nav .tag-divider{color:#333;font-size:14px;padding:0 2px;display:flex;align-items:center}
 .tz-row{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px 0;align-items:center;padding:6px 12px;background:#151515;border-radius:12px;border:1px solid #2a2a2a}
 .tz-group{display:flex;align-items:center;gap:4px;background:#1a1a1a;border-radius:18px;padding:3px;border:1px solid #333}
 .tz-group button{background:transparent;border:none;color:#4caf50;padding:4px 10px;border-radius:14px;font-size:13px;cursor:pointer;font-weight:bold}
@@ -59,6 +60,7 @@ h1 .badge{font-size:12px;background:#1a3a1a;color:#888;padding:2px 10px;border-r
 .card .meta .read-link{color:#4caf50;text-decoration:none;font-weight:bold;font-size:11px}
 .card .meta .read-link:hover{text-decoration:underline}
 .card .meta .tag{background:#1a3a1a;color:#4caf50;padding:0 8px;border-radius:10px;font-size:9px}
+.card .meta .news-tag{background:#1a3a1a;color:#ffd740;padding:0 8px;border-radius:10px;font-size:9px}
 .live{color:#ff5252;animation:blink 1s infinite}
 @keyframes blink{50%{opacity:0.4}}
 .ld{text-align:center;padding:40px;color:#888}
@@ -107,6 +109,7 @@ details summary:hover{color:#66bb6a}
 <a href="#" onclick="switchPage('transfer')" id="navTransfer">📰 Football News</a>
 </div>
 
+<!-- ===== PAGE 1: MATCH DATA ===== -->
 <div class="page active" id="pageMatch">
 <div class="league-nav" id="leagueNav">
 <button class="on" onclick="setLeague('bl1')">Bundesliga</button>
@@ -142,7 +145,9 @@ details summary:hover{color:#66bb6a}
 <div id="matchMain"><div class="ld">Loading...</div></div>
 </div>
 
+<!-- ===== PAGE 2: FOOTBALL NEWS ===== -->
 <div class="page" id="pageTransfer">
+<!-- 联赛筛选 -->
 <div class="league-nav" id="rumorNav">
 <button class="on" onclick="switchRumorTab('all')">🌍 All</button>
 <button onclick="switchRumorTab('bundesliga')">🇩🇪 Bundesliga</button>
@@ -150,6 +155,16 @@ details summary:hover{color:#66bb6a}
 <button onclick="switchRumorTab('laliga')">🇪🇸 La Liga</button>
 <button onclick="switchRumorTab('seriea')">🇮🇹 Serie A</button>
 <button onclick="switchRumorTab('ligue1')">🇫🇷 Ligue 1</button>
+</div>
+
+<!-- 新闻类型标签 -->
+<div class="league-nav" id="rumorTags" style="margin-top:4px;gap:4px;">
+<button class="on" onclick="switchRumorTag('all')">📰 All</button>
+<button onclick="switchRumorTag('transfer')">🔄 Transfers</button>
+<button onclick="switchRumorTag('match')">⚽ Match</button>
+<button onclick="switchRumorTag('injury')">🏥 Injury</button>
+<button onclick="switchRumorTag('title')">🏆 Title</button>
+<button onclick="switchRumorTag('club')">🎯 Club</button>
 </div>
 
 <div class="bar">
@@ -386,7 +401,7 @@ if (!icon1 && name1 !== '?') icon1 = getTeamBadge(name1, 20);
 if (m.team2 && m.team2.teamIconUrl) icon2 = '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'" style="width:20px;height:20px;border-radius:50%;object-fit:contain;flex-shrink:0;">';
 if (!icon2 && name2 !== '?') icon2 = getTeamBadge(name2, 20);
 var display1 = icon1 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>';
-var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>';
+var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\")">' + name2 + ' ℹ️</span>';
 if (done || live) {
 var r = m.matchResults.find(function(x) { return x.resultName === 'Endergebnis'; }) || m.matchResults[0];
 var hs = r ? r.pointsTeam1 || 0 : 0, as = r ? r.pointsTeam2 || 0 : 0;
@@ -494,10 +509,11 @@ function filterMatches() { renderMatches(); }
 
 
 // ================================================================
-// FOOTBALL NEWS MODULE - EXPANDED KEYWORDS
+// FOOTBALL NEWS MODULE - WITH TAGS
 // ================================================================
 var allRumors = [];
 var rumorTab = 'all';
+var currentRumorTag = 'all';
 var isLoadingRumors = false;
 
 var RSS_SOURCES = [
@@ -506,44 +522,34 @@ var RSS_SOURCES = [
 { name: 'BBC Sport', url: 'http://newsrss.bbc.co.uk/rss/sportonline_uk_edition/football/rss.xml' }
 ];
 
-// ================================================================
-// EXPANDED KEYWORDS - Football news (not just transfers)
-// ================================================================
-var FOOTBALL_KEYWORDS = [
-// --- Transfer related ---
-'transfer', 'rumour', 'rumor', 'deal', 'bid', 'move', 'join', 'sign',
-'loan', 'free agent', 'release', 'target', 'interested', 'pursue',
-'signing', 'contract', 'extension', 'renewal', 'offer', 'negotiation',
-'agent', 'fee', 'million', 'swap', 'exclusive', 'done deal',
-// --- Match related ---
-'match', 'game', 'fixture', 'result', 'score', 'goal', 'win', 'loss',
-'victory', 'defeat', 'draw', 'comeback', 'clean sheet', 'hat-trick',
-'penalty', 'injury time', 'extra time', 'shootout',
-// --- Player & Team related ---
-'player', 'team', 'squad', 'lineup', 'starting XI', 'captain',
-'star', 'legend', 'youngster', 'academy', 'youth', 'development',
-'injury', 'injured', 'fit', 'fitness', 'recovery', 'comeback',
-'suspended', 'suspension', 'ban', 'red card', 'yellow card',
-// --- Competition & Achievement related ---
-'champion', 'title', 'league', 'cup', 'final', 'semifinal', 'quarterfinal',
-'promotion', 'relegation', 'playoff', 'qualify', 'qualification',
-'record', 'milestone', 'history', 'legendary',
-// --- Manager & Club related ---
-'manager', 'coach', 'head coach', 'appoint', 'sack', 'dismiss', 'resign',
-'club', 'president', 'chairman', 'owner', 'takeover', 'investment',
-// --- General news ---
-'update', 'breaking', 'exclusive', 'report', 'source', 'reveal',
-'announce', 'confirm', 'deny', 'respond', 'react', 'statement',
-'preview', 'review', 'analysis', 'opinion', 'feature'
-];
-
-var LEAGUE_TEAMS = {
-bundesliga: ['Bayern','Dortmund','Leipzig','Frankfurt','Gladbach','Wolfsburg','Stuttgart','Hoffenheim','Freiburg','Koln','Mainz','Augsburg','Bochum','Darmstadt','Heidenheim'],
-premier: ['Arsenal','Liverpool','Man City','Manchester','Chelsea','Tottenham','Newcastle','Aston Villa','West Ham','Everton','Wolves','Crystal Palace','Fulham','Brentford','Brighton'],
-laliga: ['Barcelona','Real Madrid','Atletico','Sevilla','Real Sociedad','Villarreal','Athletic','Valencia','Betis','Getafe','Celta','Mallorca','Rayo','Espanyol','Alaves'],
-seriea: ['Juventus','Milan','Inter','Roma','Napoli','Lazio','Atalanta','Fiorentina','Torino','Bologna','Genoa','Sassuolo','Udinese','Empoli','Salernitana'],
-ligue1: ['PSG','Marseille','Lyon','Monaco','Lille','Nice','Rennes','Lens','Strasbourg','Montpellier','Nantes','Reims','Troyes','Clermont','Brest']
+// ---- 新闻类型关键词 ----
+var TAG_KEYWORDS = {
+transfer: ['transfer','deal','bid','sign','loan','contract','agent','fee','million','swap','done deal','签约','报价','续约','转会','加盟','离队','租借','rumour','rumor','target','interested','pursue','signing','release','free agent'],
+match: ['match','game','fixture','result','score','goal','win','loss','victory','defeat','draw','comeback','clean sheet','hat-trick','penalty','injury time','extra time','shootout','highlights'],
+injury: ['injury','injured','fit','fitness','recovery','suspended','suspension','ban','red card','yellow card','伤病','复出','停赛','禁赛','受伤'],
+title: ['champion','title','league','cup','final','semifinal','quarterfinal','promotion','relegation','playoff','qualify','record','milestone','冠军','联赛','杯赛','决赛','晋级','降级'],
+club: ['manager','coach','appoint','sack','dismiss','resign','club','president','chairman','owner','takeover','主教练','上任','下课','辞职','主席','老板']
 };
+
+function switchRumorTag(tag) {
+currentRumorTag = tag;
+var btns = document.querySelectorAll('#rumorTags button');
+for (var i = 0; i < btns.length; i++) btns[i].className = '';
+var target = document.querySelector('#rumorTags button[onclick="switchRumorTag(\'' + tag + '\')"]');
+if (target) target.className = 'on';
+renderRumors();
+}
+
+// ---- 通用足球关键词（用于过滤非足球新闻） ----
+var FOOTBALL_KEYWORDS = [
+'transfer','rumour','deal','bid','sign','loan','contract','agent',
+'match','game','result','score','goal','win','loss','victory','defeat','draw',
+'injury','injured','suspended','ban','red card','yellow card',
+'champion','title','league','cup','final','promotion','relegation',
+'manager','coach','appoint','sack','resign','club','president','owner',
+'football','soccer','premier','bundesliga','laliga','seriea','ligue1',
+'uefa','champions','europa','world cup','euro'
+];
 
 async function fetchWithProxy(url) {
 var proxies = [
@@ -601,7 +607,6 @@ var description = item.querySelector('description')?.textContent || '';
 var cleanDesc = description.replace(/<[^>]*>/g, '').trim();
 var summary = cleanDesc || title;
 if (summary.length > 150) summary = summary.substring(0, 150) + '...';
-// ---- Use expanded keywords ----
 var isFootball = FOOTBALL_KEYWORDS.some(function(kw) {
 return title.toLowerCase().includes(kw.toLowerCase()) || summary.toLowerCase().includes(kw.toLowerCase());
 });
@@ -667,7 +672,9 @@ function renderRumors() {
 var main = document.getElementById('rumorMain');
 var filtered = getFilteredRumors();
 if (filtered.length === 0) {
-main.innerHTML = '<div class="empty">No football news found<br><span style="font-size:12px;color:#555;">Click Refresh to fetch latest RSS feeds</span></div>';
+var tagNames = { 'all': 'All', 'transfer': 'Transfers', 'match': 'Match', 'injury': 'Injury', 'title': 'Title', 'club': 'Club' };
+var tagDisplay = tagNames[currentRumorTag] || 'All';
+main.innerHTML = '<div class="empty">No ' + tagDisplay + ' news found<br><span style="font-size:12px;color:#555;">Click Refresh to fetch latest RSS feeds</span></div>';
 return;
 }
 var html = '<div class="grid">';
@@ -677,16 +684,35 @@ var timeStr = isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-US', {mon
 var safeLink = item.link || '#';
 var icons = { 'Sky Sports': '🎯', 'Transfermarkt': '⚽', 'BBC Sport': '📺' };
 var icon = icons[item.source] || '📰';
-html += '<div class="card"><div class="source-row"><span class="source">' + icon + ' ' + item.source + '</span>' + (timeStr ? '<span class="source-tag">' + timeStr + '</span>' : '') + '</div><div class="title"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer">' + item.title + '</a></div>' + (item.summary ? '<div class="summary">' + item.summary + '</div>' : '') + '<div class="meta"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="read-link">📖 Read more →</a></div></div>';
+// 自动检测新闻类型标签
+var detectedTag = detectNewsTag(item.title + ' ' + item.summary);
+var tagDisplay = detectedTag ? '<span class="news-tag">' + detectedTag + '</span>' : '';
+html += '<div class="card"><div class="source-row"><span class="source">' + icon + ' ' + item.source + '</span>' + (timeStr ? '<span class="source-tag">' + timeStr + '</span>' : '') + '</div><div class="title"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer">' + item.title + '</a></div>' + (item.summary ? '<div class="summary">' + item.summary + '</div>' : '') + '<div class="meta"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="read-link">📖 Read more →</a>' + tagDisplay + '</div></div>';
 });
 html += '</div>';
 main.innerHTML = html;
 document.getElementById('rumorCount').textContent = filtered.length + ' news';
 }
 
+function detectNewsTag(text) {
+var lower = text.toLowerCase();
+for (var tag in TAG_KEYWORDS) {
+var keywords = TAG_KEYWORDS[tag];
+for (var i = 0; i < keywords.length; i++) {
+if (lower.includes(keywords[i].toLowerCase())) {
+var tagNames = { 'transfer': '🔄 Transfer', 'match': '⚽ Match', 'injury': '🏥 Injury', 'title': '🏆 Title', 'club': '🎯 Club' };
+return tagNames[tag] || tag;
+}
+}
+}
+return null;
+}
+
 function getFilteredRumors() {
 var search = document.getElementById('rumorSearchInput').value.toLowerCase();
 var filtered = allRumors;
+
+// 按联赛过滤
 if (rumorTab !== 'all') {
 var teams = LEAGUE_TEAMS[rumorTab] || [];
 filtered = filtered.filter(function(item) {
@@ -694,6 +720,17 @@ var text = (item.title + ' ' + item.summary).toLowerCase();
 return teams.some(function(team) { return text.includes(team.toLowerCase()); });
 });
 }
+
+// 按新闻类型标签过滤
+if (currentRumorTag !== 'all') {
+var keywords = TAG_KEYWORDS[currentRumorTag] || [];
+filtered = filtered.filter(function(item) {
+var text = (item.title + ' ' + item.summary).toLowerCase();
+return keywords.some(function(kw) { return text.includes(kw.toLowerCase()); });
+});
+}
+
+// 按搜索词过滤
 if (search) {
 filtered = filtered.filter(function(item) {
 return (item.title + ' ' + item.summary + ' ' + item.source).toLowerCase().includes(search);
@@ -713,6 +750,10 @@ renderRumors();
 
 function filterRumors() { renderRumors(); }
 
+
+// ================================================================
+// PAGE SWITCH
+// ================================================================
 function switchPage(page) {
 document.querySelectorAll('.page').forEach(function(el) { el.className = 'page'; });
 document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1)).className = 'page active';
