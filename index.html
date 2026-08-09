@@ -95,7 +95,7 @@ details summary:hover{color:#66bb6a}
 @keyframes spin{to{transform:rotate(360deg)}}
 .page{display:none}
 .page.active{display:block}
-@media(max-width:600px){.tz-row{flex-direction:column;align-items:stretch}.tz-divider{display:none}}
+@media(max-width:600px){.tz-row{flex-direction:column;align-items:stretch;}.tz-divider{display:none}}
 </style>
 </head>
 <body>
@@ -107,7 +107,6 @@ details summary:hover{color:#66bb6a}
 <a href="#" onclick="switchPage('transfer')" id="navTransfer">📰 Transfer Rumors</a>
 </div>
 
-<!-- ===== PAGE 1: MATCH DATA ===== -->
 <div class="page active" id="pageMatch">
 <div class="league-nav" id="leagueNav">
 <button class="on" onclick="setLeague('bl1')">Bundesliga</button>
@@ -130,7 +129,7 @@ details summary:hover{color:#66bb6a}
 <button onclick="resetG()" style="color:#666;font-size:11px;">Reset</button>
 </div>
 <span class="tz-display" id="tzDisplayG">+14h</span>
-<span class="tz-divider">│</span>
+<span class="tz-divider">|</span>
 <span class="tz-label">🏆 UCL/UEL:</span>
 <div class="tz-group">
 <button onclick="adjustE(-1)">−1</button>
@@ -143,7 +142,6 @@ details summary:hover{color:#66bb6a}
 <div id="matchMain"><div class="ld">Loading...</div></div>
 </div>
 
-<!-- ===== PAGE 2: TRANSFER RUMORS ===== -->
 <div class="page" id="pageTransfer">
 <div class="league-nav" id="rumorNav">
 <button class="on" onclick="switchRumorTab('all')">🌍 All</button>
@@ -164,25 +162,18 @@ details summary:hover{color:#66bb6a}
 <div id="rumorMain"><div class="ld"><div class="spinner"></div><br>Loading transfer rumors...</div></div>
 
 <div class="footer-note">
-<p>
-📰 This page shows aggregated summaries (max 150 chars). Full content available via source links.
-<br>
+<p>📰 This page shows aggregated summaries (max 150 chars). Full content available via source links.<br>
 Sources: <a href="https://www.transfermarkt.com/" target="_blank" rel="noopener">Transfermarkt</a> |
 <a href="https://www.bbc.com/sport/football" target="_blank" rel="noopener">BBC Sport</a> |
 <a href="https://www.goal.com/" target="_blank" rel="noopener">Goal.com</a> |
-<a href="https://www.skysports.com/" target="_blank" rel="noopener">Sky Sports</a>
-<br>
-For personal reference only. Copyright belongs to original authors.
-</p>
+<a href="https://www.skysports.com/" target="_blank" rel="noopener">Sky Sports</a><br>
+For personal reference only. Copyright belongs to original authors.</p>
 </div>
 </div>
 
 <button id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script>
-// ================================================================
-// COMMON UTILITIES
-// ================================================================
 function getTeamBadge(name, size) {
 if (!name || name === '?' || name === 'Unknown') return '';
 size = size || 20;
@@ -205,9 +196,6 @@ document.body.appendChild(div);
 div.addEventListener('click', function(e) { if (e.target === this) this.remove(); });
 }
 
-// ================================================================
-// MATCH DATA MODULE
-// ================================================================
 var matchData = { m: [], t: [] };
 var currentLeague = 'bl1';
 var offsetG = 14;
@@ -218,7 +206,8 @@ function setLeague(l) {
 currentLeague = l;
 var btns = document.querySelectorAll('#leagueNav button');
 for (var i = 0; i < btns.length; i++) btns[i].className = '';
-document.querySelector('#leagueNav button[onclick="setLeague(\'' + l + '\')"]').className = 'on';
+var target = document.querySelector('#leagueNav button[onclick="setLeague(\'' + l + '\')"]');
+if (target) target.className = 'on';
 document.getElementById('searchInput').value = '';
 refreshMatches();
 }
@@ -227,7 +216,7 @@ function adjustG(delta) { offsetG += delta; updateDisplay('tzDisplayG', offsetG)
 function resetG() { offsetG = 14; updateDisplay('tzDisplayG', 14); if (currentLeague !== 'UCL' && currentLeague !== 'UEL') renderMatches(); }
 function adjustE(delta) { offsetE += delta; updateDisplay('tzDisplayE', offsetE); if (currentLeague === 'UCL' || currentLeague === 'UEL') renderMatches(); }
 function resetE() { offsetE = 8; updateDisplay('tzDisplayE', 8); if (currentLeague === 'UCL' || currentLeague === 'UEL') renderMatches(); }
-function updateDisplay(id, val) { var el = document.getElementById(id); if (val === 0) el.textContent = '+0h'; else if (val > 0) el.textContent = '+' + val + 'h'; else el.textContent = val + 'h'; }
+function updateDisplay(id, val) { var el = document.getElementById(id); if (el) { if (val === 0) el.textContent = '+0h'; else if (val > 0) el.textContent = '+' + val + 'h'; else el.textContent = val + 'h'; } }
 
 function fmt(dateStr, offset) {
 var d = new Date(dateStr);
@@ -504,15 +493,10 @@ return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + '</span></d
 
 function filterMatches() { renderMatches(); }
 
-
-// ================================================================
-// TRANSFER RUMORS MODULE
-// ================================================================
 var allRumors = [];
 var rumorTab = 'all';
 var isLoadingRumors = false;
 
-// RSS Sources
 var RSS_SOURCES = [
 { name: 'Transfermarkt', url: 'https://www.transfermarkt.com/rss/feed' },
 { name: 'BBC Sport', url: 'http://newsrss.bbc.co.uk/rss/sportonline_uk_edition/football/rss.xml' },
@@ -520,22 +504,16 @@ var RSS_SOURCES = [
 { name: 'Sky Sports', url: 'https://www.skysports.com/rss/12040' }
 ];
 
-var TRANSFER_KEYWORDS = [
-'transfer', 'rumour', 'rumor', 'deal', 'bid', 'move', 'join', 'sign',
-'loan', 'free agent', 'release', 'target', 'interested', 'pursue',
-'signing', 'contract', 'extension', 'renewal', 'offer', 'negotiation',
-'agent', 'fee', 'million', 'swap', 'exclusive', 'done deal'
-];
+var TRANSFER_KEYWORDS = ['transfer','rumour','rumor','deal','bid','move','join','sign','loan','free agent','release','target','interested','pursue','signing','contract','extension','renewal','offer','negotiation','agent','fee','million','swap','exclusive','done deal'];
 
 var LEAGUE_TEAMS = {
-bundesliga: ['Bayern', 'Dortmund', 'Leipzig', 'Frankfurt', 'Gladbach', 'Wolfsburg', 'Stuttgart', 'Hoffenheim', 'Freiburg', 'Koln', 'Mainz', 'Augsburg', 'Bochum', 'Darmstadt', 'Heidenheim'],
-premier: ['Arsenal', 'Liverpool', 'Man City', 'Manchester', 'Chelsea', 'Tottenham', 'Newcastle', 'Aston Villa', 'West Ham', 'Everton', 'Wolves', 'Crystal Palace', 'Fulham', 'Brentford', 'Brighton'],
-laliga: ['Barcelona', 'Real Madrid', 'Atletico', 'Sevilla', 'Real Sociedad', 'Villarreal', 'Athletic', 'Valencia', 'Betis', 'Getafe', 'Celta', 'Mallorca', 'Rayo', 'Espanyol', 'Alaves'],
-seriea: ['Juventus', 'Milan', 'Inter', 'Roma', 'Napoli', 'Lazio', 'Atalanta', 'Fiorentina', 'Torino', 'Bologna', 'Genoa', 'Sassuolo', 'Udinese', 'Empoli', 'Salernitana'],
-ligue1: ['PSG', 'Marseille', 'Lyon', 'Monaco', 'Lille', 'Nice', 'Rennes', 'Lens', 'Strasbourg', 'Montpellier', 'Nantes', 'Reims', 'Troyes', 'Clermont', 'Brest']
+bundesliga: ['Bayern','Dortmund','Leipzig','Frankfurt','Gladbach','Wolfsburg','Stuttgart','Hoffenheim','Freiburg','Koln','Mainz','Augsburg','Bochum','Darmstadt','Heidenheim'],
+premier: ['Arsenal','Liverpool','Man City','Manchester','Chelsea','Tottenham','Newcastle','Aston Villa','West Ham','Everton','Wolves','Crystal Palace','Fulham','Brentford','Brighton'],
+laliga: ['Barcelona','Real Madrid','Atletico','Sevilla','Real Sociedad','Villarreal','Athletic','Valencia','Betis','Getafe','Celta','Mallorca','Rayo','Espanyol','Alaves'],
+seriea: ['Juventus','Milan','Inter','Roma','Napoli','Lazio','Atalanta','Fiorentina','Torino','Bologna','Genoa','Sassuolo','Udinese','Empoli','Salernitana'],
+ligue1: ['PSG','Marseille','Lyon','Monaco','Lille','Nice','Rennes','Lens','Strasbourg','Montpellier','Nantes','Reims','Troyes','Clermont','Brest']
 };
 
-// ---- Fetch RSS via proxy ----
 async function fetchRSSWithProxy(url) {
 var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
 var response = await fetch(proxyUrl);
@@ -543,13 +521,11 @@ if (!response.ok) throw new Error('HTTP ' + response.status);
 return await response.text();
 }
 
-// ---- Parse RSS XML ----
 function parseRSS(xml, sourceName) {
 var parser = new DOMParser();
 var doc = parser.parseFromString(xml, 'text/xml');
 var items = doc.querySelectorAll('item');
 var results = [];
-
 items.forEach(function(item) {
 var title = item.querySelector('title')?.textContent || '';
 var link = item.querySelector('link')?.textContent || '';
@@ -558,12 +534,9 @@ var description = item.querySelector('description')?.textContent || '';
 var cleanDesc = description.replace(/<[^>]*>/g, '').trim();
 var summary = cleanDesc || title;
 if (summary.length > 150) summary = summary.substring(0, 150) + '...';
-
 var isTransfer = TRANSFER_KEYWORDS.some(function(kw) {
-return title.toLowerCase().includes(kw.toLowerCase()) ||
-summary.toLowerCase().includes(kw.toLowerCase());
+return title.toLowerCase().includes(kw.toLowerCase()) || summary.toLowerCase().includes(kw.toLowerCase());
 });
-
 if (isTransfer && title && link) {
 results.push({ title: title, link: link, pubDate: pubDate, summary: summary, source: sourceName });
 }
@@ -571,7 +544,6 @@ results.push({ title: title, link: link, pubDate: pubDate, summary: summary, sou
 return results;
 }
 
-// ---- Fetch single RSS source ----
 async function fetchRSSSource(source) {
 try {
 var xml = await fetchRSSWithProxy(source.url);
@@ -583,23 +555,16 @@ return [];
 }
 }
 
-// ---- Fetch all rumors ----
 async function fetchAllRumors() {
 if (isLoadingRumors) return;
 isLoadingRumors = true;
 var statusEl = document.getElementById('rumorStatus');
-statusEl.textContent = 'Loading...';
+if (statusEl) statusEl.textContent = 'Loading...';
 document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>Fetching transfer rumors...</div>';
-
 allRumors = [];
 var promises = RSS_SOURCES.map(function(source) { return fetchRSSSource(source); });
 var results = await Promise.all(promises);
-
-results.forEach(function(items) {
-allRumors = allRumors.concat(items);
-});
-
-// Deduplicate
+results.forEach(function(items) { allRumors = allRumors.concat(items); });
 var seen = new Set();
 allRumors = allRumors.filter(function(item) {
 var key = item.title.substring(0, 60).toLowerCase();
@@ -607,8 +572,6 @@ if (seen.has(key)) return false;
 seen.add(key);
 return true;
 });
-
-// Sort by date
 allRumors.sort(function(a, b) {
 var da = new Date(a.pubDate);
 var db = new Date(b.pubDate);
@@ -616,65 +579,42 @@ if (isNaN(da.getTime())) return 1;
 if (isNaN(db.getTime())) return -1;
 return db - da;
 });
-
-// Fallback
 if (allRumors.length === 0) {
 allRumors = [
 { title: 'Visit Transfermarkt for latest transfer news', link: 'https://www.transfermarkt.com/', pubDate: new Date().toUTCString(), summary: 'Check Transfermarkt for the latest transfer rumors and done deals.', source: 'Transfermarkt' },
 { title: 'BBC Sport Football - Latest transfer news', link: 'https://www.bbc.com/sport/football', pubDate: new Date().toUTCString(), summary: 'BBC Sport provides comprehensive coverage of football transfers.', source: 'BBC Sport' }
 ];
 }
-
 renderRumors();
 isLoadingRumors = false;
-statusEl.textContent = 'Updated (' + allRumors.length + ')';
+if (statusEl) statusEl.textContent = 'Updated (' + allRumors.length + ')';
 document.getElementById('rumorCount').textContent = allRumors.length + ' rumors';
 }
 
-// ---- Render rumors ----
 function renderRumors() {
 var main = document.getElementById('rumorMain');
 var filtered = getFilteredRumors();
-
 if (filtered.length === 0) {
 main.innerHTML = '<div class="empty">No transfer rumors found<br><span style="font-size:12px;color:#555;">Click Refresh to fetch latest RSS feeds</span></div>';
 return;
 }
-
 var html = '<div class="grid">';
 filtered.forEach(function(item) {
 var date = new Date(item.pubDate);
-var timeStr = isNaN(date.getTime()) ? '' :
-date.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' +
-date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-
+var timeStr = isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
 var safeLink = item.link || '#';
 var icons = { 'Transfermarkt': '⚽', 'BBC Sport': '📺', 'Goal.com': '⚡', 'Sky Sports': '🎯' };
 var icon = icons[item.source] || '📰';
-
-html += '<div class="card">' +
-'<div class="source-row">' +
-'<span class="source">' + icon + ' ' + item.source + '</span>' +
-(timeStr ? '<span class="source-tag">' + timeStr + '</span>' : '') +
-'</div>' +
-'<div class="title"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer">' + item.title + '</a></div>' +
-(item.summary ? '<div class="summary">' + item.summary + '</div>' : '') +
-'<div class="meta">' +
-'<a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="read-link">📖 Read more →</a>' +
-'</div>' +
-'</div>';
+html += '<div class="card"><div class="source-row"><span class="source">' + icon + ' ' + item.source + '</span>' + (timeStr ? '<span class="source-tag">' + timeStr + '</span>' : '') + '</div><div class="title"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer">' + item.title + '</a></div>' + (item.summary ? '<div class="summary">' + item.summary + '</div>' : '') + '<div class="meta"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="read-link">📖 Read more →</a></div></div>';
 });
 html += '</div>';
-
 main.innerHTML = html;
 document.getElementById('rumorCount').textContent = filtered.length + ' rumors';
 }
 
-// ---- Filter rumors ----
 function getFilteredRumors() {
 var search = document.getElementById('rumorSearchInput').value.toLowerCase();
 var filtered = allRumors;
-
 if (rumorTab !== 'all') {
 var teams = LEAGUE_TEAMS[rumorTab] || [];
 filtered = filtered.filter(function(item) {
@@ -682,7 +622,6 @@ var text = (item.title + ' ' + item.summary).toLowerCase();
 return teams.some(function(team) { return text.includes(team.toLowerCase()); });
 });
 }
-
 if (search) {
 filtered = filtered.filter(function(item) {
 return (item.title + ' ' + item.summary + ' ' + item.source).toLowerCase().includes(search);
@@ -695,16 +634,13 @@ function switchRumorTab(tab) {
 rumorTab = tab;
 var btns = document.querySelectorAll('#rumorNav button');
 for (var i = 0; i < btns.length; i++) btns[i].className = '';
-document.querySelector('#rumorNav button[onclick="switchRumorTab(\'' + tab + '\')"]').className = 'on';
+var target = document.querySelector('#rumorNav button[onclick="switchRumorTab(\'' + tab + '\')"]');
+if (target) target.className = 'on';
 renderRumors();
 }
 
 function filterRumors() { renderRumors(); }
 
-
-// ================================================================
-// PAGE SWITCH
-// ================================================================
 function switchPage(page) {
 document.querySelectorAll('.page').forEach(function(el) { el.className = 'page'; });
 document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1)).className = 'page active';
