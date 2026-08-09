@@ -77,7 +77,7 @@ details summary:hover{color:#66bb6a}
     <button onclick="adjustG(1)">+1</button>
     <button onclick="resetG()" style="color:#666;font-size:11px;">重置</button>
   </div>
-  <span class="tz-display" id="tzDisplayG">+6h</span>
+  <span class="tz-display" id="tzDisplayG">+14h</span>
 
   <span class="tz-divider">│</span>
 
@@ -105,8 +105,8 @@ window.onscroll = function() {
 };
 
 var lg='bl1', d={};
-var offsetG = 6;  // 德甲默认 +6h
-var offsetE = 8;  // 欧冠默认 +8h
+var offsetG = 14;
+var offsetE = 8;
 
 function set(l) {
   lg = l;
@@ -150,8 +150,8 @@ function adjustG(delta) {
 }
 
 function resetG() {
-  offsetG = 6;
-  updateDisplay('tzDisplayG', 6);
+  offsetG = 14;
+  updateDisplay('tzDisplayG', 14);
   if (lg !== 'UCL' && lg !== 'UEL') renG();
 }
 
@@ -174,7 +174,6 @@ function updateDisplay(id, val) {
   else el.textContent = val + 'h';
 }
 
-// ---- 时间转换：UTC + offset，自动处理日期进位 ----
 function fmt(dateStr, offset) {
   var d = new Date(dateStr);
   var totalMinutes = d.getUTCHours() * 60 + d.getUTCMinutes() + offset * 60;
