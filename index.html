@@ -170,6 +170,7 @@ h1 {
   height: 20px;
   border-radius: 50%;
   object-fit: contain;
+  flex-shrink: 0;
 }
 .card .side.r {
   justify-content: flex-end;
@@ -262,6 +263,21 @@ td img {
   height: 16px;
   object-fit: contain;
 }
+td .team-badge-sm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 8px;
+  font-weight: bold;
+  color: #fff;
+  flex-shrink: 0;
+  margin-right: 4px;
+  vertical-align: middle;
+  text-transform: uppercase;
+}
 .ld {
   text-align: center;
   padding: 40px;
@@ -311,6 +327,21 @@ details summary:hover {
 #backTop:hover {
   transform: scale(1.1);
   background: #66bb6a;
+}
+
+/* 队徽占位样式 */
+.team-badge {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  color: #fff;
+  flex-shrink: 0;
+  text-transform: uppercase;
 }
 
 /* 弹窗样式 */
@@ -433,6 +464,23 @@ details summary:hover {
 
 <script>
 // ============================================================
+// 工具函数：获取球队首字母占位
+// ============================================================
+function getTeamBadge(name, size) {
+  if (!name || name === '?' || name === '未知') return '';
+  size = size || 20;
+  var fontSize = size >= 20 ? 10 : 8;
+  var letter = name.charAt(0).toUpperCase();
+  var colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e84393','#00b894','#6c5ce7','#fd79a8','#0984e3','#fdcb6e','#e17055','#00cec9','#6c5ce7','#fd79a8','#00b894'];
+  var idx = 0;
+  for (var i = 0; i < name.length; i++) {
+    idx += name.charCodeAt(i);
+  }
+  var color = colors[idx % colors.length];
+  return '<span class="team-badge" style="background:' + color + ';width:' + size + 'px;height:' + size + 'px;font-size:' + fontSize + 'px;">' + letter + '</span>';
+}
+
+// ============================================================
 // 弹窗工具
 // ============================================================
 function showModal(title, html) {
@@ -484,36 +532,34 @@ async function showRoster(league, teamId, teamName) {
   showModal('📋 ' + teamName + ' 阵容', html);
 }
 
-// ---- 显示德甲球队资料（从积分榜缓存中获取）- 增强版 ----
+// ---- 显示德甲球队资料（从积分榜缓存中获取） ----
 function showTeamInfo(teamId, teamName) {
   var table = d.t || [];
   
   if (!table || table.length === 0) {
-    showModal('ℹ️ ' + teamName, '<div style="color:#888;">暂无球队资料<br><span style="font-size:11px;">积分榜数据未加载</span></div>');
+    showModal('ℹ️ ' + teamName, '<div style="color:#888;">积分榜数据未加载</div>');
     return;
   }
   
   var found = null;
+  var cleanName = teamName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '').toLowerCase();
+  
   for (var i = 0; i < table.length; i++) {
     var row = table[i];
-    // 多种方式匹配：teamId 直接匹配，或通过 teamName 匹配，或通过 teamInfoId 匹配
+    var rowClean = row.teamName.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, '').toLowerCase();
+    
     if (row.teamId == teamId || 
-        row.teamInfoId == teamId || 
+        row.teamInfoId == teamId ||
         row.teamName === teamName ||
-        row.teamName == teamName) {
+        row.teamName == teamName ||
+        rowClean === cleanName) {
       found = row;
       break;
     }
   }
   
   if (!found) {
-    // 调试：打印出所有球队名，方便排查
-    var allNames = table.map(function(r) { return r.teamName; }).join(', ');
-    showModal('ℹ️ ' + teamName, 
-      '<div style="color:#888;">暂无球队资料<br>' +
-      '<span style="font-size:11px;">搜索: ' + teamName + ' (ID: ' + teamId + ')</span><br>' +
-      '<span style="font-size:10px;color:#555;">可用球队: ' + allNames + '</span></div>'
-    );
+    showModal('ℹ️ ' + teamName, '<div style="color:#888;">暂无球队资料</div>');
     return;
   }
   
@@ -521,6 +567,8 @@ function showTeamInfo(teamId, teamName) {
   html += '<div class="info-item"><span class="label">🏷️ 名称</span>' + (found.teamName || '未知') + '</div>';
   if (found.teamIconUrl) {
     html += '<div class="info-item"><span class="label">🖼️ 队徽</span><img src="' + found.teamIconUrl + '" onerror="this.style.display=\'none\'"></div>';
+  } else {
+    html += '<div class="info-item"><span class="label">🖼️ 队徽</span>' + getTeamBadge(found.teamName, 48) + '</div>';
   }
   html += '<div class="info-item"><span class="label">🏟️ 场次</span>' + (found.matches || 0) + ' 场</div>';
   html += '<div class="info-item"><span class="label">⚽ 进球</span>' + (found.goals || 0) + '</div>';
@@ -651,7 +699,14 @@ function renG() {
     h += '<details open><summary>📈 积分榜</summary><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
     for (var i = 0; i < t.length; i++) {
       var r = t[i];
-      var icon = r.teamIconUrl ? '<img src="' + r.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+      var icon = '';
+      if (r.teamIconUrl) {
+        icon = '<img src="' + r.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'" style="width:16px;height:16px;border-radius:50%;object-fit:contain;vertical-align:middle;margin-right:4px;">';
+      }
+      if (!icon && r.teamName) {
+        icon = getTeamBadge(r.teamName, 16);
+        icon = icon.replace('team-badge', 'team-badge-sm');
+      }
       h += '<tr><td>' + (i + 1) + '</td><td>' + icon + '<b>' + r.teamName + '</b></td><td>' + r.matches + '</td><td>' + r.won + '</td><td>' + r.draw + '</td><td>' + r.lost + '</td><td>' + r.goals + '</td><td>' + r.opponentGoals + '</td><td style="color:' + (r.goalDiff > 0 ? '#4caf50' : r.goalDiff < 0 ? '#ff5252' : '#eee') + '">' + (r.goalDiff > 0 ? '+' : '') + r.goalDiff + '</td><td style="font-weight:bold;color:#4caf50">' + r.points + '</td></tr>';
     }
     h += '</table></details>';
@@ -675,17 +730,30 @@ function cardG(m) {
 
   var live = !m.matchIsFinished && m.matchResults && m.matchResults.length > 0;
   var done = m.matchIsFinished;
-  var sc = 'VS',
-    cl = '';
+  var sc = 'VS', cl = '';
 
   var name1 = m.team1 ? m.team1.teamName : '?';
   var name2 = m.team2 ? m.team2.teamName : '?';
   var teamId1 = m.team1 ? m.team1.teamId : null;
   var teamId2 = m.team2 ? m.team2.teamId : null;
-  var icon1 = m.team1 && m.team1.teamIconUrl ? '<img src="' + m.team1.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
-  var icon2 = m.team2 && m.team2.teamIconUrl ? '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+  
+  // ---- 队徽或首字母占位 ----
+  var icon1 = '';
+  if (m.team1 && m.team1.teamIconUrl) {
+    icon1 = '<img src="' + m.team1.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'" style="width:20px;height:20px;border-radius:50%;object-fit:contain;flex-shrink:0;">';
+  }
+  if (!icon1 && name1 !== '?') {
+    icon1 = getTeamBadge(name1, 20);
+  }
+  
+  var icon2 = '';
+  if (m.team2 && m.team2.teamIconUrl) {
+    icon2 = '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'" style="width:20px;height:20px;border-radius:50%;object-fit:contain;flex-shrink:0;">';
+  }
+  if (!icon2 && name2 !== '?') {
+    icon2 = getTeamBadge(name2, 20);
+  }
 
-  // 德甲球队资料按钮
   var display1 = icon1 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>';
   var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>';
 
@@ -789,8 +857,8 @@ function cardE(m) {
   var name2 = aa.team.shortDisplayName;
   var teamId1 = hh.team.id;
   var teamId2 = aa.team.id;
-  var logo1 = hh.team.logo ? '<img src="' + hh.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
-  var logo2 = aa.team.logo ? '<img src="' + aa.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+  var logo1 = hh.team.logo ? '<img src="' + hh.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'" style="width:20px;height:20px;border-radius:50%;object-fit:contain;flex-shrink:0;">' : '';
+  var logo2 = aa.team.logo ? '<img src="' + aa.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'" style="width:20px;height:20px;border-radius:50%;object-fit:contain;flex-shrink:0;">' : '';
 
   var leagueType = lg === 'UCL' ? 'UCL' : 'UEL';
 
