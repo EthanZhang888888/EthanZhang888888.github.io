@@ -493,6 +493,9 @@ return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + '</span></d
 
 function filterMatches() { renderMatches(); }
 
+// ================================================================
+// TRANSFER RUMORS - FIXED WITH MULTIPLE PROXIES
+// ================================================================
 var allRumors = [];
 var rumorTab = 'all';
 var isLoadingRumors = false;
@@ -514,14 +517,55 @@ seriea: ['Juventus','Milan','Inter','Roma','Napoli','Lazio','Atalanta','Fiorenti
 ligue1: ['PSG','Marseille','Lyon','Monaco','Lille','Nice','Rennes','Lens','Strasbourg','Montpellier','Nantes','Reims','Troyes','Clermont','Brest']
 };
 
-async function fetchRSSWithProxy(url) {
-var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
-var response = await fetch(proxyUrl);
-if (!response.ok) throw new Error('HTTP ' + response.status);
-return await response.text();
+// ---- Multiple proxy fallback ----
+async function fetchWithProxy(url) {
+var proxies = [
+'https://api.allorigins.win/raw?url=',
+'https://corsproxy.io/?',
+'https://api.rss2json.com/v1/api.json?rss_url='
+];
+
+for (var p = 0; p < proxies.length; p++) {
+try {
+var proxyUrl = proxies[p] + encodeURIComponent(url);
+var controller = new AbortController();
+var timeout = setTimeout(function() { controller.abort(); }, 10000);
+var response = await fetch(proxyUrl, { signal: controller.signal });
+clearTimeout(timeout);
+
+if (response.ok) {
+var text = await response.text();
+// 如果是 rss2json 返回的 JSON 格式，需要特殊处理
+if (proxies[p].includes('rss2json')) {
+try {
+var jsonData = JSON.parse(text);
+if (jsonData.items) {
+// 将 rss2json 格式转换为标准 XML
+var xml = '<?xml version="1.0" encoding="UTF-8"?><rss><channel>';
+jsonData.items.forEach(function(item) {
+xml += '<item>';
+xml += '<title><![CDATA[' + (item.title || '') + ']]></title>';
+xml += '<link>' + (item.link || '') + '</link>';
+xml += '<pubDate>' + (item.pubDate || '') + '</pubDate>';
+xml += '<description><![CDATA[' + (item.content || item.description || '') + ']]></description>';
+xml += '</item>';
+});
+xml += '</channel></rss>';
+return xml;
+}
+} catch(e) {}
+}
+return text;
+}
+} catch(e) {
+console.warn('Proxy ' + p + ' failed:', e.message);
+}
+}
+return null;
 }
 
 function parseRSS(xml, sourceName) {
+if (!xml) return [];
 var parser = new DOMParser();
 var doc = parser.parseFromString(xml, 'text/xml');
 var items = doc.querySelectorAll('item');
@@ -546,7 +590,7 @@ return results;
 
 async function fetchRSSSource(source) {
 try {
-var xml = await fetchRSSWithProxy(source.url);
+var xml = await fetchWithProxy(source.url);
 var items = parseRSS(xml, source.name);
 return items;
 } catch(e) {
@@ -559,12 +603,14 @@ async function fetchAllRumors() {
 if (isLoadingRumors) return;
 isLoadingRumors = true;
 var statusEl = document.getElementById('rumorStatus');
-if (statusEl) statusEl.textContent = 'Loading...';
-document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>Fetching transfer rumors...</div>';
+if (statusEl) statusEl.textContent = 'Loading RSS...';
+document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>Fetching transfer rumors from RSS feeds...</div>';
+
 allRumors = [];
 var promises = RSS_SOURCES.map(function(source) { return fetchRSSSource(source); });
 var results = await Promise.all(promises);
 results.forEach(function(items) { allRumors = allRumors.concat(items); });
+
 var seen = new Set();
 allRumors = allRumors.filter(function(item) {
 var key = item.title.substring(0, 60).toLowerCase();
@@ -579,12 +625,14 @@ if (isNaN(da.getTime())) return 1;
 if (isNaN(db.getTime())) return -1;
 return db - da;
 });
+
 if (allRumors.length === 0) {
 allRumors = [
-{ title: 'Visit Transfermarkt for latest transfer news', link: 'https://www.transfermarkt.com/', pubDate: new Date().toUTCString(), summary: 'Check Transfermarkt for the latest transfer rumors and done deals.', source: 'Transfermarkt' },
-{ title: 'BBC Sport Football - Latest transfer news', link: 'https://www.bbc.com/sport/football', pubDate: new Date().toUTCString(), summary: 'BBC Sport provides comprehensive coverage of football transfers.', source: 'BBC Sport' }
+{ title: 'Visit Transfermarkt for latest transfer news', link: 'https://www.transfermarkt.com/', pubDate: new Date().toUTCString(), summary: 'Check Transfermarkt for the latest transfer rumors and done deals across all major leagues.', source: 'Transfermarkt' },
+{ title: 'BBC Sport Football - Latest transfer news', link: 'https://www.bbc.com/sport/football', pubDate: new Date().toUTCString(), summary: 'BBC Sport provides comprehensive coverage of football transfers and breaking news.', source: 'BBC Sport' }
 ];
 }
+
 renderRumors();
 isLoadingRumors = false;
 if (statusEl) statusEl.textContent = 'Updated (' + allRumors.length + ')';
