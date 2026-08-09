@@ -55,8 +55,8 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 @keyframes breath{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 @keyframes float{0%{transform:translateY(0px) rotate(0deg);opacity:0.3}100%{transform:translateY(-25px) rotate(20deg);opacity:0.8}}
 
-/* ===== 6个小足球 - 随机游走 ===== */
-.small-ball{position:absolute;border-radius:50%;pointer-events:none;z-index:1;animation-timing-function:ease-in-out;will-change:transform}
+/* ===== 小足球 ===== */
+.small-ball{position:absolute;border-radius:50%;pointer-events:none;z-index:1;will-change:transform}
 .small-ball .ball-body{width:100%;height:100%;border-radius:50%;position:relative;animation:ball-spin 2s linear infinite;box-shadow:inset -4px -4px 12px rgba(0,0,0,0.8),inset 4px 4px 12px rgba(255,255,255,0.08)}
 .small-ball .p{position:absolute;width:18%;height:18%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.08);clip-path:polygon(50% 0%,100% 38%,81% 100%,19% 100%,0% 38%);border-radius:2px}
 .small-ball .p:nth-child(1){top:10%;left:20%}
@@ -66,51 +66,9 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 .small-ball .p:nth-child(5){top:42%;left:5%}
 .small-ball .p:nth-child(6){top:38%;right:8%}
 
-/* 流星拖尾粒子 - 更明显 */
-.small-ball .trail{position:absolute;top:50%;left:50%;border-radius:50%;pointer-events:none;opacity:0;animation:trail-fade 1.5s ease-out infinite}
-.small-ball .trail-1{width:80px;height:80px;background:radial-gradient(circle,rgba(255,215,0,0.45),transparent 70%);transform:translate(-50%,-50%) translateX(-20px);animation-delay:0s}
-.small-ball .trail-2{width:55px;height:55px;background:radial-gradient(circle,rgba(255,215,0,0.28),transparent 70%);transform:translate(-50%,-50%) translateX(-45px);animation-delay:0.25s}
-.small-ball .trail-3{width:35px;height:35px;background:radial-gradient(circle,rgba(255,215,0,0.14),transparent 70%);transform:translate(-50%,-50%) translateX(-70px);animation-delay:0.5s}
-.small-ball .trail-4{width:18px;height:18px;background:radial-gradient(circle,rgba(255,215,0,0.06),transparent 70%);transform:translate(-50%,-50%) translateX(-95px);animation-delay:0.75s}
-
-/* 各球不同颜色拖尾 */
-.s1 .trail-1,.s1 .trail-2,.s1 .trail-3,.s1 .trail-4{background:radial-gradient(circle,rgba(255,215,0,0.5),transparent 70%)}
-.s2 .trail-1,.s2 .trail-2,.s2 .trail-3,.s2 .trail-4{background:radial-gradient(circle,rgba(0,255,255,0.5),transparent 70%)}
-.s3 .trail-1,.s3 .trail-2,.s3 .trail-3,.s3 .trail-4{background:radial-gradient(circle,rgba(255,100,255,0.5),transparent 70%)}
-.s4 .trail-1,.s4 .trail-2,.s4 .trail-3,.s4 .trail-4{background:radial-gradient(circle,rgba(100,255,100,0.5),transparent 70%)}
-.s5 .trail-1,.s5 .trail-2,.s5 .trail-3,.s5 .trail-4{background:radial-gradient(circle,rgba(255,150,50,0.5),transparent 70%)}
-.s6 .trail-1,.s6 .trail-2,.s6 .trail-3,.s6 .trail-4{background:radial-gradient(circle,rgba(100,150,255,0.5),transparent 70%)}
-
-@keyframes trail-fade{
-0%{opacity:0;transform:translate(-50%,-50%) translateX(0px) scale(0.6)}
-15%{opacity:1;transform:translate(-50%,-50%) translateX(-15px) scale(1.3)}
-50%{opacity:0.7;transform:translate(-50%,-50%) translateX(-50px) scale(0.9)}
-100%{opacity:0;transform:translate(-50%,-50%) translateX(-110px) scale(0.3)}
-}
-
-/* 闪烁粒子 */
-.small-ball .sparkle{position:absolute;top:50%;left:50%;width:5px;height:5px;border-radius:50%;background:#fff;pointer-events:none;opacity:0;animation:sparkle-fade 0.8s ease-out infinite}
-.small-ball .sparkle:nth-child(10){transform:translate(-50%,-50%) translateX(-18px) translateY(-14px);animation-delay:0.1s}
-.small-ball .sparkle:nth-child(11){transform:translate(-50%,-50%) translateX(-38px) translateY(12px);animation-delay:0.3s}
-.small-ball .sparkle:nth-child(12){transform:translate(-50%,-50%) translateX(-58px) translateY(-10px);animation-delay:0.5s}
-.small-ball .sparkle:nth-child(13){transform:translate(-50%,-50%) translateX(-78px) translateY(14px);animation-delay:0.7s}
-@keyframes sparkle-fade{
-0%{opacity:0;transform:translate(-50%,-50%) translateX(0px) scale(0)}
-30%{opacity:1;transform:translate(-50%,-50%) translateX(-20px) scale(1.8)}
-100%{opacity:0;transform:translate(-50%,-50%) translateX(-90px) scale(0)}
-}
-
 @keyframes ball-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
-/* ===== 6个球的大小、位置和随机路径 ===== */
-.small-ball.s1{width:38px;height:38px;top:5%;left:3%;animation:rand1 14s cubic-bezier(0.4,0.1,0.6,0.9) infinite}
-.small-ball.s2{width:52px;height:52px;top:10%;right:5%;animation:rand2 18s cubic-bezier(0.3,0.2,0.7,0.8) infinite}
-.small-ball.s3{width:30px;height:30px;bottom:15%;left:8%;animation:rand3 12s cubic-bezier(0.5,0,0.5,1) infinite}
-.small-ball.s4{width:48px;height:48px;bottom:10%;right:3%;animation:rand4 22s cubic-bezier(0.4,0.3,0.6,0.7) infinite}
-.small-ball.s5{width:34px;height:34px;top:42%;left:2%;animation:rand5 16s cubic-bezier(0.6,0.1,0.4,0.9) infinite}
-.small-ball.s6{width:44px;height:44px;top:48%;right:2%;animation:rand6 13s cubic-bezier(0.3,0.3,0.7,0.7) infinite}
-
-/* 不同颜色 */
+/* 6个球不同颜色和大小 */
 .s1 .ball-body{background:radial-gradient(circle at 40% 35%,#bbb,#555)}
 .s2 .ball-body{background:radial-gradient(circle at 40% 35%,#ccc,#666)}
 .s3 .ball-body{background:radial-gradient(circle at 40% 35%,#aaa,#444)}
@@ -118,75 +76,24 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 .s5 .ball-body{background:radial-gradient(circle at 40% 35%,#999,#333)}
 .s6 .ball-body{background:radial-gradient(circle at 40% 35%,#bbb,#555)}
 
+.small-ball.s1{width:38px;height:38px}
+.small-ball.s2{width:52px;height:52px}
+.small-ball.s3{width:30px;height:30px}
+.small-ball.s4{width:48px;height:48px}
+.small-ball.s5{width:34px;height:34px}
+.small-ball.s6{width:44px;height:44px}
+
 /* 光晕 */
-.small-ball::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;border-radius:50%;background:radial-gradient(circle,currentColor,transparent 70%);opacity:0.08;animation:glow-pulse 3s ease-in-out infinite}
+.small-ball::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;border-radius:50%;background:radial-gradient(circle,currentColor,transparent 70%);opacity:0.06;animation:glow-pulse 3s ease-in-out infinite}
 .s1::before{color:#ffd700}
 .s2::before{color:#00ffff}
 .s3::before{color:#ff66ff}
 .s4::before{color:#66ff66}
 .s5::before{color:#ff9933}
 .s6::before{color:#6699ff}
-@keyframes glow-pulse{0%,100%{opacity:0.05;transform:scale(1)}50%{opacity:0.15;transform:scale(1.3)}}
+@keyframes glow-pulse{0%,100%{opacity:0.04;transform:scale(1)}50%{opacity:0.12;transform:scale(1.2)}}
 
-/* ===== 6条完全不同的随机路径 ===== */
-@keyframes rand1{
-0%{transform:translate(0,0)}
-14%{transform:translate(140px,90px)}
-28%{transform:translate(60px,220px)}
-42%{transform:translate(220px,140px)}
-56%{transform:translate(320px,30px)}
-70%{transform:translate(170px,330px)}
-84%{transform:translate(70px,170px)}
-100%{transform:translate(0,0)}
-}
-@keyframes rand2{
-0%{transform:translate(0,0)}
-18%{transform:translate(-120px,170px)}
-36%{transform:translate(-270px,60px)}
-54%{transform:translate(-170px,280px)}
-72%{transform:translate(-70px,120px)}
-90%{transform:translate(-200px,-50px)}
-100%{transform:translate(0,0)}
-}
-@keyframes rand3{
-0%{transform:translate(0,0)}
-13%{transform:translate(90px,-110px)}
-26%{transform:translate(220px,-60px)}
-39%{transform:translate(110px,60px)}
-52%{transform:translate(320px,-160px)}
-65%{transform:translate(160px,-270px)}
-78%{transform:translate(60px,-110px)}
-91%{transform:translate(190px,60px)}
-100%{transform:translate(0,0)}
-}
-@keyframes rand4{
-0%{transform:translate(0,0)}
-20%{transform:translate(-90px,-140px)}
-40%{transform:translate(-220px,-70px)}
-60%{transform:translate(-140px,90px)}
-80%{transform:translate(-330px,-190px)}
-100%{transform:translate(0,0)}
-}
-@keyframes rand5{
-0%{transform:translate(0,0)}
-15%{transform:translate(160px,-40px)}
-30%{transform:translate(90px,200px)}
-45%{transform:translate(300px,90px)}
-60%{transform:translate(380px,-60px)}
-75%{transform:translate(220px,220px)}
-90%{transform:translate(110px,90px)}
-100%{transform:translate(0,0)}
-}
-@keyframes rand6{
-0%{transform:translate(0,0)}
-17%{transform:translate(-130px,70px)}
-34%{transform:translate(-70px,-170px)}
-51%{transform:translate(-270px,-90px)}
-68%{transform:translate(-320px,110px)}
-85%{transform:translate(-160px,-220px)}
-100%{transform:translate(0,0)}
-}
-
+/* ===== 主内容样式 ===== */
 h1{text-align:center;margin:20px 0 10px;font-size:2em;font-weight:800;background:linear-gradient(135deg,#66bb6a,#a5d6a7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:gradientShift 4s ease-in-out infinite;position:relative;z-index:2;letter-spacing:-0.5px;text-shadow:0 0 60px rgba(76,175,80,0.15)}
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 h1 .badge{font-size:12px;background:rgba(76,175,80,0.15);color:#a5d6a7;padding:3px 16px;border-radius:20px;margin-left:12px;-webkit-text-fill-color:#a5d6a7;font-weight:500;border:1px solid rgba(76,175,80,0.1);vertical-align:middle;backdrop-filter:blur(4px)}
@@ -387,12 +294,12 @@ h1{font-size:1.3em}
 </div>
 
 <!-- ===== 6个小足球 ===== -->
-<div class="small-ball s1"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div><div class="trail trail-1"></div><div class="trail trail-2"></div><div class="trail trail-3"></div><div class="trail trail-4"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div></div>
-<div class="small-ball s2"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div><div class="trail trail-1"></div><div class="trail trail-2"></div><div class="trail trail-3"></div><div class="trail trail-4"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div></div>
-<div class="small-ball s3"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div><div class="trail trail-1"></div><div class="trail trail-2"></div><div class="trail trail-3"></div><div class="trail trail-4"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div></div>
-<div class="small-ball s4"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div><div class="trail trail-1"></div><div class="trail trail-2"></div><div class="trail trail-3"></div><div class="trail trail-4"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div></div>
-<div class="small-ball s5"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div><div class="trail trail-1"></div><div class="trail trail-2"></div><div class="trail trail-3"></div><div class="trail trail-4"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div></div>
-<div class="small-ball s6"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div><div class="trail trail-1"></div><div class="trail trail-2"></div><div class="trail trail-3"></div><div class="trail trail-4"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div></div>
+<div class="small-ball s1"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div></div>
+<div class="small-ball s2"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div></div>
+<div class="small-ball s3"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div></div>
+<div class="small-ball s4"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div></div>
+<div class="small-ball s5"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div></div>
+<div class="small-ball s6"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div></div>
 
 <h1>
   <span class="live-dot"></span>
@@ -487,6 +394,200 @@ h1{font-size:1.3em}
 <button id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script>
+// ================================================================
+// 小足球物理运动引擎
+// ================================================================
+(function() {
+  var balls = [];
+  var container = document.body;
+  var animId = null;
+  var isRunning = false;
+
+  // 获取所有小足球元素
+  var elements = document.querySelectorAll('.small-ball');
+  if (elements.length === 0) return;
+
+  // 窗口尺寸
+  function getBounds() {
+    return {
+      width: window.innerWidth,
+      height: window.innerHeight
+    };
+  }
+
+  // 初始化每个球
+  elements.forEach(function(el, index) {
+    var size = el.offsetWidth || 40;
+    var bounds = getBounds();
+    // 随机初始位置（避开边界）
+    var x = Math.random() * (bounds.width - size * 2) + size;
+    var y = Math.random() * (bounds.height - size * 2) + size;
+    // 随机速度方向（1-3像素/帧）
+    var angle = Math.random() * Math.PI * 2;
+    var speed = 1.2 + Math.random() * 2.2;
+    // 随机旋转速度
+    var rotSpeed = (Math.random() - 0.5) * 0.06;
+
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+    // 添加自转动画
+    el.style.animation = 'ball-spin ' + (2 + Math.random() * 2) + 's linear infinite';
+
+    balls.push({
+      el: el,
+      x: x,
+      y: y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: size,
+      rotSpeed: rotSpeed,
+      rotation: 0
+    });
+  });
+
+  // 碰撞反弹
+  function updateBalls() {
+    var bounds = getBounds();
+    var speedChange = false;
+
+    for (var i = 0; i < balls.length; i++) {
+      var b = balls[i];
+      var half = b.size / 2;
+
+      // 更新位置
+      b.x += b.vx;
+      b.y += b.vy;
+
+      // 边界碰撞检测 + 反弹 + 变速
+      var hit = false;
+      if (b.x - half < 0) {
+        b.x = half;
+        b.vx = Math.abs(b.vx) * (0.85 + Math.random() * 0.2);
+        hit = true;
+      } else if (b.x + half > bounds.width) {
+        b.x = bounds.width - half;
+        b.vx = -Math.abs(b.vx) * (0.85 + Math.random() * 0.2);
+        hit = true;
+      }
+
+      if (b.y - half < 0) {
+        b.y = half;
+        b.vy = Math.abs(b.vy) * (0.85 + Math.random() * 0.2);
+        hit = true;
+      } else if (b.y + half > bounds.height) {
+        b.y = bounds.height - half;
+        b.vy = -Math.abs(b.vy) * (0.85 + Math.random() * 0.2);
+        hit = true;
+      }
+
+      // 碰撞后随机改变速度大小（0.8-1.6倍）
+      if (hit) {
+        var speedMult = 0.8 + Math.random() * 0.8;
+        var currentSpeed = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+        if (currentSpeed > 0.5) {
+          var ratio = speedMult / currentSpeed;
+          b.vx *= ratio;
+          b.vy *= ratio;
+        }
+        // 限制最大速度
+        var maxSpeed = 4.5;
+        var currentSpeed2 = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+        if (currentSpeed2 > maxSpeed) {
+          b.vx = (b.vx / currentSpeed2) * maxSpeed;
+          b.vy = (b.vy / currentSpeed2) * maxSpeed;
+        }
+        // 限制最小速度（防止停滞）
+        if (currentSpeed2 < 0.6) {
+          var angle2 = Math.random() * Math.PI * 2;
+          b.vx = Math.cos(angle2) * 1.0;
+          b.vy = Math.sin(angle2) * 1.0;
+        }
+        speedChange = true;
+      }
+
+      // 随机微调速度方向（让运动更自然）
+      if (!hit && Math.random() < 0.002) {
+        var angleChange = (Math.random() - 0.5) * 0.3;
+        var sp = Math.sqrt(b.vx * b.vx + b.vy * b.vy);
+        if (sp > 0.3) {
+          var newAngle = Math.atan2(b.vy, b.vx) + angleChange;
+          b.vx = Math.cos(newAngle) * sp;
+          b.vy = Math.sin(newAngle) * sp;
+        }
+      }
+
+      // 更新DOM位置
+      b.el.style.left = b.x - half + 'px';
+      b.el.style.top = b.y - half + 'px';
+    }
+  }
+
+  // 动画循环
+  function animate() {
+    updateBalls();
+    animId = requestAnimationFrame(animate);
+  }
+
+  // 窗口大小变化时重新调整边界
+  var resizeTimeout = null;
+  function handleResize() {
+    if (resizeTimeout) clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(function() {
+      var bounds = getBounds();
+      for (var i = 0; i < balls.length; i++) {
+        var b = balls[i];
+        var half = b.size / 2;
+        if (b.x + half > bounds.width) b.x = bounds.width - half;
+        if (b.y + half > bounds.height) b.y = bounds.height - half;
+        if (b.x - half < 0) b.x = half;
+        if (b.y - half < 0) b.y = half;
+        b.el.style.left = b.x - half + 'px';
+        b.el.style.top = b.y - half + 'px';
+      }
+    }, 100);
+  }
+
+  // 启动
+  function start() {
+    if (isRunning) return;
+    isRunning = true;
+    window.addEventListener('resize', handleResize);
+    animate();
+  }
+
+  // 停止
+  function stop() {
+    if (!isRunning) return;
+    isRunning = false;
+    window.removeEventListener('resize', handleResize);
+    if (animId) {
+      cancelAnimationFrame(animId);
+      animId = null;
+    }
+  }
+
+  // 页面可见性变化时暂停/恢复（节省性能）
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      stop();
+    } else {
+      if (!isRunning) {
+        isRunning = true;
+        animate();
+      }
+    }
+  });
+
+  // 启动
+  start();
+
+  // 暴露停止方法（页面切换时可选停止）
+  window.__footballEngine = { start: start, stop: stop };
+})();
+
+// ================================================================
+// 其余功能代码
+// ================================================================
 function getTeamBadge(name, size) {
 if (!name || name === '?' || name === 'Unknown') return '';
 size = size || 24;
