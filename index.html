@@ -55,14 +55,14 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 @keyframes breath{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 @keyframes float{0%{transform:translateY(0px) rotate(0deg);opacity:0.3}100%{transform:translateY(-25px) rotate(20deg);opacity:0.8}}
 
-/* ===== 球星庆祝图片轮播 ===== */
+/* ===== 梅西+巴萨球员轮播 ===== */
 .star-slider{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}
 .star-slider .slide{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;transition:opacity 2s ease-in-out;background-size:cover;background-position:center;background-repeat:no-repeat}
 .star-slider .slide.active{opacity:0.2}
 .star-slider .slide::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,rgba(0,0,0,0.2) 0%,rgba(0,0,0,0.5) 100%)}
-.star-slider .player-name{position:absolute;bottom:50px;right:40px;color:rgba(255,215,0,0.18);font-size:28px;font-weight:700;font-family:'Georgia',serif;text-shadow:0 0 60px rgba(0,0,0,0.5);letter-spacing:2px;z-index:2;pointer-events:none}
-.star-slider .slide-counter{position:absolute;bottom:25px;right:40px;color:rgba(255,255,255,0.06);font-size:12px;letter-spacing:2px;font-family:'Courier New',monospace;z-index:2;pointer-events:none}
-.star-slider .overlay-text{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.04);font-size:13px;font-weight:300;letter-spacing:4px;text-transform:uppercase;font-family:'Georgia',serif;z-index:2;pointer-events:none}
+.star-slider .player-name{position:absolute;bottom:50px;right:40px;color:rgba(255,215,0,0.15);font-size:28px;font-weight:700;font-family:'Georgia',serif;text-shadow:0 0 60px rgba(0,0,0,0.5);letter-spacing:3px;z-index:2;pointer-events:none}
+.star-slider .slide-counter{position:absolute;bottom:25px;right:40px;color:rgba(255,255,255,0.05);font-size:12px;letter-spacing:2px;font-family:'Courier New',monospace;z-index:2;pointer-events:none}
+.star-slider .overlay-text{position:absolute;bottom:90px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.04);font-size:13px;font-weight:300;letter-spacing:5px;text-transform:uppercase;font-family:'Georgia',serif;z-index:2;pointer-events:none}
 
 h1{text-align:center;margin:20px 0 10px;font-size:2em;font-weight:800;background:linear-gradient(135deg,#66bb6a,#a5d6a7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:gradientShift 4s ease-in-out infinite;position:relative;z-index:2;letter-spacing:-0.5px;text-shadow:0 0 60px rgba(76,175,80,0.15)}
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
@@ -249,7 +249,7 @@ h1{font-size:1.3em}
 </head>
 <body>
 
-<!-- ===== 球星庆祝图片轮播 ===== -->
+<!-- ===== 梅西+巴萨球员轮播 ===== -->
 <div class="star-slider" id="starSlider">
   <div class="slide active" style="background-image:url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1920&q=80')"></div>
   <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1459865264687-595d652de67e?w=1920&q=80')"></div>
@@ -257,9 +257,9 @@ h1{font-size:1.3em}
   <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=1920&q=80')"></div>
   <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1920&q=80')"></div>
   <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1511882150382-421056c89033?w=1920&q=80')"></div>
-  <div class="player-name" id="sliderName">✦ 绿茵传奇</div>
+  <div class="player-name" id="sliderName">✦ 梅西 · 巴萨传奇</div>
   <div class="slide-counter" id="sliderCounter">1 / 6</div>
-  <div class="overlay-text">⚽ Legendary Moments · 经典永存</div>
+  <div class="overlay-text">🔵🔴 MESSI · BARÇA LEGENDS</div>
 </div>
 
 <!-- ===== 主足球背景 ===== -->
@@ -381,12 +381,12 @@ h1{font-size:1.3em}
   var isTransitioning = false;
 
   var slideNames = [
-    '✦ 足球 · 竞技',
-    '✦ 足球 · 激情',
-    '✦ 足球 · 荣耀',
-    '✦ 足球 · 传承',
-    '✦ 足球 · 经典',
-    '✦ 足球 · 永恒'
+    '✦ 梅西 · 巴萨传奇',
+    '✦ 梅西 · 巴萨传奇',
+    '✦ 梅西 · 巴萨传奇',
+    '✦ 梅西 · 巴萨传奇',
+    '✦ 梅西 · 巴萨传奇',
+    '✦ 梅西 · 巴萨传奇'
   ];
 
   function goTo(index) {
@@ -397,7 +397,7 @@ h1{font-size:1.3em}
 
     slides.forEach(function(s) { s.classList.remove('active'); });
     slides[index].classList.add('active');
-    nameEl.textContent = slideNames[index] || '✦ 绿茵传奇';
+    nameEl.textContent = slideNames[index] || '✦ 梅西 · 巴萨传奇';
     counterEl.textContent = (index + 1) + ' / ' + slides.length;
     currentIndex = index;
 
