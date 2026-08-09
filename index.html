@@ -15,7 +15,7 @@ body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%
 body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 
 /* ===== 主足球背景 ===== */
-.football-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;opacity:0.35}
+.football-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;opacity:0.30}
 .football-bg .main-ball{position:absolute;width:750px;height:750px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#888,#222);top:50%;left:50%;margin-left:-375px;margin-top:-375px;animation:drift 25s ease-in-out infinite,spin 40s linear infinite,breath 6s ease-in-out infinite;box-shadow:inset -40px -40px 100px rgba(0,0,0,0.9),inset 40px 40px 100px rgba(255,255,255,0.12),0 0 150px rgba(0,0,0,0.5)}
 .football-bg .main-ball::before{content:'';position:absolute;top:-2%;left:-2%;width:104%;height:104%;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,0.08),transparent 60%)}
 .football-bg .pattern{position:absolute;width:100%;height:100%;top:0;left:0}
@@ -54,6 +54,15 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 @keyframes breath{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 @keyframes float{0%{transform:translateY(0px) rotate(0deg);opacity:0.3}100%{transform:translateY(-25px) rotate(20deg);opacity:0.8}}
+
+/* ===== 球星视频背景轮播 ===== */
+.star-video-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}
+.star-video-bg video{width:100%;height:100%;object-fit:cover;opacity:0.18}
+.star-video-bg .player-name{position:absolute;bottom:60px;right:40px;color:rgba(255,215,0,0.15);font-size:32px;font-weight:700;font-family:'Georgia',serif;text-shadow:0 0 60px rgba(0,0,0,0.5);letter-spacing:2px}
+.star-video-bg .video-counter{position:absolute;bottom:30px;right:40px;color:rgba(255,255,255,0.06);font-size:12px;letter-spacing:2px;font-family:'Courier New',monospace}
+.star-video-bg .overlay-text{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.06);font-size:14px;font-weight:300;letter-spacing:4px;text-transform:uppercase;font-family:'Georgia',serif}
+.star-video-bg .loading-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.1);font-size:16px;letter-spacing:3px;font-family:'Courier New',monospace;animation:pulse-text 2s ease-in-out infinite}
+@keyframes pulse-text{0%,100%{opacity:0.3}50%{opacity:0.8}}
 
 h1{text-align:center;margin:20px 0 10px;font-size:2em;font-weight:800;background:linear-gradient(135deg,#66bb6a,#a5d6a7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:gradientShift 4s ease-in-out infinite;position:relative;z-index:2;letter-spacing:-0.5px;text-shadow:0 0 60px rgba(76,175,80,0.15)}
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
@@ -240,6 +249,15 @@ h1{font-size:1.3em}
 </head>
 <body>
 
+<!-- ===== 球星视频背景轮播 ===== -->
+<div class="star-video-bg" id="starVideoBg">
+  <video id="starVideo" muted playsinline autoplay></video>
+  <div class="player-name" id="playerName">✦ 绿茵传奇</div>
+  <div class="overlay-text">⚽ Legendary Moments · 经典永存</div>
+  <div class="video-counter" id="videoCounter">1 / 6</div>
+  <div class="loading-text" id="loadingText">✦ 加载中 ...</div>
+</div>
+
 <!-- ===== 主足球背景 ===== -->
 <div class="football-bg">
   <div class="main-ball">
@@ -347,6 +365,123 @@ h1{font-size:1.3em}
 <button id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script>
+// ================================================================
+// 球星视频轮播引擎 - 使用 Pixabay 免费可商用素材
+// ================================================================
+(function() {
+  // ---- 视频列表 ----
+  // 所有视频来自 Pixabay，在 Pixabay Content License 下免费可商用
+  // 来源: https://pixabay.com/zh/videos/
+  var videoList = [
+    { url: 'https://cdn.pixabay.com/video/2023/06/27/169201-841476706_large.mp4', name: '✦ 足球 · 竞技' },
+    { url: 'https://cdn.pixabay.com/video/2022/11/03/137548-770359247_large.mp4', name: '✦ 足球 · 激情' },
+    { url: 'https://cdn.pixabay.com/video/2024/01/24/197894-904808701_large.mp4', name: '✦ 足球 · 荣耀' },
+    { url: 'https://cdn.pixabay.com/video/2023/08/25/177001-856718288_large.mp4', name: '✦ 足球 · 传承' },
+    { url: 'https://cdn.pixabay.com/video/2022/08/05/127141-732513458_large.mp4', name: '✦ 足球 · 经典' },
+    { url: 'https://cdn.pixabay.com/video/2023/07/14/171777-845273386_large.mp4', name: '✦ 足球 · 永恒' }
+  ];
+
+  var currentIndex = 0;
+  var videoEl = document.getElementById('starVideo');
+  var nameEl = document.getElementById('playerName');
+  var counterEl = document.getElementById('videoCounter');
+  var loadingEl = document.getElementById('loadingText');
+  var isPlaying = false;
+  var timeoutId = null;
+
+  function loadVideo(index) {
+    if (index >= videoList.length) index = 0;
+    if (index < 0) index = videoList.length - 1;
+    currentIndex = index;
+    var item = videoList[currentIndex];
+    
+    // 显示加载状态
+    loadingEl.style.display = 'block';
+    
+    videoEl.src = item.url;
+    videoEl.load();
+    nameEl.textContent = item.name;
+    counterEl.textContent = (currentIndex + 1) + ' / ' + videoList.length;
+    
+    // 尝试播放
+    videoEl.play().then(function() {
+      loadingEl.style.display = 'none';
+    }).catch(function(e) {
+      // 自动播放被阻止时静默处理
+      loadingEl.style.display = 'none';
+      console.warn('视频自动播放被阻止:', e.message);
+    });
+    
+    isPlaying = true;
+  }
+
+  function nextVideo() {
+    var next = (currentIndex + 1) % videoList.length;
+    loadVideo(next);
+  }
+
+  // 视频播放结束自动切换
+  videoEl.addEventListener('ended', function() {
+    nextVideo();
+  });
+
+  // 视频加载失败时跳过
+  videoEl.addEventListener('error', function() {
+    loadingEl.style.display = 'none';
+    console.warn('视频加载失败，切换到下一个');
+    nextVideo();
+  });
+
+  // 视频可以播放时隐藏加载提示
+  videoEl.addEventListener('canplay', function() {
+    loadingEl.style.display = 'none';
+  });
+
+  // 超时保护：如果视频卡住超过8秒，强制切换
+  videoEl.addEventListener('timeupdate', function() {
+    if (videoEl.currentTime > 0.5) {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+    }
+  });
+
+  // 页面可见性变化时处理
+  document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+      if (videoEl) videoEl.pause();
+    } else {
+      if (videoEl) {
+        videoEl.play().catch(function() {});
+        if (videoEl.ended) {
+          nextVideo();
+        }
+      }
+    }
+  });
+
+  // 启动：加载第一个视频
+  setTimeout(function() {
+    loadVideo(0);
+  }, 500);
+
+  // 暴露控制接口
+  window.__videoPlayer = {
+    next: nextVideo,
+    prev: function() {
+      var prev = (currentIndex - 1 + videoList.length) % videoList.length;
+      loadVideo(prev);
+    },
+    load: loadVideo,
+    getCurrent: function() { return videoList[currentIndex]; }
+  };
+
+})();
+
+// ================================================================
+// 其余功能代码
+// ================================================================
 function getTeamBadge(name, size) {
 if (!name || name === '?' || name === 'Unknown') return '';
 size = size || 24;
