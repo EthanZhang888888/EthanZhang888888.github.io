@@ -100,13 +100,14 @@ details summary:hover{color:#66bb6a}
 </head>
 <body>
 
-<h1>Football Data Center <span class="badge" id="pageBadge">Match Data</span></h1>
+<h1>⚽ Football Data Center <span class="badge" id="pageBadge">Match Data</span></h1>
 
 <div class="main-nav">
-<a href="#" onclick="switchPage('match')" class="on" id="navMatch">Match Data</a>
-<a href="#" onclick="switchPage('transfer')" id="navTransfer">Transfer Rumors</a>
+<a href="#" onclick="switchPage('match')" class="on" id="navMatch">📊 Match Data</a>
+<a href="#" onclick="switchPage('transfer')" id="navTransfer">📰 Transfer Rumors</a>
 </div>
 
+<!-- ===== PAGE 1: MATCH DATA ===== -->
 <div class="page active" id="pageMatch">
 <div class="league-nav" id="leagueNav">
 <button class="on" onclick="setLeague('bl1')">Bundesliga</button>
@@ -118,21 +119,21 @@ details summary:hover{color:#66bb6a}
 
 <div class="bar">
 <input id="searchInput" placeholder="Search team..." oninput="filterMatches()">
-<button onclick="refreshMatches()">Refresh</button>
+<button onclick="refreshMatches()">🔄 Refresh</button>
 </div>
 
 <div class="tz-row">
-<span class="tz-label">Bundesliga:</span>
+<span class="tz-label">🇩🇪 Bundesliga:</span>
 <div class="tz-group">
-<button onclick="adjustG(-1)">-1</button>
+<button onclick="adjustG(-1)">−1</button>
 <button onclick="adjustG(1)">+1</button>
 <button onclick="resetG()" style="color:#666;font-size:11px;">Reset</button>
 </div>
 <span class="tz-display" id="tzDisplayG">+14h</span>
-<span class="tz-divider">|</span>
-<span class="tz-label">UCL/UEL:</span>
+<span class="tz-divider">│</span>
+<span class="tz-label">🏆 UCL/UEL:</span>
 <div class="tz-group">
-<button onclick="adjustE(-1)">-1</button>
+<button onclick="adjustE(-1)">−1</button>
 <button onclick="adjustE(1)">+1</button>
 <button onclick="resetE()" style="color:#666;font-size:11px;">Reset</button>
 </div>
@@ -142,19 +143,20 @@ details summary:hover{color:#66bb6a}
 <div id="matchMain"><div class="ld">Loading...</div></div>
 </div>
 
+<!-- ===== PAGE 2: TRANSFER RUMORS ===== -->
 <div class="page" id="pageTransfer">
 <div class="league-nav" id="rumorNav">
-<button class="on" onclick="switchRumorTab('all')">All</button>
-<button onclick="switchRumorTab('bundesliga')">Bundesliga</button>
-<button onclick="switchRumorTab('premier')">Premier League</button>
-<button onclick="switchRumorTab('laliga')">La Liga</button>
-<button onclick="switchRumorTab('seriea')">Serie A</button>
-<button onclick="switchRumorTab('ligue1')">Ligue 1</button>
+<button class="on" onclick="switchRumorTab('all')">🌍 All</button>
+<button onclick="switchRumorTab('bundesliga')">🇩🇪 Bundesliga</button>
+<button onclick="switchRumorTab('premier')">🏴 Premier</button>
+<button onclick="switchRumorTab('laliga')">🇪🇸 La Liga</button>
+<button onclick="switchRumorTab('seriea')">🇮🇹 Serie A</button>
+<button onclick="switchRumorTab('ligue1')">🇫🇷 Ligue 1</button>
 </div>
 
 <div class="bar">
 <input id="rumorSearchInput" placeholder="Search team or player..." oninput="filterRumors()">
-<button onclick="fetchAllRumors()">Refresh</button>
+<button onclick="fetchAllRumors()">🔄 Refresh</button>
 <span class="count" id="rumorCount">0 rumors</span>
 <span class="status" id="rumorStatus"></span>
 </div>
@@ -163,11 +165,14 @@ details summary:hover{color:#66bb6a}
 
 <div class="footer-note">
 <p>
-This page shows aggregated summaries (max 150 chars). Full content available via source links.
+📰 This page shows aggregated summaries (max 150 chars). Full content available via source links.
 <br>
-Sources: <a href="https://www.footballcritic.com/" target="_blank" rel="noopener">FootballCritic</a> |
-<a href="https://www.bbc.com/sport/football" target="_blank" rel="noopener">BBC Sport</a>
-| For personal reference only. Copyright belongs to original authors.
+Sources: <a href="https://www.transfermarkt.com/" target="_blank" rel="noopener">Transfermarkt</a> |
+<a href="https://www.bbc.com/sport/football" target="_blank" rel="noopener">BBC Sport</a> |
+<a href="https://www.goal.com/" target="_blank" rel="noopener">Goal.com</a> |
+<a href="https://www.skysports.com/" target="_blank" rel="noopener">Sky Sports</a>
+<br>
+For personal reference only. Copyright belongs to original authors.
 </p>
 </div>
 </div>
@@ -175,6 +180,9 @@ Sources: <a href="https://www.footballcritic.com/" target="_blank" rel="noopener
 <button id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
 
 <script>
+// ================================================================
+// COMMON UTILITIES
+// ================================================================
 function getTeamBadge(name, size) {
 if (!name || name === '?' || name === 'Unknown') return '';
 size = size || 20;
@@ -192,11 +200,14 @@ var old = document.querySelector('.modal-overlay');
 if (old) old.remove();
 var div = document.createElement('div');
 div.className = 'modal-overlay';
-div.innerHTML = '<div class="modal-box"><button class="close" onclick="this.closest(\'.modal-overlay\').remove()">X</button><h3>' + title + '</h3><div id="modalBody">' + html + '</div></div>';
+div.innerHTML = '<div class="modal-box"><button class="close" onclick="this.closest(\'.modal-overlay\').remove()">✕</button><h3>' + title + '</h3><div id="modalBody">' + html + '</div></div>';
 document.body.appendChild(div);
 div.addEventListener('click', function(e) { if (e.target === this) this.remove(); });
 }
 
+// ================================================================
+// MATCH DATA MODULE
+// ================================================================
 var matchData = { m: [], t: [] };
 var currentLeague = 'bl1';
 var offsetG = 14;
@@ -237,7 +248,7 @@ return { date: month + '/' + day, time: hours + ':' + minutes };
 function showTeamInfo(teamId, teamName) {
 var table = matchData.t || [];
 if (!table || table.length === 0) {
-showModal('Info ' + teamName, '<div style="color:#888;">Standings data not loaded</div>');
+showModal('ℹ️ ' + teamName, '<div style="color:#888;">Standings data not loaded</div>');
 return;
 }
 var found = null;
@@ -250,7 +261,7 @@ found = row; break;
 }
 }
 if (!found) {
-showModal('Info ' + teamName, '<div style="color:#888;">Team data not found</div>');
+showModal('ℹ️ ' + teamName, '<div style="color:#888;">Team data not found</div>');
 return;
 }
 var html = '';
@@ -265,7 +276,7 @@ html += '<div class="info-item"><span class="label">Goals</span>' + (found.goals
 html += '<div class="info-item"><span class="label">Conceded</span>' + (found.opponentGoals || 0) + '</div>';
 html += '<div class="info-item"><span class="label">GD</span>' + (found.goalDiff > 0 ? '+' : '') + (found.goalDiff || 0) + '</div>';
 html += '<div class="info-item"><span class="label">Points</span>' + (found.points || 0) + '</div>';
-showModal('Info ' + found.teamName, html);
+showModal('ℹ️ ' + found.teamName, html);
 }
 
 var rosterCache = {};
@@ -302,7 +313,7 @@ showModal('Squad ' + teamName, html);
 }
 
 async function refreshMatches() {
-document.getElementById('matchMain').innerHTML = '<div class="ld">Loading...</div>';
+document.getElementById('matchMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>Loading matches...</div>';
 try {
 if (currentLeague === 'UCL' || currentLeague === 'UEL') {
 var lk = currentLeague === 'UCL' ? 'UEFA.CHAMPIONS' : 'UEFA.EUROPA';
@@ -320,7 +331,7 @@ matchData.t = await r2.json();
 renderMatches();
 }
 } catch(e) {
-document.getElementById('matchMain').innerHTML = '<div class="ld">Error: ' + e.message + '<br><button onclick="refreshMatches()" style="margin-top:8px;padding:6px 14px;background:#4caf50;border:none;border-radius:12px;color:#000;cursor:pointer">Retry</button></div>';
+document.getElementById('matchMain').innerHTML = '<div class="ld">❌ Error: ' + e.message + '<br><button onclick="refreshMatches()" style="margin-top:8px;padding:6px 14px;background:#4caf50;border:none;border-radius:12px;color:#000;cursor:pointer">🔄 Retry</button></div>';
 }
 }
 
@@ -350,7 +361,7 @@ renderGermanMatches(m, t);
 function renderGermanMatches(m, t) {
 var h = '';
 if (t.length) {
-h += '<details open><summary>Standings</summary><table><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>PTS</th></tr>';
+h += '<details open><summary>📈 Standings</summary><table><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>PTS</th></tr>';
 for (var i = 0; i < t.length; i++) {
 var r = t[i];
 var icon = '';
@@ -365,9 +376,9 @@ h += '</table></details>';
 var live = m.filter(function(x) { return !x.matchIsFinished && x.matchResults && x.matchResults.length > 0; });
 var done = m.filter(function(x) { return x.matchIsFinished; });
 var up = m.filter(function(x) { return !x.matchIsFinished && (!x.matchResults || x.matchResults.length === 0); });
-if (live.length) h += '<div class="section-title" style="color:#ff5252">LIVE</div><div class="grid">' + live.map(cardGerman).join('') + '</div>';
-if (up.length) h += '<div class="section-title" style="color:#4caf50">Upcoming</div><div class="grid">' + up.slice(0, 12).map(cardGerman).join('') + '</div>';
-if (done.length) h += '<div class="section-title" style="color:#888">Finished</div><div class="grid">' + done.slice(-12).map(cardGerman).join('') + '</div>';
+if (live.length) h += '<div class="section-title" style="color:#ff5252">🔴 LIVE</div><div class="grid">' + live.map(cardGerman).join('') + '</div>';
+if (up.length) h += '<div class="section-title" style="color:#4caf50">⏰ Upcoming</div><div class="grid">' + up.slice(0, 12).map(cardGerman).join('') + '</div>';
+if (done.length) h += '<div class="section-title" style="color:#888">✅ Finished</div><div class="grid">' + done.slice(-12).map(cardGerman).join('') + '</div>';
 document.getElementById('matchMain').innerHTML = h || '<div class="ld">No data</div>';
 }
 
@@ -386,38 +397,38 @@ if (m.team1 && m.team1.teamIconUrl) icon1 = '<img src="' + m.team1.teamIconUrl +
 if (!icon1 && name1 !== '?') icon1 = getTeamBadge(name1, 20);
 if (m.team2 && m.team2.teamIconUrl) icon2 = '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'" style="width:20px;height:20px;border-radius:50%;object-fit:contain;flex-shrink:0;">';
 if (!icon2 && name2 !== '?') icon2 = getTeamBadge(name2, 20);
-var display1 = icon1 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' info</span>';
-var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' info</span>';
+var display1 = icon1 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>';
+var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>';
 if (done || live) {
 var r = m.matchResults.find(function(x) { return x.resultName === 'Endergebnis'; }) || m.matchResults[0];
 var hs = r ? r.pointsTeam1 || 0 : 0, as = r ? r.pointsTeam2 || 0 : 0;
 sc = hs + '-' + as;
 if (done) {
 if (hs > as) {
-display1 = icon1 + ' <span class="team-link" style="color:#4caf50;font-weight:bold;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' W info</span>';
+display1 = icon1 + ' <span class="team-link" style="color:#4caf50;font-weight:bold;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ✔ ℹ️</span>';
 display2 = icon2 + ' <span style="color:#888;">' + name2 + '</span>';
 cl = 'color:#4caf50';
 } else if (hs < as) {
 display1 = icon1 + ' <span style="color:#888;">' + name1 + '</span>';
-display2 = icon2 + ' <span class="team-link" style="color:#4caf50;font-weight:bold;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' W info</span>';
+display2 = icon2 + ' <span class="team-link" style="color:#4caf50;font-weight:bold;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ✔ ℹ️</span>';
 cl = 'color:#ff5252';
 } else {
-display1 = icon1 + ' <span class="team-link" style="color:#ffd740;font-weight:bold;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' info</span>';
-display2 = icon2 + ' <span class="team-link" style="color:#ffd740;font-weight:bold;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' info</span>';
+display1 = icon1 + ' <span class="team-link" style="color:#ffd740;font-weight:bold;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>';
+display2 = icon2 + ' <span class="team-link" style="color:#ffd740;font-weight:bold;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>';
 cl = 'color:#ffd740';
 }
 } else {
 cl = hs > as ? 'color:#4caf50' : hs < as ? 'color:#ff5252' : 'color:#ffd740';
 }
 }
-var botText = live ? '<span class="live">LIVE</span>' : done ? 'Finished' : '';
-return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + (m.group && m.group.groupName ? ' ' + m.group.groupName : '') + '</span></div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
+var botText = live ? '<span class="live">● LIVE</span>' : done ? '🏁 Finished' : '';
+return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</span></div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
 function renderEuroMatches(m, t) {
 var h = '';
 if (t.length) {
-h += '<details open><summary>Standings</summary>';
+h += '<details open><summary>📈 Standings</summary>';
 for (var gi = 0; gi < t.length; gi++) {
 var g = t[gi];
 h += '<div class="group-title">' + g.name + '</div><table><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>PTS</th></tr>';
@@ -434,9 +445,9 @@ h += '</details>';
 var live = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'in'; });
 var done = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'post'; });
 var up = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'pre'; });
-if (live.length) h += '<div class="section-title" style="color:#ff5252">LIVE</div><div class="grid">' + live.map(cardEuro).join('') + '</div>';
-if (up.length) h += '<div class="section-title" style="color:#4caf50">Upcoming</div><div class="grid">' + up.slice(0, 12).map(cardEuro).join('') + '</div>';
-if (done.length) h += '<div class="section-title" style="color:#888">Finished</div><div class="grid">' + done.slice(-12).map(cardEuro).join('') + '</div>';
+if (live.length) h += '<div class="section-title" style="color:#ff5252">🔴 LIVE</div><div class="grid">' + live.map(cardEuro).join('') + '</div>';
+if (up.length) h += '<div class="section-title" style="color:#4caf50">⏰ Upcoming</div><div class="grid">' + up.slice(0, 12).map(cardEuro).join('') + '</div>';
+if (done.length) h += '<div class="section-title" style="color:#888">✅ Finished</div><div class="grid">' + done.slice(-12).map(cardEuro).join('') + '</div>';
 document.getElementById('matchMain').innerHTML = h || '<div class="ld">No data</div>';
 }
 
@@ -458,8 +469,8 @@ var teamId1 = hh.team.id, teamId2 = aa.team.id;
 var logo1 = hh.team.logo ? '<img src="' + hh.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'" style="width:20px;height:20px;border-radius:50%;object-fit:contain;flex-shrink:0;">' : '';
 var logo2 = aa.team.logo ? '<img src="' + aa.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'" style="width:20px;height:20px;border-radius:50%;object-fit:contain;flex-shrink:0;">' : '';
 var leagueType = currentLeague === 'UCL' ? 'UCL' : 'UEL';
-var display1 = logo1 + ' <span style="cursor:pointer;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' squad</span>';
-var display2 = logo2 + ' <span style="cursor:pointer;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' squad</span>';
+var display1 = logo1 + ' <span style="cursor:pointer;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' 📋</span>';
+var display2 = logo2 + ' <span style="cursor:pointer;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' 📋</span>';
 var cl = '';
 var isPenalty = false;
 if (m.status && m.status.type && m.status.type.detail) {
@@ -470,150 +481,149 @@ if (c.status.type.detail.toLowerCase().indexOf('penalty') !== -1) isPenalty = tr
 }
 if (done) {
 if (hScore > aScore) {
-display1 = logo1 + ' <span style="cursor:pointer;color:#4caf50;font-weight:bold;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + (isPenalty ? ' PK W' : ' W') + ' squad</span>';
-display2 = logo2 + ' <span style="cursor:pointer;color:#888;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' squad</span>';
+display1 = logo1 + ' <span style="cursor:pointer;color:#4caf50;font-weight:bold;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + (isPenalty ? ' ⚽PK✔' : ' ✔') + ' 📋</span>';
+display2 = logo2 + ' <span style="cursor:pointer;color:#888;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' 📋</span>';
 cl = 'color:#4caf50';
 } else if (hScore < aScore) {
-display1 = logo1 + ' <span style="cursor:pointer;color:#888;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' squad</span>';
-display2 = logo2 + ' <span style="cursor:pointer;color:#4caf50;font-weight:bold;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + (isPenalty ? ' PK W' : ' W') + ' squad</span>';
+display1 = logo1 + ' <span style="cursor:pointer;color:#888;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' 📋</span>';
+display2 = logo2 + ' <span style="cursor:pointer;color:#4caf50;font-weight:bold;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + (isPenalty ? ' ⚽PK✔' : ' ✔') + ' 📋</span>';
 cl = 'color:#ff5252';
 } else {
-display1 = logo1 + ' <span style="cursor:pointer;color:#ffd740;font-weight:bold;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' squad</span>';
-display2 = logo2 + ' <span style="cursor:pointer;color:#ffd740;font-weight:bold;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' squad</span>';
+display1 = logo1 + ' <span style="cursor:pointer;color:#ffd740;font-weight:bold;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' 📋</span>';
+display2 = logo2 + ' <span style="cursor:pointer;color:#ffd740;font-weight:bold;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' 📋</span>';
 cl = 'color:#ffd740';
 }
 } else if (live) {
 cl = hScore > aScore ? 'color:#4caf50' : hScore < aScore ? 'color:#ff5252' : 'color:#ffd740';
 }
-var botText = live ? '<span class="live">LIVE</span>' : done ? 'Finished' : '';
-if (done && isPenalty) botText += ' PK';
-var rosterBtns = '<button onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">squad ' + name1 + '</button><button onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">squad ' + name2 + '</button>';
+var botText = live ? '<span class="live">● LIVE</span>' : done ? '🏁 Finished' : '';
+if (done && isPenalty) botText += ' ⚽PK';
+var rosterBtns = '<button onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">📋 ' + name1 + '</button><button onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">📋 ' + name2 + '</button>';
 return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + '</span></div><div class="row"><div class="side">' + display1 + '</div><div class="mid" style="' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + ' ' + rosterBtns + '</div></div>';
 }
 
 function filterMatches() { renderMatches(); }
 
+
+// ================================================================
+// TRANSFER RUMORS MODULE
+// ================================================================
 var allRumors = [];
 var rumorTab = 'all';
 var isLoadingRumors = false;
 
-var RUMOR_TEAMS = {
-bundesliga: ['Bayern','BVB','Frankfurt','Koln','Leipzig','MGladbach','Freiburg','Hertha','Hoffenheim','Mainz-05','Augsburg','Bochum','Darmstadt','Heidenheim','Kiel','Paderborn','HSV','Dusseldorf','Hannover-96','Nurnberg','Bielefeld','Ingolstadt'],
-premier: ['Arsenal','Liverpool','Manchester-City','Manchester-United','Chelsea','Tottenham','Newcastle-United','Aston-Villa','West-Ham','Everton','Wolverhampton','Crystal-Palace','Fulham','Brentford','Brighton','Bournemouth','Nottingham-Forest','Southampton','Leeds-United','Leicester-City'],
-laliga: ['Barcelona','Real-Madrid','Atletico-Madrid','Sevilla','Real-Sociedad','Villarreal','Athletic-Bilbao','Valencia','Betis','Getafe','Celta-Vigo','Mallorca','Rayo-Vallecano','Espanyol','Alaves','Osasuna','Girona','Cadiz','Granada','Las-Palmas'],
-seriea: ['Juventus','Milan','Inter','Roma','Napoli','Lazio','Atalanta','Fiorentina','Torino','Bologna','Genoa','Sassuolo','Udinese','Empoli','Salernitana','Lecce','Cagliari','Verona','Frosinone','Monza'],
-ligue1: ['PSG','Marseille','Lyon','Monaco','Lille','Nice','Rennes','Lens','Strasbourg','Montpellier','Nantes','Reims','Troyes','Clermont','Brest','Metz','Toulouse','Lorient']
+// RSS Sources
+var RSS_SOURCES = [
+{ name: 'Transfermarkt', url: 'https://www.transfermarkt.com/rss/feed' },
+{ name: 'BBC Sport', url: 'http://newsrss.bbc.co.uk/rss/sportonline_uk_edition/football/rss.xml' },
+{ name: 'Goal.com', url: 'https://www.goal.com/rss/en/transfer' },
+{ name: 'Sky Sports', url: 'https://www.skysports.com/rss/12040' }
+];
+
+var TRANSFER_KEYWORDS = [
+'transfer', 'rumour', 'rumor', 'deal', 'bid', 'move', 'join', 'sign',
+'loan', 'free agent', 'release', 'target', 'interested', 'pursue',
+'signing', 'contract', 'extension', 'renewal', 'offer', 'negotiation',
+'agent', 'fee', 'million', 'swap', 'exclusive', 'done deal'
+];
+
+var LEAGUE_TEAMS = {
+bundesliga: ['Bayern', 'Dortmund', 'Leipzig', 'Frankfurt', 'Gladbach', 'Wolfsburg', 'Stuttgart', 'Hoffenheim', 'Freiburg', 'Koln', 'Mainz', 'Augsburg', 'Bochum', 'Darmstadt', 'Heidenheim'],
+premier: ['Arsenal', 'Liverpool', 'Man City', 'Manchester', 'Chelsea', 'Tottenham', 'Newcastle', 'Aston Villa', 'West Ham', 'Everton', 'Wolves', 'Crystal Palace', 'Fulham', 'Brentford', 'Brighton'],
+laliga: ['Barcelona', 'Real Madrid', 'Atletico', 'Sevilla', 'Real Sociedad', 'Villarreal', 'Athletic', 'Valencia', 'Betis', 'Getafe', 'Celta', 'Mallorca', 'Rayo', 'Espanyol', 'Alaves'],
+seriea: ['Juventus', 'Milan', 'Inter', 'Roma', 'Napoli', 'Lazio', 'Atalanta', 'Fiorentina', 'Torino', 'Bologna', 'Genoa', 'Sassuolo', 'Udinese', 'Empoli', 'Salernitana'],
+ligue1: ['PSG', 'Marseille', 'Lyon', 'Monaco', 'Lille', 'Nice', 'Rennes', 'Lens', 'Strasbourg', 'Montpellier', 'Nantes', 'Reims', 'Troyes', 'Clermont', 'Brest']
 };
 
-var RUMOR_KEYWORDS = ['transfer','rumour','rumor','deal','bid','move','join','sign','loan','free agent','release','target','interested','pursue'];
-
-var RUMOR_TEAM_NAMES = {
-'Bayern':['Bayern'],'BVB':['Dortmund'],'Frankfurt':['Frankfurt'],
-'Leipzig':['Leipzig'],'MGladbach':['Monchengladbach'],
-'Arsenal':['Arsenal'],'Liverpool':['Liverpool'],
-'Manchester-City':['Man City','Manchester City'],'Manchester-United':['Man United','Manchester United'],
-'Chelsea':['Chelsea'],'Barcelona':['Barcelona'],
-'Real-Madrid':['Real Madrid'],'Atletico-Madrid':['Atletico Madrid'],
-'Juventus':['Juventus'],'Milan':['Milan'],
-'Inter':['Inter Milan'],'PSG':['PSG'],'Marseille':['Marseille']
-};
-
-function delay(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
-
-async function fetchTeamRSS(teamName) {
-var url = 'https://www.footballcritic.com/feeds/team/' + teamName;
-try {
-var resp = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
-if (!resp.ok) return [];
-var xml = await resp.text();
-return parseRSS(xml, 'FootballCritic ' + teamName, teamName);
-} catch(e) { return []; }
+// ---- Fetch RSS via proxy ----
+async function fetchRSSWithProxy(url) {
+var proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url);
+var response = await fetch(proxyUrl);
+if (!response.ok) throw new Error('HTTP ' + response.status);
+return await response.text();
 }
 
-async function fetchBBCRSS() {
-var url = 'http://newsrss.bbc.co.uk/rss/sportonline_uk_edition/football/rss.xml';
-try {
-var resp = await fetch('https://api.allorigins.win/raw?url=' + encodeURIComponent(url));
-if (!resp.ok) return [];
-var xml = await resp.text();
-return parseRSS(xml, 'BBC Sport', null);
-} catch(e) { return []; }
-}
-
-function parseRSS(xml, source, teamName) {
+// ---- Parse RSS XML ----
+function parseRSS(xml, sourceName) {
 var parser = new DOMParser();
 var doc = parser.parseFromString(xml, 'text/xml');
 var items = doc.querySelectorAll('item');
 var results = [];
+
 items.forEach(function(item) {
 var title = item.querySelector('title')?.textContent || '';
 var link = item.querySelector('link')?.textContent || '';
 var pubDate = item.querySelector('pubDate')?.textContent || '';
 var description = item.querySelector('description')?.textContent || '';
-var summary = description.replace(/<[^>]*>/g, '').trim();
+var cleanDesc = description.replace(/<[^>]*>/g, '').trim();
+var summary = cleanDesc || title;
 if (summary.length > 150) summary = summary.substring(0, 150) + '...';
-if (!summary) summary = title;
-var isTransfer = RUMOR_KEYWORDS.some(function(kw) {
-return title.toLowerCase().includes(kw) || summary.toLowerCase().includes(kw);
+
+var isTransfer = TRANSFER_KEYWORDS.some(function(kw) {
+return title.toLowerCase().includes(kw.toLowerCase()) ||
+summary.toLowerCase().includes(kw.toLowerCase());
 });
-if (isTransfer) {
-var detectedTeam = teamName || extractRumorTeam(title, summary);
-results.push({ title: title, link: link, pubDate: pubDate, summary: summary, source: source, team: detectedTeam });
+
+if (isTransfer && title && link) {
+results.push({ title: title, link: link, pubDate: pubDate, summary: summary, source: sourceName });
 }
 });
 return results;
 }
 
-function extractRumorTeam(title, summary) {
-var text = (title + ' ' + summary).toLowerCase();
-for (var team in RUMOR_TEAM_NAMES) {
-var aliases = RUMOR_TEAM_NAMES[team];
-for (var i = 0; i < aliases.length; i++) {
-if (text.includes(aliases[i].toLowerCase())) return team;
+// ---- Fetch single RSS source ----
+async function fetchRSSSource(source) {
+try {
+var xml = await fetchRSSWithProxy(source.url);
+var items = parseRSS(xml, source.name);
+return items;
+} catch(e) {
+console.warn('Failed to fetch ' + source.name + ':', e.message);
+return [];
 }
-}
-return null;
 }
 
+// ---- Fetch all rumors ----
 async function fetchAllRumors() {
 if (isLoadingRumors) return;
 isLoadingRumors = true;
 var statusEl = document.getElementById('rumorStatus');
 statusEl.textContent = 'Loading...';
-document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>Loading transfer rumors...</div>';
+document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>Fetching transfer rumors...</div>';
 
 allRumors = [];
-var allTeams = [];
-for (var key in RUMOR_TEAMS) {
-allTeams = allTeams.concat(RUMOR_TEAMS[key]);
-}
-
-var batchSize = 3;
-for (var i = 0; i < allTeams.length; i += batchSize) {
-var batch = allTeams.slice(i, i + batchSize);
-var promises = batch.map(function(team) { return fetchTeamRSS(team); });
+var promises = RSS_SOURCES.map(function(source) { return fetchRSSSource(source); });
 var results = await Promise.all(promises);
-results.forEach(function(items) { allRumors = allRumors.concat(items); });
-var progress = Math.min(100, Math.round((i + batchSize) / allTeams.length * 100));
-document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>Loading... ' + progress + '% (' + Math.min(i + batchSize, allTeams.length) + '/' + allTeams.length + ')</div>';
-if (i + batchSize < allTeams.length) await delay(500);
-}
 
-statusEl.textContent = 'Loading BBC...';
-var bbcItems = await fetchBBCRSS();
-allRumors = allRumors.concat(bbcItems);
+results.forEach(function(items) {
+allRumors = allRumors.concat(items);
+});
 
+// Deduplicate
 var seen = new Set();
 allRumors = allRumors.filter(function(item) {
-var key = item.title.substring(0, 50);
+var key = item.title.substring(0, 60).toLowerCase();
 if (seen.has(key)) return false;
 seen.add(key);
 return true;
 });
+
+// Sort by date
 allRumors.sort(function(a, b) {
-var da = new Date(a.pubDate), db = new Date(b.pubDate);
+var da = new Date(a.pubDate);
+var db = new Date(b.pubDate);
+if (isNaN(da.getTime())) return 1;
+if (isNaN(db.getTime())) return -1;
 return db - da;
 });
+
+// Fallback
+if (allRumors.length === 0) {
+allRumors = [
+{ title: 'Visit Transfermarkt for latest transfer news', link: 'https://www.transfermarkt.com/', pubDate: new Date().toUTCString(), summary: 'Check Transfermarkt for the latest transfer rumors and done deals.', source: 'Transfermarkt' },
+{ title: 'BBC Sport Football - Latest transfer news', link: 'https://www.bbc.com/sport/football', pubDate: new Date().toUTCString(), summary: 'BBC Sport provides comprehensive coverage of football transfers.', source: 'BBC Sport' }
+];
+}
 
 renderRumors();
 isLoadingRumors = false;
@@ -621,39 +631,58 @@ statusEl.textContent = 'Updated (' + allRumors.length + ')';
 document.getElementById('rumorCount').textContent = allRumors.length + ' rumors';
 }
 
+// ---- Render rumors ----
 function renderRumors() {
 var main = document.getElementById('rumorMain');
 var filtered = getFilteredRumors();
+
 if (filtered.length === 0) {
-main.innerHTML = '<div class="empty">No transfer rumors<br><span style="font-size:12px;color:#555;">Click Refresh to load</span></div>';
+main.innerHTML = '<div class="empty">No transfer rumors found<br><span style="font-size:12px;color:#555;">Click Refresh to fetch latest RSS feeds</span></div>';
 return;
 }
+
 var html = '<div class="grid">';
 filtered.forEach(function(item) {
 var date = new Date(item.pubDate);
-var timeStr = isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
-var teamTag = item.team && item.team !== item.source ? '<span class="tag">' + item.team + '</span>' : '';
+var timeStr = isNaN(date.getTime()) ? '' :
+date.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' +
+date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+
 var safeLink = item.link || '#';
-html += '<div class="card"><div class="source-row"><span class="source">' + item.source + '</span>' + (timeStr ? '<span class="source-tag">' + timeStr + '</span>' : '') + '</div><div class="title"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer">' + item.title + '</a></div>' + (item.summary ? '<div class="summary">' + item.summary + '</div>' : '') + '<div class="meta"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="read-link">Read more</a>' + teamTag + '</div></div>';
+var icons = { 'Transfermarkt': '⚽', 'BBC Sport': '📺', 'Goal.com': '⚡', 'Sky Sports': '🎯' };
+var icon = icons[item.source] || '📰';
+
+html += '<div class="card">' +
+'<div class="source-row">' +
+'<span class="source">' + icon + ' ' + item.source + '</span>' +
+(timeStr ? '<span class="source-tag">' + timeStr + '</span>' : '') +
+'</div>' +
+'<div class="title"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer">' + item.title + '</a></div>' +
+(item.summary ? '<div class="summary">' + item.summary + '</div>' : '') +
+'<div class="meta">' +
+'<a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="read-link">📖 Read more →</a>' +
+'</div>' +
+'</div>';
 });
 html += '</div>';
+
 main.innerHTML = html;
 document.getElementById('rumorCount').textContent = filtered.length + ' rumors';
 }
 
+// ---- Filter rumors ----
 function getFilteredRumors() {
 var search = document.getElementById('rumorSearchInput').value.toLowerCase();
 var filtered = allRumors;
+
 if (rumorTab !== 'all') {
-var teamList = RUMOR_TEAMS[rumorTab] || [];
+var teams = LEAGUE_TEAMS[rumorTab] || [];
 filtered = filtered.filter(function(item) {
-var title = (item.title + ' ' + item.summary).toLowerCase();
-return teamList.some(function(team) {
-var aliases = RUMOR_TEAM_NAMES[team] || [team];
-return aliases.some(function(alias) { return title.includes(alias.toLowerCase()); });
-});
+var text = (item.title + ' ' + item.summary).toLowerCase();
+return teams.some(function(team) { return text.includes(team.toLowerCase()); });
 });
 }
+
 if (search) {
 filtered = filtered.filter(function(item) {
 return (item.title + ' ' + item.summary + ' ' + item.source).toLowerCase().includes(search);
@@ -672,6 +701,10 @@ renderRumors();
 
 function filterRumors() { renderRumors(); }
 
+
+// ================================================================
+// PAGE SWITCH
+// ================================================================
 function switchPage(page) {
 document.querySelectorAll('.page').forEach(function(el) { el.className = 'page'; });
 document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1)).className = 'page active';
@@ -679,6 +712,7 @@ document.querySelectorAll('.main-nav a').forEach(function(el) { el.className = '
 document.getElementById('nav' + page.charAt(0).toUpperCase() + page.slice(1)).className = 'on';
 document.getElementById('pageBadge').textContent = page === 'match' ? 'Match Data' : 'Transfer Rumors';
 if (page === 'match' && matchData.m.length === 0) refreshMatches();
+if (page === 'transfer' && allRumors.length === 0) fetchAllRumors();
 }
 
 window.onscroll = function() {
