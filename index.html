@@ -484,33 +484,50 @@ async function showRoster(league, teamId, teamName) {
   showModal('📋 ' + teamName + ' 阵容', html);
 }
 
-// ---- 显示德甲球队资料（从积分榜缓存中获取） ----
+// ---- 显示德甲球队资料（从积分榜缓存中获取）- 增强版 ----
 function showTeamInfo(teamId, teamName) {
-  // 从 d.t 积分榜数据中查找
   var table = d.t || [];
+  
+  if (!table || table.length === 0) {
+    showModal('ℹ️ ' + teamName, '<div style="color:#888;">暂无球队资料<br><span style="font-size:11px;">积分榜数据未加载</span></div>');
+    return;
+  }
+  
   var found = null;
   for (var i = 0; i < table.length; i++) {
-    if (table[i].teamId == teamId) {
-      found = table[i];
+    var row = table[i];
+    // 多种方式匹配：teamId 直接匹配，或通过 teamName 匹配，或通过 teamInfoId 匹配
+    if (row.teamId == teamId || 
+        row.teamInfoId == teamId || 
+        row.teamName === teamName ||
+        row.teamName == teamName) {
+      found = row;
       break;
     }
   }
+  
   if (!found) {
-    showModal('ℹ️ ' + teamName, '<div style="color:#888;">暂无球队资料</div>');
+    // 调试：打印出所有球队名，方便排查
+    var allNames = table.map(function(r) { return r.teamName; }).join(', ');
+    showModal('ℹ️ ' + teamName, 
+      '<div style="color:#888;">暂无球队资料<br>' +
+      '<span style="font-size:11px;">搜索: ' + teamName + ' (ID: ' + teamId + ')</span><br>' +
+      '<span style="font-size:10px;color:#555;">可用球队: ' + allNames + '</span></div>'
+    );
     return;
   }
+  
   var html = '';
   html += '<div class="info-item"><span class="label">🏷️ 名称</span>' + (found.teamName || '未知') + '</div>';
   if (found.teamIconUrl) {
     html += '<div class="info-item"><span class="label">🖼️ 队徽</span><img src="' + found.teamIconUrl + '" onerror="this.style.display=\'none\'"></div>';
   }
-  html += '<div class="info-item"><span class="label">📊 排名</span>' + (found.teamInfoId || i + 1) + '</div>';
-  html += '<div class="info-item"><span class="label">🏟️ 场次</span>' + found.matches + ' 场</div>';
-  html += '<div class="info-item"><span class="label">⚽ 进球</span>' + found.goals + '</div>';
-  html += '<div class="info-item"><span class="label">🥅 失球</span>' + found.opponentGoals + '</div>';
-  html += '<div class="info-item"><span class="label">📈 净胜球</span>' + (found.goalDiff > 0 ? '+' : '') + found.goalDiff + '</div>';
-  html += '<div class="info-item"><span class="label">🏆 积分</span>' + found.points + '</div>';
-  showModal('ℹ️ ' + teamName, html);
+  html += '<div class="info-item"><span class="label">🏟️ 场次</span>' + (found.matches || 0) + ' 场</div>';
+  html += '<div class="info-item"><span class="label">⚽ 进球</span>' + (found.goals || 0) + '</div>';
+  html += '<div class="info-item"><span class="label">🥅 失球</span>' + (found.opponentGoals || 0) + '</div>';
+  html += '<div class="info-item"><span class="label">📈 净胜球</span>' + (found.goalDiff > 0 ? '+' : '') + (found.goalDiff || 0) + '</div>';
+  html += '<div class="info-item"><span class="label">🏆 积分</span>' + (found.points || 0) + '</div>';
+  showModal('ℹ️ ' + found.teamName, html);
 }
 
 // ============================================================
@@ -616,7 +633,7 @@ function fmt(dateStr, offset) {
 }
 
 // ============================================================
-// 德甲渲染（带球队资料，从积分榜缓存读取）
+// 德甲渲染
 // ============================================================
 function renG() {
   var s = document.getElementById('s').value.toLowerCase();
@@ -668,7 +685,7 @@ function cardG(m) {
   var icon1 = m.team1 && m.team1.teamIconUrl ? '<img src="' + m.team1.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
   var icon2 = m.team2 && m.team2.teamIconUrl ? '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
 
-  // 德甲：球队名可点击查看资料（从积分榜缓存读取）
+  // 德甲球队资料按钮
   var display1 = icon1 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>';
   var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>';
 
