@@ -55,9 +55,9 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 @keyframes breath{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 @keyframes float{0%{transform:translateY(0px) rotate(0deg);opacity:0.3}100%{transform:translateY(-25px) rotate(20deg);opacity:0.8}}
 
-/* ===== 小足球 + 流星拖尾特效 ===== */
-.small-ball{position:absolute;border-radius:50%;pointer-events:none;z-index:1}
-.small-ball .ball-body{width:100%;height:100%;border-radius:50%;position:relative;animation:ball-spin 3s linear infinite;box-shadow:inset -4px -4px 12px rgba(0,0,0,0.8),inset 4px 4px 12px rgba(255,255,255,0.08)}
+/* ===== 小足球 - 高速随机运动 ===== */
+.small-ball{position:absolute;border-radius:50%;pointer-events:none;z-index:1;animation-timing-function:ease-in-out;will-change:transform}
+.small-ball .ball-body{width:100%;height:100%;border-radius:50%;position:relative;animation:ball-spin 2s linear infinite;box-shadow:inset -4px -4px 12px rgba(0,0,0,0.8),inset 4px 4px 12px rgba(255,255,255,0.08)}
 .small-ball .p{position:absolute;width:18%;height:18%;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.08);clip-path:polygon(50% 0%,100% 38%,81% 100%,19% 100%,0% 38%);border-radius:2px}
 .small-ball .p:nth-child(1){top:10%;left:20%}
 .small-ball .p:nth-child(2){top:15%;right:22%}
@@ -66,12 +66,12 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 .small-ball .p:nth-child(5){top:42%;left:5%}
 .small-ball .p:nth-child(6){top:38%;right:8%}
 
-/* 流星拖尾粒子 */
-.small-ball .trail{position:absolute;top:50%;left:50%;border-radius:50%;pointer-events:none;opacity:0;animation:trail-fade 1.5s ease-out infinite}
-.small-ball .trail-1{width:70px;height:70px;background:radial-gradient(circle,rgba(255,215,0,0.4),transparent 70%);transform:translate(-50%,-50%) translateX(-30px);animation-delay:0s}
-.small-ball .trail-2{width:50px;height:50px;background:radial-gradient(circle,rgba(255,215,0,0.25),transparent 70%);transform:translate(-50%,-50%) translateX(-55px);animation-delay:0.25s}
-.small-ball .trail-3{width:30px;height:30px;background:radial-gradient(circle,rgba(255,215,0,0.12),transparent 70%);transform:translate(-50%,-50%) translateX(-80px);animation-delay:0.5s}
-.small-ball .trail-4{width:15px;height:15px;background:radial-gradient(circle,rgba(255,215,0,0.05),transparent 70%);transform:translate(-50%,-50%) translateX(-105px);animation-delay:0.75s}
+/* 流星拖尾 */
+.small-ball .trail{position:absolute;top:50%;left:50%;border-radius:50%;pointer-events:none;opacity:0;animation:trail-fade 1.2s ease-out infinite}
+.small-ball .trail-1{width:70px;height:70px;background:radial-gradient(circle,rgba(255,215,0,0.4),transparent 70%);transform:translate(-50%,-50%) translateX(-25px);animation-delay:0s}
+.small-ball .trail-2{width:50px;height:50px;background:radial-gradient(circle,rgba(255,215,0,0.25),transparent 70%);transform:translate(-50%,-50%) translateX(-50px);animation-delay:0.2s}
+.small-ball .trail-3{width:30px;height:30px;background:radial-gradient(circle,rgba(255,215,0,0.12),transparent 70%);transform:translate(-50%,-50%) translateX(-75px);animation-delay:0.4s}
+.small-ball .trail-4{width:15px;height:15px;background:radial-gradient(circle,rgba(255,215,0,0.05),transparent 70%);transform:translate(-50%,-50%) translateX(-100px);animation-delay:0.6s}
 
 /* 各球不同颜色 */
 .s1 .trail-1,.s1 .trail-2,.s1 .trail-3,.s1 .trail-4{background:radial-gradient(circle,rgba(255,215,0,0.5),transparent 70%)}
@@ -94,12 +94,11 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 100%{opacity:0;transform:translate(-50%,-50%) translateX(-100px) scale(0.3)}
 }
 
-/* 额外闪烁粒子 */
-.small-ball .sparkle{position:absolute;top:50%;left:50%;width:4px;height:4px;border-radius:50%;background:#fff;pointer-events:none;opacity:0;animation:sparkle-fade 0.8s ease-out infinite}
-.small-ball .sparkle:nth-child(10){transform:translate(-50%,-50%) translateX(-20px) translateY(-15px);animation-delay:0.1s}
-.small-ball .sparkle:nth-child(11){transform:translate(-50%,-50%) translateX(-35px) translateY(10px);animation-delay:0.3s}
-.small-ball .sparkle:nth-child(12){transform:translate(-50%,-50%) translateX(-55px) translateY(-8px);animation-delay:0.5s}
-.small-ball .sparkle:nth-child(13){transform:translate(-50%,-50%) translateX(-70px) translateY(15px);animation-delay:0.7s}
+.small-ball .sparkle{position:absolute;top:50%;left:50%;width:4px;height:4px;border-radius:50%;background:#fff;pointer-events:none;opacity:0;animation:sparkle-fade 0.7s ease-out infinite}
+.small-ball .sparkle:nth-child(10){transform:translate(-50%,-50%) translateX(-20px) translateY(-12px);animation-delay:0.08s}
+.small-ball .sparkle:nth-child(11){transform:translate(-50%,-50%) translateX(-35px) translateY(10px);animation-delay:0.25s}
+.small-ball .sparkle:nth-child(12){transform:translate(-50%,-50%) translateX(-55px) translateY(-8px);animation-delay:0.42s}
+.small-ball .sparkle:nth-child(13){transform:translate(-50%,-50%) translateX(-70px) translateY(12px);animation-delay:0.6s}
 @keyframes sparkle-fade{
 0%{opacity:0;transform:translate(-50%,-50%) translateX(0px) scale(0)}
 30%{opacity:1;transform:translate(-50%,-50%) translateX(-20px) scale(1.5)}
@@ -108,19 +107,21 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 
 @keyframes ball-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
 
-.small-ball.s1{width:35px;height:35px;top:8%;left:5%;animation:roll1 18s linear infinite}
-.small-ball.s2{width:50px;height:50px;top:15%;right:8%;animation:roll2 22s linear infinite}
-.small-ball.s3{width:30px;height:30px;bottom:20%;left:12%;animation:roll3 14s linear infinite}
-.small-ball.s4{width:45px;height:45px;bottom:15%;right:5%;animation:roll4 26s linear infinite}
-.small-ball.s5{width:28px;height:28px;top:45%;left:3%;animation:roll5 20s linear infinite}
-.small-ball.s6{width:40px;height:40px;top:50%;right:3%;animation:roll6 16s linear infinite}
-.small-ball.s7{width:55px;height:55px;bottom:45%;left:6%;animation:roll7 24s linear infinite}
-.small-ball.s8{width:32px;height:32px;bottom:50%;right:10%;animation:roll8 19s linear infinite}
-.small-ball.s9{width:48px;height:48px;top:75%;left:20%;animation:roll9 28s linear infinite}
-.small-ball.s10{width:38px;height:38px;top:5%;left:50%;animation:roll10 21s linear infinite}
-.small-ball.s11{width:42px;height:42px;bottom:5%;left:40%;animation:roll11 23s linear infinite}
-.small-ball.s12{width:30px;height:30px;top:30%;left:30%;animation:roll12 17s linear infinite}
+/* ===== 12个球的随机路径 - 速度提升30-50%，方向随机 ===== */
+.small-ball.s1{width:35px;height:35px;top:5%;left:3%;animation:rand1 12s cubic-bezier(0.4,0.1,0.6,0.9) infinite}
+.small-ball.s2{width:50px;height:50px;top:12%;right:5%;animation:rand2 16s cubic-bezier(0.3,0.2,0.7,0.8) infinite}
+.small-ball.s3{width:28px;height:28px;bottom:18%;left:8%;animation:rand3 10s cubic-bezier(0.5,0,0.5,1) infinite}
+.small-ball.s4{width:45px;height:45px;bottom:12%;right:3%;animation:rand4 20s cubic-bezier(0.4,0.3,0.6,0.7) infinite}
+.small-ball.s5{width:30px;height:30px;top:42%;left:2%;animation:rand5 14s cubic-bezier(0.6,0.1,0.4,0.9) infinite}
+.small-ball.s6{width:40px;height:40px;top:48%;right:2%;animation:rand6 11s cubic-bezier(0.3,0.3,0.7,0.7) infinite}
+.small-ball.s7{width:55px;height:55px;bottom:42%;left:4%;animation:rand7 18s cubic-bezier(0.5,0.2,0.5,0.8) infinite}
+.small-ball.s8{width:32px;height:32px;bottom:48%;right:6%;animation:rand8 13s cubic-bezier(0.4,0.1,0.6,0.9) infinite}
+.small-ball.s9{width:48px;height:48px;top:72%;left:15%;animation:rand9 22s cubic-bezier(0.3,0.1,0.7,0.9) infinite}
+.small-ball.s10{width:38px;height:38px;top:3%;left:45%;animation:rand10 15s cubic-bezier(0.5,0.3,0.5,0.7) infinite}
+.small-ball.s11{width:42px;height:42px;bottom:3%;left:35%;animation:rand11 17s cubic-bezier(0.4,0.2,0.6,0.8) infinite}
+.small-ball.s12{width:30px;height:30px;top:28%;left:28%;animation:rand12 12s cubic-bezier(0.6,0.2,0.4,0.8) infinite}
 
+/* 不同颜色 */
 .s1 .ball-body{background:radial-gradient(circle at 40% 35%,#aaa,#555)}
 .s2 .ball-body{background:radial-gradient(circle at 40% 35%,#bbb,#666)}
 .s3 .ball-body{background:radial-gradient(circle at 40% 35%,#999,#444)}
@@ -134,19 +135,45 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 .s11 .ball-body{background:radial-gradient(circle at 40% 35%,#aaa,#555)}
 .s12 .ball-body{background:radial-gradient(circle at 40% 35%,#bbb,#444)}
 
-@keyframes roll1{0%{transform:translate(0,0)}100%{transform:translate(600px,300px)}}
-@keyframes roll2{0%{transform:translate(0,0)}100%{transform:translate(-500px,400px)}}
-@keyframes roll3{0%{transform:translate(0,0)}100%{transform:translate(400px,-350px)}}
-@keyframes roll4{0%{transform:translate(0,0)}100%{transform:translate(-300px,-450px)}}
-@keyframes roll5{0%{transform:translate(0,0)}100%{transform:translate(700px,-200px)}}
-@keyframes roll6{0%{transform:translate(0,0)}100%{transform:translate(-600px,200px)}}
-@keyframes roll7{0%{transform:translate(0,0)}100%{transform:translate(350px,500px)}}
-@keyframes roll8{0%{transform:translate(0,0)}100%{transform:translate(-450px,-300px)}}
-@keyframes roll9{0%{transform:translate(0,0)}100%{transform:translate(550px,-400px)}}
-@keyframes roll10{0%{transform:translate(0,0)}100%{transform:translate(-350px,450px)}}
-@keyframes roll11{0%{transform:translate(0,0)}100%{transform:translate(500px,350px)}}
-@keyframes roll12{0%{transform:translate(0,0)}100%{transform:translate(-550px,-350px)}}
+/* ===== 12条完全不同的随机路径 ===== */
+@keyframes rand1{
+0%{transform:translate(0,0)}15%{transform:translate(120px,80px)}30%{transform:translate(50px,200px)}45%{transform:translate(200px,120px)}60%{transform:translate(300px,20px)}75%{transform:translate(150px,300px)}90%{transform:translate(50px,150px)}100%{transform:translate(0,0)}
+}
+@keyframes rand2{
+0%{transform:translate(0,0)}20%{transform:translate(-100px,150px)}40%{transform:translate(-250px,50px)}60%{transform:translate(-150px,250px)}80%{transform:translate(-50px,100px)}100%{transform:translate(0,0)}
+}
+@keyframes rand3{
+0%{transform:translate(0,0)}12%{transform:translate(80px,-100px)}25%{transform:translate(200px,-50px)}37%{transform:translate(100px,50px)}50%{transform:translate(300px,-150px)}62%{transform:translate(150px,-250px)}75%{transform:translate(50px,-100px)}87%{transform:translate(180px,50px)}100%{transform:translate(0,0)}
+}
+@keyframes rand4{
+0%{transform:translate(0,0)}18%{transform:translate(-80px,-120px)}36%{transform:translate(-200px,-60px)}54%{transform:translate(-120px,80px)}72%{transform:translate(-300px,-180px)}90%{transform:translate(-60px,-200px)}100%{transform:translate(0,0)}
+}
+@keyframes rand5{
+0%{transform:translate(0,0)}14%{transform:translate(150px,-30px)}28%{transform:translate(80px,180px)}42%{transform:translate(280px,80px)}56%{transform:translate(350px,-50px)}70%{transform:translate(200px,200px)}84%{transform:translate(100px,80px)}100%{transform:translate(0,0)}
+}
+@keyframes rand6{
+0%{transform:translate(0,0)}16%{transform:translate(-120px,60px)}32%{transform:translate(-60px,-150px)}48%{transform:translate(-250px,-80px)}64%{transform:translate(-300px,100px)}80%{transform:translate(-150px,-200px)}100%{transform:translate(0,0)}
+}
+@keyframes rand7{
+0%{transform:translate(0,0)}11%{transform:translate(90px,120px)}22%{transform:translate(250px,60px)}33%{transform:translate(180px,220px)}44%{transform:translate(350px,150px)}55%{transform:translate(280px,-40px)}66%{transform:translate(120px,280px)}77%{transform:translate(220px,100px)}88%{transform:translate(60px,180px)}100%{transform:translate(0,0)}
+}
+@keyframes rand8{
+0%{transform:translate(0,0)}19%{transform:translate(-70px,-80px)}38%{transform:translate(-180px,40px)}57%{transform:translate(-100px,-200px)}76%{transform:translate(-280px,-60px)}95%{transform:translate(-40px,-150px)}100%{transform:translate(0,0)}
+}
+@keyframes rand9{
+0%{transform:translate(0,0)}13%{transform:translate(200px,30px)}26%{transform:translate(100px,250px)}39%{transform:translate(320px,100px)}52%{transform:translate(250px,300px)}65%{transform:translate(400px,50px)}78%{transform:translate(180px,350px)}91%{transform:translate(300px,180px)}100%{transform:translate(0,0)}
+}
+@keyframes rand10{
+0%{transform:translate(0,0)}17%{transform:translate(-60px,100px)}34%{transform:translate(-200px,20px)}51%{transform:translate(-140px,220px)}68%{transform:translate(-320px,80px)}85%{transform:translate(-100px,300px)}100%{transform:translate(0,0)}
+}
+@keyframes rand11{
+0%{transform:translate(0,0)}15%{transform:translate(130px,-70px)}30%{transform:translate(60px,150px)}45%{transform:translate(260px,-40px)}60%{transform:translate(180px,200px)}75%{transform:translate(350px,60px)}90%{transform:translate(80px,280px)}100%{transform:translate(0,0)}
+}
+@keyframes rand12{
+0%{transform:translate(0,0)}20%{transform:translate(-40px,-60px)}40%{transform:translate(-150px,30px)}60%{transform:translate(-80px,-180px)}80%{transform:translate(-220px,-50px)}100%{transform:translate(0,0)}
+}
 
+/* 光晕 */
 .small-ball::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;border-radius:50%;background:radial-gradient(circle,currentColor,transparent 70%);opacity:0.06;animation:glow-pulse 3s ease-in-out infinite;color:#ffd700}
 .s1::before{color:#ffd700}
 .s2::before{color:#00ffff}
@@ -361,7 +388,7 @@ h1{font-size:1.3em}
   </div>
 </div>
 
-<!-- ===== 小足球（流星拖尾） ===== -->
+<!-- ===== 12个小足球 - 高速随机运动 ===== -->
 <div class="small-ball s1"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div><div class="trail trail-1"></div><div class="trail trail-2"></div><div class="trail trail-3"></div><div class="trail trail-4"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div></div>
 <div class="small-ball s2"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div><div class="trail trail-1"></div><div class="trail trail-2"></div><div class="trail trail-3"></div><div class="trail trail-4"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div></div>
 <div class="small-ball s3"><div class="ball-body"><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div><div class="p"></div></div><div class="trail trail-1"></div><div class="trail trail-2"></div><div class="trail trail-3"></div><div class="trail trail-4"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div><div class="sparkle"></div></div>
