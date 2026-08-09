@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Football Data Center</title>
+<title>足球数据中心</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 ::-webkit-scrollbar{width:6px}
@@ -13,6 +13,30 @@
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#0a120a;color:#eee;padding:10px;min-height:100vh;position:relative;overflow-x:hidden}
 body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 20% 50%,rgba(46,125,50,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(76,175,80,0.05) 0%,transparent 40%),radial-gradient(ellipse at 50% 80%,rgba(27,94,32,0.06) 0%,transparent 50%);z-index:0;pointer-events:none}
 body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+
+/* ===== 足球背景 ===== */
+.football-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;opacity:0.05}
+.football-bg .ball{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#2a2a2a,#0a0a0a);top:50%;left:50%;transform:translate(-50%,-50%);animation:spin 60s linear infinite;box-shadow:inset -20px -20px 60px rgba(0,0,0,0.8),inset 20px 20px 60px rgba(255,255,255,0.05)}
+.football-bg .pattern{position:absolute;width:100%;height:100%;top:0;left:0}
+.football-bg .pattern::before,.football-bg .pattern::after{content:'';position:absolute;border-radius:50%}
+.football-bg .pentagon{position:absolute;width:60px;height:60px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.04);clip-path:polygon(50% 0%,100% 38%,81% 100%,19% 100%,0% 38%);animation:float 8s ease-in-out infinite alternate}
+.football-bg .pentagon:nth-child(1){top:10%;left:20%;animation-delay:0s}
+.football-bg .pentagon:nth-child(2){top:15%;right:25%;animation-delay:1s}
+.football-bg .pentagon:nth-child(3){bottom:20%;left:15%;animation-delay:2s}
+.football-bg .pentagon:nth-child(4){bottom:25%;right:20%;animation-delay:3s}
+.football-bg .pentagon:nth-child(5){top:40%;left:5%;animation-delay:4s}
+.football-bg .pentagon:nth-child(6){top:35%;right:8%;animation-delay:5s}
+.football-bg .pentagon:nth-child(7){bottom:40%;left:8%;animation-delay:6s}
+.football-bg .pentagon:nth-child(8){bottom:35%;right:10%;animation-delay:7s}
+.football-bg .pentagon:nth-child(9){top:55%;left:25%;animation-delay:1.5s;width:50px;height:50px}
+.football-bg .pentagon:nth-child(10){top:50%;right:28%;animation-delay:3.5s;width:50px;height:50px}
+.football-bg .pentagon:nth-child(11){bottom:10%;left:40%;animation-delay:5.5s;width:45px;height:45px}
+.football-bg .pentagon:nth-child(12){top:12%;left:50%;animation-delay:2.5s;width:45px;height:45px}
+.football-bg .line{position:absolute;background:rgba(255,255,255,0.015);border-radius:50%;border:1px solid rgba(255,255,255,0.02)}
+.football-bg .line:nth-child(13){width:300px;height:300px;top:50%;left:50%;transform:translate(-50%,-50%)}
+.football-bg .line:nth-child(14){width:450px;height:450px;top:50%;left:50%;transform:translate(-50%,-50%)}
+@keyframes spin{0%{transform:translate(-50%,-50%) rotate(0deg) scale(1)}50%{transform:translate(-50%,-50%) rotate(180deg) scale(1.02)}100%{transform:translate(-50%,-50%) rotate(360deg) scale(1)}}
+@keyframes float{0%{transform:translateY(0px) rotate(0deg);opacity:0.3}100%{transform:translateY(-20px) rotate(30deg);opacity:0.8}}
 
 h1{text-align:center;margin:20px 0 10px;font-size:2em;font-weight:800;background:linear-gradient(135deg,#66bb6a,#a5d6a7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:gradientShift 4s ease-in-out infinite;position:relative;z-index:1;letter-spacing:-0.5px;text-shadow:0 0 60px rgba(76,175,80,0.15)}
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
@@ -103,7 +127,7 @@ h1 .live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;backg
 .card .bot button{background:rgba(76,175,80,0.04);border:1px solid rgba(76,175,80,0.06);color:#4caf50;border-radius:14px;padding:3px 14px;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.25s ease}
 .card .bot button:hover{background:rgba(76,175,80,0.1);border-color:rgba(76,175,80,0.15);transform:scale(1.02)}
 
-/* ===== 新闻卡片 ===== */
+/* 新闻卡片 */
 .card .source-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
 .card .source{color:#4caf50;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
 .card .source-tag{background:rgba(255,255,255,0.04);color:#555;padding:0 10px;border-radius:12px;font-size:9px}
@@ -117,7 +141,7 @@ h1 .live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;backg
 .card .meta .tag{background:rgba(76,175,80,0.1);color:#4caf50;padding:0 10px;border-radius:12px;font-size:9px;font-weight:600}
 .card .meta .news-tag{background:rgba(255,215,64,0.08);color:#ffd740;padding:0 10px;border-radius:12px;font-size:9px;font-weight:600}
 
-/* ===== 积分榜 ===== */
+/* 积分榜 */
 .standings-wrap{background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.03);overflow:hidden;margin:4px 0 8px}
 .standings-wrap .table-scroll{overflow-x:auto}
 .standings-wrap table{width:100%;border-collapse:collapse;font-size:13px}
@@ -134,13 +158,10 @@ h1 .live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;backg
 .standings-wrap .team-cell img{width:20px;height:20px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0}
 .standings-wrap .team-cell .badge-sm{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;font-size:8px;font-weight:700;color:#fff;flex-shrink:0;text-transform:uppercase}
 .standings-wrap .stat{font-weight:500;color:#aaa}
-.standings-wrap .stat-bold{font-weight:700;color:#eee}
 .standings-wrap .gd-positive{color:#4caf50;font-weight:700}
 .standings-wrap .gd-negative{color:#ff5252;font-weight:700}
 .standings-wrap .gd-zero{color:#444;font-weight:600}
 .standings-wrap .points{font-weight:800;color:#4caf50;font-size:15px}
-.standings-wrap .ucl-zone{background:rgba(76,175,80,0.03)}
-.standings-wrap .relegation-zone{background:rgba(255,82,82,0.03)}
 .standings-wrap .group-title{color:#ffd740;font-weight:700;font-size:14px;padding:12px 0 6px;letter-spacing:0.5px;display:flex;align-items:center;gap:8px}
 .standings-wrap .group-title::before{content:'🏆';font-size:16px}
 
@@ -204,93 +225,115 @@ h1{font-size:1.3em}
 </head>
 <body>
 
+<!-- ===== 足球背景 ===== -->
+<div class="football-bg">
+  <div class="ball">
+    <div class="pattern">
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="pentagon"></div>
+      <div class="line"></div>
+      <div class="line"></div>
+    </div>
+  </div>
+</div>
+
 <h1>
   <span class="live-dot"></span>
-  Football Data Center
-  <span class="badge" id="pageBadge">Match Data</span>
+  ⚽ 足球数据中心
+  <span class="badge" id="pageBadge">比赛数据</span>
 </h1>
 
 <div class="main-nav">
-<a href="#" onclick="switchPage('match')" class="on" id="navMatch">📊 Match Data</a>
-<a href="#" onclick="switchPage('transfer')" id="navTransfer">📰 Football News</a>
+<a href="#" onclick="switchPage('match')" class="on" id="navMatch">📊 比赛数据</a>
+<a href="#" onclick="switchPage('transfer')" id="navTransfer">📰 足球新闻</a>
 </div>
 
 <!-- ===== PAGE 1: MATCH DATA ===== -->
 <div class="page active" id="pageMatch">
 <div class="league-nav" id="leagueNav">
-<button class="on" onclick="setLeague('bl1')"><span class="icon">🇩🇪</span> Bundesliga</button>
-<button onclick="setLeague('bl2')"><span class="icon">🇩🇪</span> 2. Bundesliga</button>
-<button onclick="setLeague('bl3')"><span class="icon">🇩🇪</span> 3. Liga</button>
-<button onclick="setLeague('UCL')"><span class="icon">🏆</span> UCL</button>
-<button onclick="setLeague('UEL')"><span class="icon">🏆</span> UEL</button>
+<button class="on" onclick="setLeague('bl1')"><span class="icon">🇩🇪</span> 德甲</button>
+<button onclick="setLeague('bl2')"><span class="icon">🇩🇪</span> 德乙</button>
+<button onclick="setLeague('bl3')"><span class="icon">🇩🇪</span> 德丙</button>
+<button onclick="setLeague('UCL')"><span class="icon">🏆</span> 欧冠</button>
+<button onclick="setLeague('UEL')"><span class="icon">🏆</span> 欧联</button>
 </div>
 
 <div class="bar">
-<input id="searchInput" placeholder="🔍 Search team..." oninput="filterMatches()">
-<button onclick="refreshMatches()">🔄 Refresh</button>
+<input id="searchInput" placeholder="🔍 搜索球队..." oninput="filterMatches()">
+<button onclick="refreshMatches()">🔄 刷新</button>
 <button id="autoRefreshBtn" onclick="toggleAutoRefresh()">
   <span id="autoStatus" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#444;transition:all 0.3s;"></span>
-  <span id="autoLabel">⏸️ Live</span>
+  <span id="autoLabel">⏸️ 直播</span>
   <span id="autoCountdown" style="color:#444;font-weight:400;font-size:11px;"></span>
 </button>
 </div>
 
 <div class="tz-row">
-<span class="tz-label">🇩🇪 Bundesliga:</span>
+<span class="tz-label">🇩🇪 德甲:</span>
 <div class="tz-group">
 <button onclick="adjustG(-1)">−1</button>
 <button onclick="adjustG(1)">+1</button>
-<button onclick="resetG()" style="color:#444;font-size:11px;">Reset</button>
+<button onclick="resetG()" style="color:#444;font-size:11px;">重置</button>
 </div>
 <span class="tz-display" id="tzDisplayG">+14h</span>
 <span class="tz-divider">│</span>
-<span class="tz-label">🏆 UCL/UEL:</span>
+<span class="tz-label">🏆 欧冠/欧联:</span>
 <div class="tz-group">
 <button onclick="adjustE(-1)">−1</button>
 <button onclick="adjustE(1)">+1</button>
-<button onclick="resetE()" style="color:#444;font-size:11px;">Reset</button>
+<button onclick="resetE()" style="color:#444;font-size:11px;">重置</button>
 </div>
 <span class="tz-display" id="tzDisplayE">+8h</span>
 </div>
 
-<div id="matchMain"><div class="ld"><div class="spinner"></div><br>Loading matches...</div></div>
+<div id="matchMain"><div class="ld"><div class="spinner"></div><br>加载比赛数据...</div></div>
 </div>
 
 <!-- ===== PAGE 2: FOOTBALL NEWS ===== -->
 <div class="page" id="pageTransfer">
 <div class="league-nav" id="rumorNav">
-<button class="on" onclick="switchRumorTab('all')">🌍 All</button>
-<button onclick="switchRumorTab('bundesliga')">🇩🇪 Bundesliga</button>
-<button onclick="switchRumorTab('premier')">🏴 Premier</button>
-<button onclick="switchRumorTab('laliga')">🇪🇸 La Liga</button>
-<button onclick="switchRumorTab('seriea')">🇮🇹 Serie A</button>
-<button onclick="switchRumorTab('ligue1')">🇫🇷 Ligue 1</button>
+<button class="on" onclick="switchRumorTab('all')">🌍 全部</button>
+<button onclick="switchRumorTab('bundesliga')">🇩🇪 德甲</button>
+<button onclick="switchRumorTab('premier')">🏴 英超</button>
+<button onclick="switchRumorTab('laliga')">🇪🇸 西甲</button>
+<button onclick="switchRumorTab('seriea')">🇮🇹 意甲</button>
+<button onclick="switchRumorTab('ligue1')">🇫🇷 法甲</button>
 </div>
 
 <div class="league-nav" id="rumorTags" style="margin-top:4px;gap:4px;">
-<button class="on" onclick="switchRumorTag('all')">📰 All</button>
-<button onclick="switchRumorTag('transfer')">🔄 Transfers</button>
-<button onclick="switchRumorTag('match')">⚽ Match</button>
-<button onclick="switchRumorTag('injury')">🏥 Injury</button>
-<button onclick="switchRumorTag('title')">🏆 Title</button>
-<button onclick="switchRumorTag('club')">🎯 Club</button>
+<button class="on" onclick="switchRumorTag('all')">📰 全部</button>
+<button onclick="switchRumorTag('transfer')">🔄 转会</button>
+<button onclick="switchRumorTag('match')">⚽ 比赛</button>
+<button onclick="switchRumorTag('injury')">🏥 伤病</button>
+<button onclick="switchRumorTag('title')">🏆 冠军</button>
+<button onclick="switchRumorTag('club')">🎯 俱乐部</button>
 </div>
 
 <div class="bar">
-<input id="rumorSearchInput" placeholder="🔍 Search team or player..." oninput="filterRumors()">
-<button onclick="fetchAllRumors()">🔄 Refresh</button>
-<span class="count" id="rumorCount">0 news</span>
+<input id="rumorSearchInput" placeholder="🔍 搜索球队或球员..." oninput="filterRumors()">
+<button onclick="fetchAllRumors()">🔄 刷新</button>
+<span class="count" id="rumorCount">0 条新闻</span>
 <span class="status" id="rumorStatus"></span>
 </div>
 
-<div id="rumorMain"><div class="ld"><div class="spinner"></div><br>Loading football news...</div></div>
+<div id="rumorMain"><div class="ld"><div class="spinner"></div><br>加载足球新闻...</div></div>
 
 <div class="footer-note">
-<p>📰 This page shows aggregated summaries (max 150 chars). Full content available via source links.<br>
-Sources: <a href="https://www.skysports.com/" target="_blank" rel="noopener">Sky Sports</a> |
+<p>📰 本页仅显示新闻摘要（不超过150字），完整内容请点击「阅读原文」跳转查看。<br>
+数据来源: <a href="https://www.skysports.com/" target="_blank" rel="noopener">Sky Sports</a> |
 <a href="https://www.transfermarkt.com/" target="_blank" rel="noopener">Transfermarkt</a> |
 <a href="https://www.bbc.com/sport/football" target="_blank" rel="noopener">BBC Sport</a><br>
-For personal reference only. Copyright belongs to original authors.</p>
+仅供个人参考，版权归原作者所有。</p>
 </div>
 </div>
 
@@ -360,7 +403,7 @@ return { date: month + '/' + day, time: hours + ':' + minutes };
 function showTeamInfo(teamId, teamName) {
 var table = matchData.t || [];
 if (!table || table.length === 0) {
-showModal('ℹ️ ' + teamName, '<div style="color:#444;">Standings data not loaded</div>');
+showModal('ℹ️ ' + teamName, '<div style="color:#444;">积分榜数据未加载</div>');
 return;
 }
 var found = null;
@@ -373,21 +416,21 @@ found = row; break;
 }
 }
 if (!found) {
-showModal('ℹ️ ' + teamName, '<div style="color:#444;">Team data not found</div>');
+showModal('ℹ️ ' + teamName, '<div style="color:#444;">未找到球队数据</div>');
 return;
 }
 var html = '';
-html += '<div class="info-item"><span class="label">Name</span>' + (found.teamName || 'Unknown') + '</div>';
+html += '<div class="info-item"><span class="label">名称</span>' + (found.teamName || '未知') + '</div>';
 if (found.teamIconUrl) {
-html += '<div class="info-item"><span class="label">Badge</span><img src="' + found.teamIconUrl + '" onerror="this.style.display=\'none\'"></div>';
+html += '<div class="info-item"><span class="label">队徽</span><img src="' + found.teamIconUrl + '" onerror="this.style.display=\'none\'"></div>';
 } else {
-html += '<div class="info-item"><span class="label">Badge</span>' + getTeamBadge(found.teamName, 48) + '</div>';
+html += '<div class="info-item"><span class="label">队徽</span>' + getTeamBadge(found.teamName, 48) + '</div>';
 }
-html += '<div class="info-item"><span class="label">Matches</span>' + (found.matches || 0) + '</div>';
-html += '<div class="info-item"><span class="label">Goals</span>' + (found.goals || 0) + '</div>';
-html += '<div class="info-item"><span class="label">Conceded</span>' + (found.opponentGoals || 0) + '</div>';
-html += '<div class="info-item"><span class="label">GD</span>' + (found.goalDiff > 0 ? '+' : '') + (found.goalDiff || 0) + '</div>';
-html += '<div class="info-item"><span class="label">Points</span>' + (found.points || 0) + '</div>';
+html += '<div class="info-item"><span class="label">场次</span>' + (found.matches || 0) + '</div>';
+html += '<div class="info-item"><span class="label">进球</span>' + (found.goals || 0) + '</div>';
+html += '<div class="info-item"><span class="label">失球</span>' + (found.opponentGoals || 0) + '</div>';
+html += '<div class="info-item"><span class="label">净胜球</span>' + (found.goalDiff > 0 ? '+' : '') + (found.goalDiff || 0) + '</div>';
+html += '<div class="info-item"><span class="label">积分</span>' + (found.points || 0) + '</div>';
 showModal('ℹ️ ' + found.teamName, html);
 }
 
@@ -405,23 +448,23 @@ var data = await r.json();
 rosterCache[key] = data;
 renderRosterModal(data, teamName);
 } catch(e) {
-showModal('Squad ' + teamName, '<div style="color:#444;">No squad data</div>');
+showModal('阵容 ' + teamName, '<div style="color:#444;">暂无阵容数据</div>');
 }
 }
 function renderRosterModal(data, teamName) {
 if (!data || !data.athletes || data.athletes.length === 0) {
-showModal('Squad ' + teamName, '<div style="color:#444;">No squad data</div>');
+showModal('阵容 ' + teamName, '<div style="color:#444;">暂无阵容数据</div>');
 return;
 }
 var html = '';
-html += '<div style="color:#4caf50;font-weight:700;margin:8px 0 6px;">👤 Players (' + data.athletes.length + ')</div>';
+html += '<div style="color:#4caf50;font-weight:700;margin:8px 0 6px;">👤 球员名单 (' + data.athletes.length + '人)</div>';
 data.athletes.forEach(function(a) {
 var num = a.jersey || '?';
 var pos = a.position ? a.position.abbreviation : '';
-var name = a.displayName || a.fullName || 'Unknown';
+var name = a.displayName || a.fullName || '未知';
 html += '<div class="player-item"><span class="num">#' + num + '</span>' + name + '<span class="pos">' + pos + '</span></div>';
 });
-showModal('Squad ' + teamName, html);
+showModal('阵容 ' + teamName, html);
 }
 
 function hasLiveMatches() {
@@ -446,7 +489,7 @@ var hasLive = hasLiveMatches();
 if (!hasLive && !autoRefreshEnabled) {
 btn.className = 'disabled';
 status.style.background = '#444';
-label.textContent = '⏸️ No Live';
+label.textContent = '⏸️ 无直播';
 document.getElementById('autoCountdown').textContent = '';
 } else if (!hasLive && autoRefreshEnabled) {
 toggleAutoRefresh();
@@ -456,7 +499,7 @@ btn.className = '';
 }
 
 async function refreshMatches() {
-document.getElementById('matchMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>Loading matches...</div>';
+document.getElementById('matchMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载比赛数据...</div>';
 try {
 if (currentLeague === 'UCL' || currentLeague === 'UEL') {
 var lk = currentLeague === 'UCL' ? 'UEFA.CHAMPIONS' : 'UEFA.EUROPA';
@@ -475,7 +518,7 @@ renderMatches();
 }
 updateLiveButton();
 } catch(e) {
-document.getElementById('matchMain').innerHTML = '<div class="ld">❌ Error: ' + e.message + '<br><button onclick="refreshMatches()" style="margin-top:14px;padding:10px 28px;background:linear-gradient(135deg,#4caf50,#2e7d32);border:none;border-radius:30px;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(76,175,80,0.15)">🔄 Retry</button></div>';
+document.getElementById('matchMain').innerHTML = '<div class="ld">❌ 错误: ' + e.message + '<br><button onclick="refreshMatches()" style="margin-top:14px;padding:10px 28px;background:linear-gradient(135deg,#4caf50,#2e7d32);border:none;border-radius:30px;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(76,175,80,0.15)">🔄 重试</button></div>';
 }
 }
 
@@ -526,7 +569,7 @@ if (newData[j].matchID === matchId) { matchData.m[i] = newData[j]; break; }
 }
 renderMatches();
 updateLiveButton();
-} catch(e) { console.warn('Live refresh failed:', e.message); }
+} catch(e) { console.warn('直播刷新失败:', e.message); }
 }
 
 var autoRefreshEnabled = false;
@@ -549,7 +592,7 @@ if (autoRefreshEnabled) {
 btn.className = 'active';
 status.style.background = '#4caf50';
 status.className = 'pulse';
-label.textContent = '● Live';
+label.textContent = '● 直播中';
 countdown.textContent = '15s';
 countdownSeconds = 15;
 refreshLiveMatches();
@@ -559,7 +602,7 @@ countdownTimer = setInterval(function() { countdownSeconds--; if (countdownSecon
 btn.className = '';
 status.style.background = '#444';
 status.className = '';
-label.textContent = '⏸️ Live';
+label.textContent = '⏸️ 直播';
 countdown.textContent = '';
 clearInterval(autoRefreshTimer); clearInterval(countdownTimer);
 autoRefreshTimer = null; countdownTimer = null;
@@ -592,7 +635,7 @@ updateLiveButton();
 function renderGermanMatches(m, t) {
 var h = '';
 if (t && t.length) {
-h += '<details class="details" open><summary>📈 Standings</summary><div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>PTS</th></tr>';
+h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
 for (var i = 0; i < t.length; i++) {
 var r = t[i];
 var icon = '';
@@ -607,10 +650,10 @@ h += '</table></div></div></details>';
 var live = m.filter(function(x) { return !x.matchIsFinished && x.matchResults && x.matchResults.length > 0; });
 var done = m.filter(function(x) { return x.matchIsFinished; });
 var up = m.filter(function(x) { return !x.matchIsFinished && (!x.matchResults || x.matchResults.length === 0); });
-if (live.length) h += '<div class="section-title"><span class="dot" style="background:#ff5252;animation:blink 1.2s infinite;"></span> LIVE</div><div class="grid">' + live.map(function(x) { return cardGerman(x, 'live'); }).join('') + '</div>';
-if (up.length) h += '<div class="section-title"><span class="dot" style="background:#4caf50;"></span> Upcoming</div><div class="grid">' + up.slice(0, 12).map(function(x) { return cardGerman(x, 'upcoming'); }).join('') + '</div>';
-if (done.length) h += '<div class="section-title"><span class="dot" style="background:#333;"></span> Finished</div><div class="grid">' + done.slice(-12).map(function(x) { return cardGerman(x, 'finished'); }).join('') + '</div>';
-document.getElementById('matchMain').innerHTML = h || '<div class="ld">No data</div>';
+if (live.length) h += '<div class="section-title"><span class="dot" style="background:#ff5252;animation:blink 1.2s infinite;"></span> 直播中</div><div class="grid">' + live.map(function(x) { return cardGerman(x, 'live'); }).join('') + '</div>';
+if (up.length) h += '<div class="section-title"><span class="dot" style="background:#4caf50;"></span> 即将开始</div><div class="grid">' + up.slice(0, 12).map(function(x) { return cardGerman(x, 'upcoming'); }).join('') + '</div>';
+if (done.length) h += '<div class="section-title"><span class="dot" style="background:#333;"></span> 已结束</div><div class="grid">' + done.slice(-12).map(function(x) { return cardGerman(x, 'finished'); }).join('') + '</div>';
+document.getElementById('matchMain').innerHTML = h || '<div class="ld">暂无数据</div>';
 }
 
 function cardGerman(m, status) {
@@ -640,18 +683,18 @@ else if (hs < as) { display1 = icon1 + ' <span style="color:#555;">' + name1 + '
 else { display1 = icon1 + ' <span class="team-link" style="color:#ffd740;font-weight:700;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' <span class="info-icon">ℹ️</span></span>'; display2 = icon2 + ' <span class="team-link" style="color:#ffd740;font-weight:700;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' <span class="info-icon">ℹ️</span></span>'; cl = 'score-finished'; }
 } else { cl = 'score-live'; }
 }
-var statusTag = live ? '<span class="status-tag live">● LIVE</span>' : done ? '<span class="status-tag finished">✓ Finished</span>' : '<span class="status-tag upcoming">⏰ Upcoming</span>';
-var botText = live ? '● LIVE' : done ? '✓ Finished' : '';
+var statusTag = live ? '<span class="status-tag live">● 直播中</span>' : done ? '<span class="status-tag finished">✓ 已结束</span>' : '<span class="status-tag upcoming">⏰ 即将开始</span>';
+var botText = live ? '● 直播中' : done ? '✓ 已结束' : '';
 return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</span>' + statusTag + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid ' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
 }
 
 function renderEuroMatches(m, t) {
 var h = '';
 if (t && t.length) {
-h += '<details class="details" open><summary>📈 Standings</summary><div class="standings-wrap"><div class="table-scroll">';
+h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap"><div class="table-scroll">';
 for (var gi = 0; gi < t.length; gi++) {
 var g = t[gi];
-h += '<div class="group-title">' + g.name + '</div><table><tr><th>#</th><th>Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF</th><th>GA</th><th>GD</th><th>PTS</th></tr>';
+h += '<div class="group-title">' + g.name + '</div><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
 var es = g.standings ? g.standings.entries || [] : [];
 for (var i = 0; i < es.length; i++) {
 var e = es[i], st = e.stats || [];
@@ -667,10 +710,10 @@ h += '</div></div></details>';
 var live = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'in'; });
 var done = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'post'; });
 var up = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'pre'; });
-if (live.length) h += '<div class="section-title"><span class="dot" style="background:#ff5252;animation:blink 1.2s infinite;"></span> LIVE</div><div class="grid">' + live.map(function(x) { return cardEuro(x, 'live'); }).join('') + '</div>';
-if (up.length) h += '<div class="section-title"><span class="dot" style="background:#4caf50;"></span> Upcoming</div><div class="grid">' + up.slice(0, 12).map(function(x) { return cardEuro(x, 'upcoming'); }).join('') + '</div>';
-if (done.length) h += '<div class="section-title"><span class="dot" style="background:#333;"></span> Finished</div><div class="grid">' + done.slice(-12).map(function(x) { return cardEuro(x, 'finished'); }).join('') + '</div>';
-document.getElementById('matchMain').innerHTML = h || '<div class="ld">No data</div>';
+if (live.length) h += '<div class="section-title"><span class="dot" style="background:#ff5252;animation:blink 1.2s infinite;"></span> 直播中</div><div class="grid">' + live.map(function(x) { return cardEuro(x, 'live'); }).join('') + '</div>';
+if (up.length) h += '<div class="section-title"><span class="dot" style="background:#4caf50;"></span> 即将开始</div><div class="grid">' + up.slice(0, 12).map(function(x) { return cardEuro(x, 'upcoming'); }).join('') + '</div>';
+if (done.length) h += '<div class="section-title"><span class="dot" style="background:#333;"></span> 已结束</div><div class="grid">' + done.slice(-12).map(function(x) { return cardEuro(x, 'finished'); }).join('') + '</div>';
+document.getElementById('matchMain').innerHTML = h || '<div class="ld">暂无数据</div>';
 }
 
 function cardEuro(m, status) {
@@ -702,16 +745,19 @@ if (hScore > aScore) { display1 = logo1 + ' <span style="cursor:pointer;color:#4
 else if (hScore < aScore) { display1 = logo1 + ' <span style="cursor:pointer;color:#555;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' 📋</span>'; display2 = logo2 + ' <span style="cursor:pointer;color:#4caf50;font-weight:700;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + (isPenalty ? ' ⚽PK✔' : ' ✔') + ' 📋</span>'; cl = 'score-finished'; }
 else { display1 = logo1 + ' <span style="cursor:pointer;color:#ffd740;font-weight:700;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' 📋</span>'; display2 = logo2 + ' <span style="cursor:pointer;color:#ffd740;font-weight:700;" onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' 📋</span>'; cl = 'score-finished'; }
 } else if (live) { cl = 'score-live'; }
-var statusTag = live ? '<span class="status-tag live">● LIVE</span>' : done ? '<span class="status-tag finished">✓ Finished</span>' : '<span class="status-tag upcoming">⏰ Upcoming</span>';
-var botText = live ? '● LIVE' : done ? '✓ Finished' : '';
+var statusTag = live ? '<span class="status-tag live">● 直播中</span>' : done ? '<span class="status-tag finished">✓ 已结束</span>' : '<span class="status-tag upcoming">⏰ 即将开始</span>';
+var botText = live ? '● 直播中' : done ? '✓ 已结束' : '';
 var rosterBtns = '<button onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">📋 ' + name1 + '</button><button onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">📋 ' + name2 + '</button>';
-if (done && isPenalty) botText += ' ⚽PK';
+if (done && isPenalty) botText += ' ⚽点球';
 return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + '</span>' + statusTag + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid ' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + ' ' + rosterBtns + '</div></div>';
 }
 
 function filterMatches() { renderMatches(); }
 
 
+// ================================================================
+// 足球新闻模块
+// ================================================================
 var allRumors = [];
 var rumorTab = 'all';
 var currentRumorTag = 'all';
@@ -724,11 +770,11 @@ var RSS_SOURCES = [
 ];
 
 var TAG_KEYWORDS = {
-transfer: ['transfer','deal','bid','sign','loan','contract','agent','fee','million','swap','done deal','签约','报价','续约','转会','加盟','离队','租借','rumour','rumor','target','interested','pursue','signing','release','free agent'],
-match: ['match','game','fixture','result','score','goal','win','loss','victory','defeat','draw','comeback','clean sheet','hat-trick','penalty','injury time','extra time','shootout','highlights'],
-injury: ['injury','injured','fit','fitness','recovery','suspended','suspension','ban','red card','yellow card','伤病','复出','停赛','禁赛','受伤'],
-title: ['champion','title','league','cup','final','semifinal','quarterfinal','promotion','relegation','playoff','qualify','record','milestone','冠军','联赛','杯赛','决赛','晋级','降级'],
-club: ['manager','coach','appoint','sack','dismiss','resign','club','president','chairman','owner','takeover','主教练','上任','下课','辞职','主席','老板']
+transfer: ['transfer','deal','bid','sign','loan','contract','agent','fee','million','swap','done deal'],
+match: ['match','game','fixture','result','score','goal','win','loss','victory','defeat','draw','comeback','clean sheet','hat-trick','penalty'],
+injury: ['injury','injured','fit','fitness','recovery','suspended','suspension','ban','red card','yellow card'],
+title: ['champion','title','league','cup','final','semifinal','quarterfinal','promotion','relegation','playoff','qualify','record','milestone'],
+club: ['manager','coach','appoint','sack','dismiss','resign','club','president','chairman','owner','takeover']
 };
 
 var FOOTBALL_KEYWORDS = [
@@ -793,7 +839,7 @@ return xml;
 }
 return text;
 }
-} catch(e) { console.warn('Proxy ' + p + ' failed'); }
+} catch(e) { console.warn('代理 ' + p + ' 失败'); }
 }
 return null;
 }
@@ -834,8 +880,8 @@ async function fetchAllRumors() {
 if (isLoadingRumors) return;
 isLoadingRumors = true;
 var statusEl = document.getElementById('rumorStatus');
-if (statusEl) statusEl.textContent = 'Loading RSS...';
-document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>Loading football news...</div>';
+if (statusEl) statusEl.textContent = '加载 RSS...';
+document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载足球新闻...</div>';
 allRumors = [];
 var promises = RSS_SOURCES.map(function(source) { return fetchRSSSource(source); });
 var results = await Promise.all(promises);
@@ -862,38 +908,38 @@ allRumors = [
 }
 renderRumors();
 isLoadingRumors = false;
-if (statusEl) statusEl.textContent = 'Updated (' + allRumors.length + ')';
-document.getElementById('rumorCount').textContent = allRumors.length + ' news';
+if (statusEl) statusEl.textContent = '已更新 (' + allRumors.length + '条)';
+document.getElementById('rumorCount').textContent = allRumors.length + ' 条新闻';
 }
 
 function renderRumors() {
 var main = document.getElementById('rumorMain');
 var filtered = getFilteredRumors();
 if (filtered.length === 0) {
-var tagNames = { 'all': 'All', 'transfer': 'Transfers', 'match': 'Match', 'injury': 'Injury', 'title': 'Title', 'club': 'Club' };
-var tagDisplay = tagNames[currentRumorTag] || 'All';
-main.innerHTML = '<div class="empty">No ' + tagDisplay + ' news found<br><span style="font-size:12px;color:#222;">Click Refresh to fetch latest RSS feeds</span></div>';
+var tagNames = { 'all': '全部', 'transfer': '转会', 'match': '比赛', 'injury': '伤病', 'title': '冠军', 'club': '俱乐部' };
+var tagDisplay = tagNames[currentRumorTag] || '全部';
+main.innerHTML = '<div class="empty">暂无 ' + tagDisplay + ' 新闻<br><span style="font-size:12px;color:#222;">点击「刷新」获取最新 RSS</span></div>';
 return;
 }
 var html = '<div class="grid">';
 filtered.forEach(function(item) {
 var date = new Date(item.pubDate);
-var timeStr = isNaN(date.getTime()) ? '' : date.toLocaleDateString('en-US', {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString('en-US', {hour:'2-digit', minute:'2-digit'});
+var timeStr = isNaN(date.getTime()) ? '' : date.toLocaleDateString('zh-CN', {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
 var safeLink = item.link || '#';
 var icons = { 'Sky Sports': '🎯', 'Transfermarkt': '⚽', 'BBC Sport': '📺' };
 var icon = icons[item.source] || '📰';
 var detectedTag = detectNewsTag(item.title + ' ' + item.summary);
 var tagDisplay = detectedTag ? '<span class="news-tag">' + detectedTag + '</span>' : '';
-html += '<div class="card"><div class="source-row"><span class="source">' + icon + ' ' + item.source + '</span>' + (timeStr ? '<span class="source-tag">' + timeStr + '</span>' : '') + '</div><div class="title"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer">' + item.title + '</a></div>' + (item.summary ? '<div class="summary">' + item.summary + '</div>' : '') + '<div class="meta"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="read-link">📖 Read more →</a>' + tagDisplay + '</div></div>';
+html += '<div class="card"><div class="source-row"><span class="source">' + icon + ' ' + item.source + '</span>' + (timeStr ? '<span class="source-tag">' + timeStr + '</span>' : '') + '</div><div class="title"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer">' + item.title + '</a></div>' + (item.summary ? '<div class="summary">' + item.summary + '</div>' : '') + '<div class="meta"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="read-link">📖 阅读原文 →</a>' + tagDisplay + '</div></div>';
 });
 html += '</div>';
 main.innerHTML = html;
-document.getElementById('rumorCount').textContent = filtered.length + ' news';
+document.getElementById('rumorCount').textContent = filtered.length + ' 条新闻';
 }
 
 function detectNewsTag(text) {
 var lower = text.toLowerCase();
-var tagNames = { 'transfer': '🔄 Transfer', 'match': '⚽ Match', 'injury': '🏥 Injury', 'title': '🏆 Title', 'club': '🎯 Club' };
+var tagNames = { 'transfer': '🔄 转会', 'match': '⚽ 比赛', 'injury': '🏥 伤病', 'title': '🏆 冠军', 'club': '🎯 俱乐部' };
 for (var tag in TAG_KEYWORDS) {
 var keywords = TAG_KEYWORDS[tag];
 for (var i = 0; i < keywords.length; i++) {
@@ -940,6 +986,9 @@ renderRumors();
 function filterRumors() { renderRumors(); }
 
 
+// ================================================================
+// 页面切换
+// ================================================================
 var originalSwitchPage = switchPage;
 switchPage = function(page) {
 if (autoRefreshEnabled) { toggleAutoRefresh(); }
@@ -951,7 +1000,7 @@ document.querySelectorAll('.page').forEach(function(el) { el.className = 'page';
 document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1)).className = 'page active';
 document.querySelectorAll('.main-nav a').forEach(function(el) { el.className = ''; });
 document.getElementById('nav' + page.charAt(0).toUpperCase() + page.slice(1)).className = 'on';
-document.getElementById('pageBadge').textContent = page === 'match' ? 'Match Data' : 'Football News';
+document.getElementById('pageBadge').textContent = page === 'match' ? '比赛数据' : '足球新闻';
 if (page === 'match' && matchData.m.length === 0) refreshMatches();
 if (page === 'transfer' && allRumors.length === 0) fetchAllRumors();
 }
