@@ -77,7 +77,7 @@ details summary:hover{color:#66bb6a}
     <button onclick="adjustG(1)">+1</button>
     <button onclick="resetG()" style="color:#666;font-size:11px;">重置</button>
   </div>
-  <span class="tz-display" id="tzDisplayG">+0h</span>
+  <span class="tz-display" id="tzDisplayG">+6h</span>
 
   <span class="tz-divider">│</span>
 
@@ -87,7 +87,7 @@ details summary:hover{color:#66bb6a}
     <button onclick="adjustE(1)">+1</button>
     <button onclick="resetE()" style="color:#666;font-size:11px;">重置</button>
   </div>
-  <span class="tz-display" id="tzDisplayE">+0h</span>
+  <span class="tz-display" id="tzDisplayE">+8h</span>
 </div>
 
 <div id="main"><div class="ld">加载中...</div></div>
@@ -105,8 +105,8 @@ window.onscroll = function() {
 };
 
 var lg='bl1', d={};
-var offsetG = 0;
-var offsetE = 0;
+var offsetG = 6;  // 德甲默认 +6h
+var offsetE = 8;  // 欧冠默认 +8h
 
 function set(l) {
   lg = l;
@@ -150,8 +150,8 @@ function adjustG(delta) {
 }
 
 function resetG() {
-  offsetG = 0;
-  updateDisplay('tzDisplayG', 0);
+  offsetG = 6;
+  updateDisplay('tzDisplayG', 6);
   if (lg !== 'UCL' && lg !== 'UEL') renG();
 }
 
@@ -162,8 +162,8 @@ function adjustE(delta) {
 }
 
 function resetE() {
-  offsetE = 0;
-  updateDisplay('tzDisplayE', 0);
+  offsetE = 8;
+  updateDisplay('tzDisplayE', 8);
   if (lg === 'UCL' || lg === 'UEL') renE();
 }
 
@@ -174,14 +174,20 @@ function updateDisplay(id, val) {
   else el.textContent = val + 'h';
 }
 
-// ---- 修复：直接加偏移毫秒，自动处理日期进位 ----
-function formatTimeWithOffset(dateStr, offset) {
-  var dt = new Date(dateStr);
-  var adjusted = new Date(dt.getTime() + offset * 60 * 60 * 1000);
-  var month = String(adjusted.getUTCMonth() + 1).padStart(2, '0');
-  var day = String(adjusted.getUTCDate()).padStart(2, '0');
-  var hours = String(adjusted.getUTCHours()).padStart(2, '0');
-  var minutes = String(adjusted.getUTCMinutes()).padStart(2, '0');
+// ---- 时间转换：UTC + offset，自动处理日期进位 ----
+function fmt(dateStr, offset) {
+  var d = new Date(dateStr);
+  var totalMinutes = d.getUTCHours() * 60 + d.getUTCMinutes() + offset * 60;
+  var h = Math.floor(totalMinutes / 60);
+  var m = totalMinutes % 60;
+  if (m < 0) { m += 60; h -= 1; }
+  var dayOffset = 0;
+  while (h >= 24) { h -= 24; dayOffset++; }
+  while (h < 0) { h += 24; dayOffset--; }
+  var month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  var day = String(d.getUTCDate() + dayOffset).padStart(2, '0');
+  var hours = String(h).padStart(2, '0');
+  var minutes = String(m).padStart(2, '0');
   return { date: month + '/' + day, time: hours + ':' + minutes };
 }
 
@@ -218,7 +224,7 @@ function renG() {
 }
 
 function cardG(m) {
-  var ft = formatTimeWithOffset(m.matchDateTime, offsetG);
+  var ft = fmt(m.matchDateTime, offsetG);
   var ds = ft.date;
   var ts = ft.time;
   
@@ -311,7 +317,7 @@ function cardE(m) {
   var live = m.status && m.status.type && m.status.type.state === 'in';
   var done = m.status && m.status.type && m.status.type.state === 'post';
   
-  var ft = formatTimeWithOffset(m.date, offsetE);
+  var ft = fmt(m.date, offsetE);
   var ds = ft.date;
   var ts = ft.time;
   
