@@ -14,12 +14,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Ar
 body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 20% 50%,rgba(46,125,50,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(76,175,80,0.05) 0%,transparent 40%),radial-gradient(ellipse at 50% 80%,rgba(27,94,32,0.06) 0%,transparent 50%);z-index:0;pointer-events:none}
 body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 
-/* ===== 黑白足球背景 ===== */
-.football-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;opacity:0.15}
-.football-bg .ball{position:absolute;width:700px;height:700px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#555,#111);top:50%;left:50%;transform:translate(-50%,-50%);animation:spin 40s linear infinite;box-shadow:inset -30px -30px 80px rgba(0,0,0,0.9),inset 30px 30px 80px rgba(255,255,255,0.08)}
-.football-bg .ball::before{content:'';position:absolute;top:-2%;left:-2%;width:104%;height:104%;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,0.05),transparent 60%)}
+/* ===== 黑白足球背景（带漂移运动） ===== */
+.football-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;opacity:0.35}
+.football-bg .ball{position:absolute;width:750px;height:750px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#888,#222);top:50%;left:50%;margin-left:-375px;margin-top:-375px;animation:drift 25s ease-in-out infinite,spin 40s linear infinite,breath 6s ease-in-out infinite;box-shadow:inset -40px -40px 100px rgba(0,0,0,0.9),inset 40px 40px 100px rgba(255,255,255,0.12),0 0 150px rgba(0,0,0,0.5)}
+.football-bg .ball::before{content:'';position:absolute;top:-2%;left:-2%;width:104%;height:104%;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,0.08),transparent 60%)}
 .football-bg .pattern{position:absolute;width:100%;height:100%;top:0;left:0}
-.football-bg .pentagon{position:absolute;background:rgba(255,255,255,0.06);border:1.5px solid rgba(255,255,255,0.08);clip-path:polygon(50% 0%,100% 38%,81% 100%,19% 100%,0% 38%);animation:float 10s ease-in-out infinite alternate}
+.football-bg .pentagon{position:absolute;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.15);clip-path:polygon(50% 0%,100% 38%,81% 100%,19% 100%,0% 38%);animation:float 10s ease-in-out infinite alternate}
 .football-bg .pentagon:nth-child(1){top:8%;left:18%;width:55px;height:55px;animation-delay:0s}
 .football-bg .pentagon:nth-child(2){top:12%;right:22%;width:50px;height:50px;animation-delay:1.2s}
 .football-bg .pentagon:nth-child(3){bottom:18%;left:12%;width:60px;height:60px;animation-delay:2.4s}
@@ -39,8 +39,37 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 .football-bg .line:nth-child(16){width:280px;height:280px;top:50%;left:50%;transform:translate(-50%,-50%)}
 .football-bg .line:nth-child(17){width:420px;height:420px;top:50%;left:50%;transform:translate(-50%,-50%)}
 .football-bg .line:nth-child(18){width:560px;height:560px;top:50%;left:50%;transform:translate(-50%,-50%)}
-@keyframes spin{0%{transform:translate(-50%,-50%) rotate(0deg)}100%{transform:translate(-50%,-50%) rotate(360deg)}}
-@keyframes float{0%{transform:translateY(0px) rotate(0deg);opacity:0.2}100%{transform:translateY(-25px) rotate(20deg);opacity:0.7}}
+
+/* 足球漂移动画 - 沿椭圆路径运动 */
+@keyframes drift{
+0%{transform:translate(0,0) rotate(0deg)}
+12.5%{transform:translate(60px,-40px) rotate(45deg)}
+25%{transform:translate(100px,0) rotate(90deg)}
+37.5%{transform:translate(60px,40px) rotate(135deg)}
+50%{transform:translate(0,60px) rotate(180deg)}
+62.5%{transform:translate(-60px,40px) rotate(225deg)}
+75%{transform:translate(-100px,0) rotate(270deg)}
+87.5%{transform:translate(-60px,-40px) rotate(315deg)}
+100%{transform:translate(0,0) rotate(360deg)}
+}
+
+/* 足球自转 */
+@keyframes spin{
+0%{transform:rotate(0deg)}
+100%{transform:rotate(360deg)}
+}
+
+/* 呼吸缩放 */
+@keyframes breath{
+0%,100%{transform:scale(1)}
+50%{transform:scale(1.03)}
+}
+
+/* 五边形浮动 */
+@keyframes float{
+0%{transform:translateY(0px) rotate(0deg);opacity:0.3}
+100%{transform:translateY(-25px) rotate(20deg);opacity:0.8}
+}
 
 h1{text-align:center;margin:20px 0 10px;font-size:2em;font-weight:800;background:linear-gradient(135deg,#66bb6a,#a5d6a7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:gradientShift 4s ease-in-out infinite;position:relative;z-index:1;letter-spacing:-0.5px;text-shadow:0 0 60px rgba(76,175,80,0.15)}
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
@@ -229,7 +258,7 @@ h1{font-size:1.3em}
 </head>
 <body>
 
-<!-- ===== 黑白足球背景 ===== -->
+<!-- ===== 漂移黑白足球背景 ===== -->
 <div class="football-bg">
   <div class="ball">
     <div class="pattern">
