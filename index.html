@@ -55,14 +55,14 @@ body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;backgr
 @keyframes breath{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
 @keyframes float{0%{transform:translateY(0px) rotate(0deg);opacity:0.3}100%{transform:translateY(-25px) rotate(20deg);opacity:0.8}}
 
-/* ===== 球星视频背景轮播 ===== */
-.star-video-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}
-.star-video-bg video{width:100%;height:100%;object-fit:cover;opacity:0.18}
-.star-video-bg .player-name{position:absolute;bottom:60px;right:40px;color:rgba(255,215,0,0.15);font-size:32px;font-weight:700;font-family:'Georgia',serif;text-shadow:0 0 60px rgba(0,0,0,0.5);letter-spacing:2px}
-.star-video-bg .video-counter{position:absolute;bottom:30px;right:40px;color:rgba(255,255,255,0.06);font-size:12px;letter-spacing:2px;font-family:'Courier New',monospace}
-.star-video-bg .overlay-text{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.06);font-size:14px;font-weight:300;letter-spacing:4px;text-transform:uppercase;font-family:'Georgia',serif}
-.star-video-bg .loading-text{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:rgba(255,255,255,0.1);font-size:16px;letter-spacing:3px;font-family:'Courier New',monospace;animation:pulse-text 2s ease-in-out infinite}
-@keyframes pulse-text{0%,100%{opacity:0.3}50%{opacity:0.8}}
+/* ===== 球星图片轮播 ===== */
+.star-slider{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden}
+.star-slider .slide{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;transition:opacity 1.5s ease-in-out;background-size:cover;background-position:center;background-repeat:no-repeat}
+.star-slider .slide.active{opacity:1}
+.star-slider .slide::after{content:'';position:absolute;top:0;left:0;width:100%;height:100%;background:linear-gradient(180deg,rgba(0,0,0,0.3) 0%,rgba(0,0,0,0.6) 100%)}
+.star-slider .player-name{position:absolute;bottom:60px;right:50px;color:rgba(255,215,0,0.2);font-size:34px;font-weight:700;font-family:'Georgia',serif;text-shadow:0 0 60px rgba(0,0,0,0.5);letter-spacing:3px;z-index:2;pointer-events:none}
+.star-slider .slide-counter{position:absolute;bottom:30px;right:50px;color:rgba(255,255,255,0.08);font-size:13px;letter-spacing:2px;font-family:'Courier New',monospace;z-index:2;pointer-events:none}
+.star-slider .overlay-text{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);color:rgba(255,255,255,0.05);font-size:15px;font-weight:300;letter-spacing:5px;text-transform:uppercase;font-family:'Georgia',serif;z-index:2;pointer-events:none}
 
 h1{text-align:center;margin:20px 0 10px;font-size:2em;font-weight:800;background:linear-gradient(135deg,#66bb6a,#a5d6a7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:gradientShift 4s ease-in-out infinite;position:relative;z-index:2;letter-spacing:-0.5px;text-shadow:0 0 60px rgba(76,175,80,0.15)}
 @keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
@@ -249,13 +249,17 @@ h1{font-size:1.3em}
 </head>
 <body>
 
-<!-- ===== 球星视频背景轮播 ===== -->
-<div class="star-video-bg" id="starVideoBg">
-  <video id="starVideo" muted playsinline autoplay></video>
-  <div class="player-name" id="playerName">✦ 绿茵传奇</div>
+<!-- ===== 球星图片轮播 ===== -->
+<div class="star-slider" id="starSlider">
+  <div class="slide active" style="background-image:url('https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1920&q=80')"></div>
+  <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1459865264687-595d652de67e?w=1920&q=80')"></div>
+  <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1920&q=80')"></div>
+  <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=1920&q=80')"></div>
+  <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=1920&q=80')"></div>
+  <div class="slide" style="background-image:url('https://images.unsplash.com/photo-1511882150382-421056c89033?w=1920&q=80')"></div>
+  <div class="player-name" id="sliderName">✦ 绿茵传奇</div>
+  <div class="slide-counter" id="sliderCounter">1 / 6</div>
   <div class="overlay-text">⚽ Legendary Moments · 经典永存</div>
-  <div class="video-counter" id="videoCounter">1 / 6</div>
-  <div class="loading-text" id="loadingText">✦ 加载中 ...</div>
 </div>
 
 <!-- ===== 主足球背景 ===== -->
@@ -366,115 +370,80 @@ h1{font-size:1.3em}
 
 <script>
 // ================================================================
-// 球星视频轮播引擎 - 使用 Pixabay 免费可商用素材
+// 球星图片轮播引擎
 // ================================================================
 (function() {
-  // ---- 视频列表 ----
-  // 所有视频来自 Pixabay，在 Pixabay Content License 下免费可商用
-  // 来源: https://pixabay.com/zh/videos/
-  var videoList = [
-    { url: 'https://cdn.pixabay.com/video/2023/06/27/169201-841476706_large.mp4', name: '✦ 足球 · 竞技' },
-    { url: 'https://cdn.pixabay.com/video/2022/11/03/137548-770359247_large.mp4', name: '✦ 足球 · 激情' },
-    { url: 'https://cdn.pixabay.com/video/2024/01/24/197894-904808701_large.mp4', name: '✦ 足球 · 荣耀' },
-    { url: 'https://cdn.pixabay.com/video/2023/08/25/177001-856718288_large.mp4', name: '✦ 足球 · 传承' },
-    { url: 'https://cdn.pixabay.com/video/2022/08/05/127141-732513458_large.mp4', name: '✦ 足球 · 经典' },
-    { url: 'https://cdn.pixabay.com/video/2023/07/14/171777-845273386_large.mp4', name: '✦ 足球 · 永恒' }
+  var slides = document.querySelectorAll('.star-slider .slide');
+  var nameEl = document.getElementById('sliderName');
+  var counterEl = document.getElementById('sliderCounter');
+  var currentIndex = 0;
+  var intervalId = null;
+  var isTransitioning = false;
+
+  var slideNames = [
+    '✦ 足球 · 竞技',
+    '✦ 足球 · 激情',
+    '✦ 足球 · 荣耀',
+    '✦ 足球 · 传承',
+    '✦ 足球 · 经典',
+    '✦ 足球 · 永恒'
   ];
 
-  var currentIndex = 0;
-  var videoEl = document.getElementById('starVideo');
-  var nameEl = document.getElementById('playerName');
-  var counterEl = document.getElementById('videoCounter');
-  var loadingEl = document.getElementById('loadingText');
-  var isPlaying = false;
-  var timeoutId = null;
+  function goTo(index) {
+    if (isTransitioning) return;
+    if (index >= slides.length) index = 0;
+    if (index < 0) index = slides.length - 1;
+    isTransitioning = true;
 
-  function loadVideo(index) {
-    if (index >= videoList.length) index = 0;
-    if (index < 0) index = videoList.length - 1;
+    // 移除所有 active
+    slides.forEach(function(s) { s.classList.remove('active'); });
+    // 添加 active 到目标
+    slides[index].classList.add('active');
+    nameEl.textContent = slideNames[index] || '✦ 绿茵传奇';
+    counterEl.textContent = (index + 1) + ' / ' + slides.length;
     currentIndex = index;
-    var item = videoList[currentIndex];
-    
-    // 显示加载状态
-    loadingEl.style.display = 'block';
-    
-    videoEl.src = item.url;
-    videoEl.load();
-    nameEl.textContent = item.name;
-    counterEl.textContent = (currentIndex + 1) + ' / ' + videoList.length;
-    
-    // 尝试播放
-    videoEl.play().then(function() {
-      loadingEl.style.display = 'none';
-    }).catch(function(e) {
-      // 自动播放被阻止时静默处理
-      loadingEl.style.display = 'none';
-      console.warn('视频自动播放被阻止:', e.message);
-    });
-    
-    isPlaying = true;
+
+    setTimeout(function() {
+      isTransitioning = false;
+    }, 1500);
   }
 
-  function nextVideo() {
-    var next = (currentIndex + 1) % videoList.length;
-    loadVideo(next);
+  function nextSlide() {
+    goTo(currentIndex + 1);
   }
 
-  // 视频播放结束自动切换
-  videoEl.addEventListener('ended', function() {
-    nextVideo();
-  });
+  function start() {
+    if (intervalId) clearInterval(intervalId);
+    intervalId = setInterval(nextSlide, 5000);
+  }
 
-  // 视频加载失败时跳过
-  videoEl.addEventListener('error', function() {
-    loadingEl.style.display = 'none';
-    console.warn('视频加载失败，切换到下一个');
-    nextVideo();
-  });
-
-  // 视频可以播放时隐藏加载提示
-  videoEl.addEventListener('canplay', function() {
-    loadingEl.style.display = 'none';
-  });
-
-  // 超时保护：如果视频卡住超过8秒，强制切换
-  videoEl.addEventListener('timeupdate', function() {
-    if (videoEl.currentTime > 0.5) {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-        timeoutId = null;
-      }
+  function stop() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
     }
-  });
+  }
 
-  // 页面可见性变化时处理
+  // 页面可见性变化时暂停/恢复
   document.addEventListener('visibilitychange', function() {
     if (document.hidden) {
-      if (videoEl) videoEl.pause();
+      stop();
     } else {
-      if (videoEl) {
-        videoEl.play().catch(function() {});
-        if (videoEl.ended) {
-          nextVideo();
-        }
-      }
+      start();
     }
   });
 
-  // 启动：加载第一个视频
-  setTimeout(function() {
-    loadVideo(0);
-  }, 500);
+  // 启动
+  goTo(0);
+  start();
 
   // 暴露控制接口
-  window.__videoPlayer = {
-    next: nextVideo,
-    prev: function() {
-      var prev = (currentIndex - 1 + videoList.length) % videoList.length;
-      loadVideo(prev);
-    },
-    load: loadVideo,
-    getCurrent: function() { return videoList[currentIndex]; }
+  window.__slider = {
+    next: nextSlide,
+    prev: function() { goTo(currentIndex - 1); },
+    goTo: goTo,
+    start: start,
+    stop: stop
   };
 
 })();
