@@ -169,7 +169,8 @@ h1 .live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;backg
 .standings-wrap .rank.bronze{background:linear-gradient(135deg,#e8a87c,#d4845a);color:#fff;box-shadow:0 2px 12px rgba(212,132,90,0.25)}
 .standings-wrap .rank.normal{color:#444;font-weight:600;background:rgba(255,255,255,0.02)}
 .standings-wrap .team-cell{display:flex;align-items:center;gap:8px;font-weight:600;color:#eee}
-.standings-wrap .team-cell .team-logo{font-size:22px;width:30px;text-align:center;flex-shrink:0}
+.standings-wrap .team-cell img{width:22px;height:22px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0}
+.standings-wrap .team-cell .team-logo{font-size:20px;width:28px;text-align:center;flex-shrink:0}
 .standings-wrap .stat{font-weight:500;color:#aaa}
 .standings-wrap .gd-positive{color:#4caf50;font-weight:700}
 .standings-wrap .gd-negative{color:#ff5252;font-weight:700}
@@ -180,7 +181,8 @@ h1 .live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;backg
 
 .season-notice{background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.1);border-radius:12px;padding:16px 20px;text-align:center;margin:8px 0 12px;color:#ffd740;font-size:13px}
 .season-notice .icon{font-size:24px;display:block;margin-bottom:4px}
-.season-notice .sub{color:#666;font-size:11px;margin-top:2px}
+.season-notice .sub{color:#888;font-size:12px;margin-top:2px}
+.season-notice .date{color:#4caf50;font-weight:700}
 
 .details{margin:6px 0}
 .details summary{color:#4caf50;cursor:pointer;padding:12px 0;font-size:15px;font-weight:700;transition:color 0.2s;display:flex;align-items:center;gap:8px;list-style:none}
@@ -365,36 +367,6 @@ var color = colors[idx % colors.length];
 return '<span class="team-badge" style="background:' + color + ';width:' + size + 'px;height:' + size + 'px;font-size:' + fontSize + 'px;">' + letter + '</span>';
 }
 
-// ================================================================
-// 球队 Logo 映射（Emoji 风格）
-// ================================================================
-var teamLogos = {
-  // 英超
-  '曼城': '🌕', '阿森纳': '🔴', '利物浦': '🔴', '阿斯顿维拉': '🔵', '热刺': '⚪',
-  '切尔西': '🔵', '纽卡斯尔': '⚫', '曼联': '🔴', '西汉姆联': '🟣', '布莱顿': '🔵',
-  // 西甲
-  '皇家马德里': '👑', '巴塞罗那': '🔴🔵', '赫罗纳': '🟡', '马德里竞技': '🔴⚪', '毕尔巴鄂': '🔴⚪',
-  '皇家社会': '🔵', '贝蒂斯': '🟢', '比利亚雷亚尔': '🟡', '瓦伦西亚': '⚪', '塞维利亚': '🔴',
-  // 意甲
-  '国际米兰': '🔵⚫', 'AC米兰': '🔴⚫', '尤文图斯': '⚪⚫', '亚特兰大': '🔵⚫', '博洛尼亚': '🔴🔵',
-  '罗马': '🔴🟡', '拉齐奥': '🔵⚪', '佛罗伦萨': '🟣', '那不勒斯': '🔵', '都灵': '🟠',
-  // 法甲
-  '巴黎圣日耳曼': '🔵🔴', '摩纳哥': '🔴⚪', '里尔': '🔴🔵', '尼斯': '🔴⚫', '里昂': '🔵🔴',
-  '朗斯': '🟡🔴', '马赛': '🔵⚪', '雷恩': '🔴⚫', '斯特拉斯堡': '🔵⚪', '南特': '🟡🟢',
-  // 欧冠/欧联
-  '多特蒙德': '🟡⚫', '拜仁慕尼黑': '🔴🔵', '勒沃库森': '🔴⚫', '本菲卡': '🔴⚪'
-};
-
-function getTeamLogo(name) {
-  // 精确匹配
-  if (teamLogos[name]) return teamLogos[name];
-  // 模糊匹配
-  for (var key in teamLogos) {
-    if (name.indexOf(key) !== -1 || key.indexOf(name) !== -1) return teamLogos[key];
-  }
-  return '⚽';
-}
-
 function showModal(title, html) {
 var old = document.querySelector('.modal-overlay');
 if (old) old.remove();
@@ -413,6 +385,43 @@ var currentLeague = 'bl1';
 var offsetG = 14;
 var offsetESPN = 8;
 var currentSeason = new Date().getFullYear();
+
+// ================================================================
+// 球队 Logo 缓存（从 ESPN 比赛数据中提取）
+// ================================================================
+var teamLogoCache = {};
+
+function getTeamLogoFromCache(teamName) {
+  // 先从缓存中查找
+  if (teamLogoCache[teamName]) return teamLogoCache[teamName];
+  // 从比赛数据中查找
+  var m = matchData.m || [];
+  for (var i = 0; i < m.length; i++) {
+    var c = m[i].competitions ? m[i].competitions[0] : null;
+    if (!c || !c.competitors) continue;
+    for (var j = 0; j < c.competitors.length; j++) {
+      var team = c.competitors[j].team;
+      if (team.displayName === teamName || team.shortDisplayName === teamName) {
+        if (team.logo) {
+          teamLogoCache[teamName] = team.logo;
+          return team.logo;
+        }
+      }
+    }
+  }
+  // 没找到返回空
+  return null;
+}
+
+function getTeamLogoHtml(teamName, size) {
+  size = size || 22;
+  var logo = getTeamLogoFromCache(teamName);
+  if (logo) {
+    return '<img src="' + logo + '" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">';
+  }
+  // 没找到logo，显示文字徽章
+  return getTeamBadge(teamName, size);
+}
 
 // ================================================================
 // 自制积分榜数据（2026-27赛季 - 空积分榜）
@@ -657,7 +666,6 @@ async function refreshMatches() {
   document.getElementById('matchMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载比赛数据...</div>';
   try {
     if (['bl1','bl2','bl3'].includes(currentLeague)) {
-      // 德甲/德乙/德丙：使用 OpenLigaDB
       var year = new Date().getFullYear();
       var r1 = await fetch('https://api.openligadb.de/getmatchdata/' + currentLeague);
       var r2 = await fetch('https://api.openligadb.de/getbltable/' + currentLeague + '/' + year);
@@ -665,13 +673,11 @@ async function refreshMatches() {
       matchData.t = await r2.json();
       renderGermanMatches();
     } else {
-      // 其他联赛：使用 ESPN 比赛数据 + 自制积分榜
       var leagueCode = currentLeague;
       if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
       else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
       var r1 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
       matchData.m = (await r1.json()).events || [];
-      // 使用自制积分榜
       matchData.t = customStandings[currentLeague] ? [customStandings[currentLeague]] : [];
       renderCustomMatches();
     }
@@ -851,7 +857,7 @@ function cardGerman(m, status) {
 }
 
 // ================================================================
-// 自定义积分榜渲染（英超/西甲/意甲/法甲/欧冠/欧联）- 空积分榜 + Logo
+// 自定义积分榜渲染（使用 ESPN 真实队徽）
 // ================================================================
 function renderCustomMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -873,10 +879,21 @@ function renderCustomMatches() {
     var leagueData = t[0];
     var teams = leagueData.teams || [];
     
+    // 2026-27 赛季开赛日期
+    var seasonStartDates = {
+      'ENG.1': '2026年8月15日',
+      'ESP.1': '2026年8月16日',
+      'ITA.1': '2026年8月17日',
+      'FRA.1': '2026年8月15日',
+      'UCL': '2026年9月15日',
+      'UEL': '2026年9月16日'
+    };
+    var startDate = seasonStartDates[currentLeague] || '2026年8月中旬';
+    
     h += '<details class="details" open><summary>📈 积分榜 - ' + leagueData.name + '</summary>';
     
-    // 赛季未开始提示
-    h += '<div class="season-notice"><span class="icon">⏳</span>2026-27 赛季尚未开始<br><span class="sub">预计 2026年8月中旬开赛 · 敬请期待</span></div>';
+    // 赛季未开始提示 - 显示准确开赛日期
+    h += '<div class="season-notice"><span class="icon">📅</span>2026-27 赛季将于 <span class="date">' + startDate + '</span> 开赛<br><span class="sub">当前为赛季备战期 · 积分榜暂为空</span></div>';
     
     if (teams.length > 0) {
       h += '<div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
@@ -886,9 +903,9 @@ function renderCustomMatches() {
         var gd = r.goalsFor - r.goalsAgainst;
         var rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
         var gdClass = gd > 0 ? 'gd-positive' : gd < 0 ? 'gd-negative' : 'gd-zero';
-        var logo = getTeamLogo(r.name);
+        var logoHtml = getTeamLogoHtml(r.name, 22);
         h += '<tr><td><span class="rank ' + rankClass + '">' + (i + 1) + '</span></td>';
-        h += '<td><div class="team-cell"><span class="team-logo">' + logo + '</span><span>' + r.name + '</span></div></td>';
+        h += '<td><div class="team-cell">' + logoHtml + '<span>' + r.name + '</span></div></td>';
         h += '<td class="stat">' + r.played + '</td>';
         h += '<td class="stat">' + r.won + '</td>';
         h += '<td class="stat">' + r.drawn + '</td>';
@@ -931,24 +948,23 @@ function cardCustom(m, status) {
   var name1 = hh.team.displayName || hh.team.shortDisplayName || '?';
   var name2 = aa.team.displayName || aa.team.shortDisplayName || '?';
   var teamId1 = hh.team.id, teamId2 = aa.team.id;
-  var logo1 = hh.team.logo ? '<img src="' + hh.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
-  var logo2 = aa.team.logo ? '<img src="' + aa.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
+  
+  // 使用 ESPN 真实队徽
+  var logo1 = hh.team.logo ? '<img src="' + hh.team.logo + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">' : getTeamBadge(name1, 24);
+  var logo2 = aa.team.logo ? '<img src="' + aa.team.logo + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">' : getTeamBadge(name2, 24);
   
   var leagueCode = currentLeague;
   if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
   else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
   
-  var logoEmoji1 = getTeamLogo(name1);
-  var logoEmoji2 = getTeamLogo(name2);
-  
-  var display1 = '<span style="font-size:18px;margin-right:4px;">' + logoEmoji1 + '</span> <span style="font-weight:600;">' + name1 + '</span>';
-  var display2 = '<span style="font-size:18px;margin-right:4px;">' + logoEmoji2 + '</span> <span style="font-weight:600;">' + name2 + '</span>';
+  var display1 = logo1 + ' <span style="font-weight:600;">' + name1 + '</span>';
+  var display2 = logo2 + ' <span style="font-weight:600;">' + name2 + '</span>';
   
   var cl = done ? 'score-finished' : (live ? 'score-live' : '');
   if (done) {
-    if (hScore > aScore) { display1 = '<span style="font-size:18px;margin-right:4px;">' + logoEmoji1 + '</span> <span style="color:#4caf50;font-weight:700;">' + name1 + ' ✔</span>'; display2 = '<span style="font-size:18px;margin-right:4px;">' + logoEmoji2 + '</span> <span style="color:#555;">' + name2 + '</span>'; }
-    else if (hScore < aScore) { display1 = '<span style="font-size:18px;margin-right:4px;">' + logoEmoji1 + '</span> <span style="color:#555;">' + name1 + '</span>'; display2 = '<span style="font-size:18px;margin-right:4px;">' + logoEmoji2 + '</span> <span style="color:#4caf50;font-weight:700;">' + name2 + ' ✔</span>'; }
-    else { display1 = '<span style="font-size:18px;margin-right:4px;">' + logoEmoji1 + '</span> <span style="color:#ffd740;font-weight:700;">' + name1 + '</span>'; display2 = '<span style="font-size:18px;margin-right:4px;">' + logoEmoji2 + '</span> <span style="color:#ffd740;font-weight:700;">' + name2 + '</span>'; }
+    if (hScore > aScore) { display1 = logo1 + ' <span style="color:#4caf50;font-weight:700;">' + name1 + ' ✔</span>'; display2 = logo2 + ' <span style="color:#555;">' + name2 + '</span>'; }
+    else if (hScore < aScore) { display1 = logo1 + ' <span style="color:#555;">' + name1 + '</span>'; display2 = logo2 + ' <span style="color:#4caf50;font-weight:700;">' + name2 + ' ✔</span>'; }
+    else { display1 = logo1 + ' <span style="color:#ffd740;font-weight:700;">' + name1 + '</span>'; display2 = logo2 + ' <span style="color:#ffd740;font-weight:700;">' + name2 + '</span>'; }
   }
   
   var isPenalty = false;
@@ -993,7 +1009,7 @@ showEspnRoster = async function(leagueCode, idOrName, teamName) {
 function filterMatches() { renderMatches(); }
 
 // ================================================================
-// 足球新闻模块（保留完整功能）
+// 足球新闻模块（完整保留）
 // ================================================================
 var allRumors = [];
 var rumorTab = 'all';
