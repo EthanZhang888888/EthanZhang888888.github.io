@@ -169,8 +169,8 @@ h1 .live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;backg
 .standings-wrap .rank.bronze{background:linear-gradient(135deg,#e8a87c,#d4845a);color:#fff;box-shadow:0 2px 12px rgba(212,132,90,0.25)}
 .standings-wrap .rank.normal{color:#444;font-weight:600;background:rgba(255,255,255,0.02)}
 .standings-wrap .team-cell{display:flex;align-items:center;gap:8px;font-weight:600;color:#eee}
-.standings-wrap .team-cell img{width:22px;height:22px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0}
-.standings-wrap .team-cell .team-logo{font-size:20px;width:28px;text-align:center;flex-shrink:0}
+.standings-wrap .team-cell .team-logo-img{width:22px;height:22px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0}
+.standings-wrap .team-cell .team-logo-fallback{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;text-transform:uppercase}
 .standings-wrap .stat{font-weight:500;color:#aaa}
 .standings-wrap .gd-positive{color:#4caf50;font-weight:700}
 .standings-wrap .gd-negative{color:#ff5252;font-weight:700}
@@ -392,16 +392,15 @@ var currentSeason = new Date().getFullYear();
 var teamLogoCache = {};
 
 function getTeamLogoFromCache(teamName) {
-  // 先从缓存中查找
   if (teamLogoCache[teamName]) return teamLogoCache[teamName];
-  // 从比赛数据中查找
   var m = matchData.m || [];
   for (var i = 0; i < m.length; i++) {
     var c = m[i].competitions ? m[i].competitions[0] : null;
     if (!c || !c.competitors) continue;
     for (var j = 0; j < c.competitors.length; j++) {
       var team = c.competitors[j].team;
-      if (team.displayName === teamName || team.shortDisplayName === teamName) {
+      if (team.displayName === teamName || team.shortDisplayName === teamName || 
+          teamName.indexOf(team.displayName) !== -1 || team.displayName.indexOf(teamName) !== -1) {
         if (team.logo) {
           teamLogoCache[teamName] = team.logo;
           return team.logo;
@@ -409,7 +408,6 @@ function getTeamLogoFromCache(teamName) {
       }
     }
   }
-  // 没找到返回空
   return null;
 }
 
@@ -417,10 +415,15 @@ function getTeamLogoHtml(teamName, size) {
   size = size || 22;
   var logo = getTeamLogoFromCache(teamName);
   if (logo) {
-    return '<img src="' + logo + '" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">';
+    return '<img src="' + logo + '" class="team-logo-img" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">';
   }
-  // 没找到logo，显示文字徽章
-  return getTeamBadge(teamName, size);
+  var colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e84393','#00b894','#6c5ce7','#fd79a8','#0984e3','#fdcb6e','#e17055','#00cec9','#6c5ce7','#fd79a8','#00b894'];
+  var idx = 0;
+  for (var i = 0; i < teamName.length; i++) idx += teamName.charCodeAt(i);
+  var color = colors[idx % colors.length];
+  var letter = teamName.charAt(0).toUpperCase();
+  var fontSize = size >= 24 ? 10 : 8;
+  return '<span class="team-logo-fallback" style="background:' + color + ';width:' + size + 'px;height:' + size + 'px;font-size:' + fontSize + 'px;">' + letter + '</span>';
 }
 
 // ================================================================
@@ -857,7 +860,7 @@ function cardGerman(m, status) {
 }
 
 // ================================================================
-// 自定义积分榜渲染（使用 ESPN 真实队徽）
+// 自定义积分榜渲染 - 使用 ESPN 真实队徽
 // ================================================================
 function renderCustomMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -892,7 +895,6 @@ function renderCustomMatches() {
     
     h += '<details class="details" open><summary>📈 积分榜 - ' + leagueData.name + '</summary>';
     
-    // 赛季未开始提示 - 显示准确开赛日期
     h += '<div class="season-notice"><span class="icon">📅</span>2026-27 赛季将于 <span class="date">' + startDate + '</span> 开赛<br><span class="sub">当前为赛季备战期 · 积分榜暂为空</span></div>';
     
     if (teams.length > 0) {
