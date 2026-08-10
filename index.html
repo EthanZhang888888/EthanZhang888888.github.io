@@ -12,7 +12,7 @@
 
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#0a120a;color:#eee;padding:10px;min-height:100vh;position:relative;overflow-x:hidden}
 body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 20% 50%,rgba(46,125,50,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(76,175,80,0.05) 0%,transparent 40%),radial-gradient(ellipse at 50% 80%,rgba(27,94,32,0.06) 0%,transparent 50%);z-index:0;pointer-events:none}
-body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='https://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 
 .football-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;opacity:0.35}
 .football-bg .main-ball{position:absolute;width:750px;height:750px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#888,#222);top:50%;left:50%;margin-left:-375px;margin-top:-375px;animation:drift 25s ease-in-out infinite,spin 40s linear infinite,breath 6s ease-in-out infinite;box-shadow:inset -40px -40px 100px rgba(0,0,0,0.9),inset 40px 40px 100px rgba(255,255,255,0.12),0 0 150px rgba(0,0,0,0.5)}
@@ -578,7 +578,7 @@ var customStandings = {
 };
 
 // ================================================================
-// ESPN 球队阵容
+// ESPN 球队阵容（所有联赛统一使用）
 // ================================================================
 var rosterCache = {};
 
@@ -613,6 +613,7 @@ async function showEspnRoster(leagueCode, teamId, teamName) {
   showModal('阵容 ' + teamName, html);
 }
 
+// 德甲球队信息（OpenLigaDB）
 function showTeamInfo(teamId, teamName) {
   var table = matchData.t || [];
   if (!table || table.length === 0) {
@@ -645,6 +646,43 @@ function showTeamInfo(teamId, teamName) {
   html += '<div class="info-item"><span class="label">净胜球</span>' + (found.goalDiff > 0 ? '+' : '') + (found.goalDiff || 0) + '</div>';
   html += '<div class="info-item"><span class="label">积分</span>' + (found.points || 0) + '</div>';
   showModal('ℹ️ ' + found.teamName, html);
+}
+
+// ================================================================
+// 根据队名查找 ESPN 球队 ID（用于德甲阵容）
+// ================================================================
+async function findEspnTeamId(leagueCode, teamName) {
+  try {
+    var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams?search=' + encodeURIComponent(teamName);
+    var response = await fetch(url);
+    var data = await response.json();
+    if (data.sports && data.sports[0] && data.sports[0].leagues && data.sports[0].leagues[0] && data.sports[0].leagues[0].teams) {
+      var teams = data.sports[0].leagues[0].teams;
+      for (var i = 0; i < teams.length; i++) {
+        var displayName = teams[i].team.displayName || '';
+        var shortName = teams[i].team.shortDisplayName || '';
+        if (displayName.toLowerCase().indexOf(teamName.toLowerCase()) !== -1 ||
+            teamName.toLowerCase().indexOf(displayName.toLowerCase()) !== -1 ||
+            shortName.toLowerCase().indexOf(teamName.toLowerCase()) !== -1) {
+          return teams[i].team.id;
+        }
+      }
+    }
+    return null;
+  } catch(e) {
+    console.warn('查找球队ID失败:', teamName);
+    return null;
+  }
+}
+
+// 显示德甲阵容（通过队名搜索 ESPN 球队 ID）
+async function showBundesligaRoster(teamName) {
+  var teamId = await findEspnTeamId('GER.1', teamName);
+  if (teamId) {
+    await showEspnRoster('GER.1', teamId, teamName);
+  } else {
+    showModal('阵容 ' + teamName, '<div style="color:#444;">未找到该球队的阵容数据</div>');
+  }
 }
 
 // ================================================================
@@ -916,9 +954,10 @@ function cardGerman(m, status) {
   }
   var statusTag = live ? '<span class="status-tag live">● 直播中</span>' : done ? '<span class="status-tag finished">✓ 已结束</span>' : '<span class="status-tag upcoming">⏰ 即将开始</span>';
   
+  // 德甲阵容按钮（使用 ESPN）
   var rosterBtns = '';
   if (currentLeague === 'bl1') {
-    rosterBtns = '<button onclick="showEspnRoster(\'GER.1\', \'' + name1 + '\', \'' + name1 + '\')">📋 ' + name1 + '</button><button onclick="showEspnRoster(\'GER.1\', \'' + name2 + '\', \'' + name2 + '\')">📋 ' + name2 + '</button>';
+    rosterBtns = '<button onclick="showBundesligaRoster(\'' + name1 + '\')">📋 ' + name1 + '</button><button onclick="showBundesligaRoster(\'' + name2 + '\')">📋 ' + name2 + '</button>';
   }
   
   var botText = live ? '● 直播中' : done ? '✓ 已结束' : '';
@@ -1051,30 +1090,6 @@ function cardCustom(m, status) {
   return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + '</span>' + statusTag + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid ' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + ' ' + rosterBtns + '</div></div>';
 }
 
-var originalShowEspnRoster = showEspnRoster;
-showEspnRoster = async function(leagueCode, idOrName, teamName) {
-  if (leagueCode === 'GER.1' && isNaN(idOrName)) {
-    try {
-      var searchUrl = 'https://site.api.espn.com/apis/site/v2/sports/soccer/GER.1/teams?search=' + encodeURIComponent(teamName);
-      var resp = await fetch(searchUrl);
-      var data = await resp.json();
-      if (data.sports && data.sports[0] && data.sports[0].leagues && data.sports[0].leagues[0] && data.sports[0].leagues[0].teams) {
-        var teams = data.sports[0].leagues[0].teams;
-        for (var i = 0; i < teams.length; i++) {
-          if (teams[i].team.displayName.toLowerCase().indexOf(teamName.toLowerCase()) !== -1 ||
-              teamName.toLowerCase().indexOf(teams[i].team.displayName.toLowerCase()) !== -1) {
-            var realId = teams[i].team.id;
-            return originalShowEspnRoster('GER.1', realId, teamName);
-          }
-        }
-      }
-    } catch(e) {}
-    showModal('阵容 ' + teamName, '<div style="color:#444;">未找到该球队的阵容数据</div>');
-    return;
-  }
-  return originalShowEspnRoster(leagueCode, idOrName, teamName);
-};
-
 function filterMatches() { renderMatches(); }
 
 // ================================================================
@@ -1088,7 +1103,7 @@ var isLoadingRumors = false;
 var RSS_SOURCES = [
 { name: 'Sky Sports', url: 'https://www.skysports.com/rss/12040' },
 { name: 'Transfermarkt', url: 'https://www.transfermarkt.com/rss/feed' },
-{ name: 'BBC Sport', url: 'http://newsrss.bbc.co.uk/rss/sportonline_uk_edition/football/rss.xml' }
+{ name: 'BBC Sport', url: 'https://newsrss.bbc.co.uk/rss/sportonline_uk_edition/football/rss.xml' }
 ];
 
 var TAG_KEYWORDS = {
