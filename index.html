@@ -418,192 +418,242 @@ return { date: month + '/' + day, time: hours + ':' + minutes };
 }
 
 // ================================================================
-// 球队信息与阵容
+// 球队信息与阵容 - 统一处理五大联赛 + 欧冠/欧联
 // ================================================================
-function showTeamInfo(teamId, teamName) {
-var table = matchData.t || [];
-if (!table || table.length === 0) {
-showModal('ℹ️ ' + teamName, '<div style="color:#444;">积分榜数据未加载</div>');
-return;
-}
-var found = null;
-var cleanName = teamName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-for (var i = 0; i < table.length; i++) {
-var row = table[i];
-var rowClean = row.teamName ? row.teamName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '';
-if (row.teamId == teamId || row.teamInfoId == teamId || row.teamName === teamName || rowClean === cleanName) {
-found = row; break;
-}
-}
-if (!found) {
-showModal('ℹ️ ' + teamName, '<div style="color:#444;">未找到球队数据</div>');
-return;
-}
-var html = '';
-html += '<div class="info-item"><span class="label">名称</span>' + (found.teamName || '未知') + '</div>';
-if (found.teamIconUrl) {
-html += '<div class="info-item"><span class="label">队徽</span><img src="' + found.teamIconUrl + '" onerror="this.style.display=\'none\'"></div>';
-} else {
-html += '<div class="info-item"><span class="label">队徽</span>' + getTeamBadge(found.teamName, 48) + '</div>';
-}
-html += '<div class="info-item"><span class="label">场次</span>' + (found.matches || 0) + '</div>';
-html += '<div class="info-item"><span class="label">进球</span>' + (found.goals || 0) + '</div>';
-html += '<div class="info-item"><span class="label">失球</span>' + (found.opponentGoals || 0) + '</div>';
-html += '<div class="info-item"><span class="label">净胜球</span>' + (found.goalDiff > 0 ? '+' : '') + (found.goalDiff || 0) + '</div>';
-html += '<div class="info-item"><span class="label">积分</span>' + (found.points || 0) + '</div>';
-showModal('ℹ️ ' + found.teamName, html);
+
+// 缓存球队信息和阵容
+var teamInfoCache = {};
+var rosterCache = {};
+
+// 获取球队信息（五大联赛/欧战）
+async function fetchTeamInfo(leagueCode, teamId) {
+  var key = leagueCode + '_' + teamId;
+  if (teamInfoCache[key]) {
+    return teamInfoCache[key];
+  }
+  try {
+    // ESPN 球队信息 API
+    var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams/' + teamId;
+    var response = await fetch(url);
+    var data = await response.json();
+    teamInfoCache[key] = data;
+    return data;
+  } catch(e) {
+    console.warn('获取球队信息失败:', e);
+    return null;
+  }
 }
 
-var rosterCache = {};
-async function showRoster(league, teamId, teamName) {
-var lk = league;
-if (league === 'UCL') lk = 'UEFA.CHAMPIONS';
-else if (league === 'UEL') lk = 'UEFA.EUROPA';
-var key = 'roster_' + lk + '_' + teamId;
-if (rosterCache[key]) {
-renderRosterModal(rosterCache[key], teamName);
-return;
+// 获取球队阵容（五大联赛/欧战）
+async function fetchTeamRoster(leagueCode, teamId) {
+  var key = 'roster_' + leagueCode + '_' + teamId;
+  if (rosterCache[key]) {
+    return rosterCache[key];
+  }
+  try {
+    var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams/' + teamId + '/roster';
+    var response = await fetch(url);
+    var data = await response.json();
+    rosterCache[key] = data;
+    return data;
+  } catch(e) {
+    console.warn('获取阵容失败:', e);
+    return null;
+  }
 }
-try {
-var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + lk + '/teams/' + teamId + '/roster');
-var data = await r.json();
-rosterCache[key] = data;
-renderRosterModal(data, teamName);
-} catch(e) {
-showModal('阵容 ' + teamName, '<div style="color:#444;">暂无阵容数据</div>');
+
+// 显示球队信息弹窗（统一处理）
+async function showEspnTeamInfo(leagueCode, teamId, teamName) {
+  var data = await fetchTeamInfo(leagueCode, teamId);
+  if (!data || !data.team) {
+    showModal('ℹ️ ' + teamName, '<div style="color:#444;">暂无球队数据</div>');
+    return;
+  }
+  var team = data.team;
+  var html = '';
+  html += '<div class="info-item"><span class="label">名称</span>' + (team.displayName || teamName) + '</div>';
+  if (team.logo) {
+    html += '<div class="info-item"><span class="label">队徽</span><img src="' + team.logo + '" onerror="this.style.display=\'none\'" style="max-width:56px;max-height:56px;"></div>';
+  }
+  if (team.venue) {
+    html += '<div class="info-item"><span class="label">主场</span>' + (team.venue.fullName || team.venue.name || '未知') + '</div>';
+  }
+  if (team.record) {
+    var wins = team.record.items ? team.record.items.filter(function(r) { return r.type === 'win'; }).length : 0;
+    var losses = team.record.items ? team.record.items.filter(function(r) { return r.type === 'loss'; }).length : 0;
+    var ties = team.record.items ? team.record.items.filter(function(r) { return r.type === 'tie'; }).length : 0;
+    html += '<div class="info-item"><span class="label">战绩</span>胜 ' + wins + ' / 平 ' + ties + ' / 负 ' + losses + '</div>';
+  }
+  showModal('ℹ️ ' + (team.displayName || teamName), html);
 }
+
+// 显示球队阵容弹窗（统一处理）
+async function showEspnRoster(leagueCode, teamId, teamName) {
+  var data = await fetchTeamRoster(leagueCode, teamId);
+  if (!data || !data.athletes || data.athletes.length === 0) {
+    showModal('阵容 ' + teamName, '<div style="color:#444;">暂无阵容数据</div>');
+    return;
+  }
+  var html = '';
+  html += '<div style="color:#4caf50;font-weight:700;margin:8px 0 6px;">👤 球员名单 (' + data.athletes.length + '人)</div>';
+  data.athletes.forEach(function(a) {
+    var num = a.jersey || '?';
+    var pos = a.position ? a.position.abbreviation : '';
+    var name = a.displayName || a.fullName || '未知';
+    html += '<div class="player-item"><span class="num">#' + num + '</span>' + name + '<span class="pos">' + pos + '</span></div>';
+  });
+  showModal('阵容 ' + teamName, html);
 }
-function renderRosterModal(data, teamName) {
-if (!data || !data.athletes || data.athletes.length === 0) {
-showModal('阵容 ' + teamName, '<div style="color:#444;">暂无阵容数据</div>');
-return;
-}
-var html = '';
-html += '<div style="color:#4caf50;font-weight:700;margin:8px 0 6px;">👤 球员名单 (' + data.athletes.length + '人)</div>';
-data.athletes.forEach(function(a) {
-var num = a.jersey || '?';
-var pos = a.position ? a.position.abbreviation : '';
-var name = a.displayName || a.fullName || '未知';
-html += '<div class="player-item"><span class="num">#' + num + '</span>' + name + '<span class="pos">' + pos + '</span></div>';
-});
-showModal('阵容 ' + teamName, html);
+
+// 德甲/德乙 球队信息（原有）
+function showTeamInfo(teamId, teamName) {
+  var table = matchData.t || [];
+  if (!table || table.length === 0) {
+    showModal('ℹ️ ' + teamName, '<div style="color:#444;">积分榜数据未加载</div>');
+    return;
+  }
+  var found = null;
+  var cleanName = teamName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  for (var i = 0; i < table.length; i++) {
+    var row = table[i];
+    var rowClean = row.teamName ? row.teamName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '';
+    if (row.teamId == teamId || row.teamInfoId == teamId || row.teamName === teamName || rowClean === cleanName) {
+      found = row; break;
+    }
+  }
+  if (!found) {
+    showModal('ℹ️ ' + teamName, '<div style="color:#444;">未找到球队数据</div>');
+    return;
+  }
+  var html = '';
+  html += '<div class="info-item"><span class="label">名称</span>' + (found.teamName || '未知') + '</div>';
+  if (found.teamIconUrl) {
+    html += '<div class="info-item"><span class="label">队徽</span><img src="' + found.teamIconUrl + '" onerror="this.style.display=\'none\'"></div>';
+  } else {
+    html += '<div class="info-item"><span class="label">队徽</span>' + getTeamBadge(found.teamName, 48) + '</div>';
+  }
+  html += '<div class="info-item"><span class="label">场次</span>' + (found.matches || 0) + '</div>';
+  html += '<div class="info-item"><span class="label">进球</span>' + (found.goals || 0) + '</div>';
+  html += '<div class="info-item"><span class="label">失球</span>' + (found.opponentGoals || 0) + '</div>';
+  html += '<div class="info-item"><span class="label">净胜球</span>' + (found.goalDiff > 0 ? '+' : '') + (found.goalDiff || 0) + '</div>';
+  html += '<div class="info-item"><span class="label">积分</span>' + (found.points || 0) + '</div>';
+  showModal('ℹ️ ' + found.teamName, html);
 }
 
 // ================================================================
 // 直播刷新逻辑
 // ================================================================
 function hasLiveMatches() {
-var m = matchData.m || [];
-for (var i = 0; i < m.length; i++) {
-var match = m[i];
-if (['GER.1','ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].includes(currentLeague)) {
-if (match.status && match.status.type && match.status.type.state === 'in') return true;
-} else {
-if (!match.matchIsFinished && match.matchResults && match.matchResults.length > 0) return true;
-}
-}
-return false;
+  var m = matchData.m || [];
+  for (var i = 0; i < m.length; i++) {
+    var match = m[i];
+    if (['GER.1','ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].includes(currentLeague)) {
+      if (match.status && match.status.type && match.status.type.state === 'in') return true;
+    } else {
+      if (!match.matchIsFinished && match.matchResults && match.matchResults.length > 0) return true;
+    }
+  }
+  return false;
 }
 
 function updateLiveButton() {
-var btn = document.getElementById('autoRefreshBtn');
-var status = document.getElementById('autoStatus');
-var label = document.getElementById('autoLabel');
-var hasLive = hasLiveMatches();
+  var btn = document.getElementById('autoRefreshBtn');
+  var status = document.getElementById('autoStatus');
+  var label = document.getElementById('autoLabel');
+  var hasLive = hasLiveMatches();
 
-if (!hasLive && !autoRefreshEnabled) {
-btn.className = 'disabled';
-status.style.background = '#444';
-label.textContent = '⏸️ 无直播';
-document.getElementById('autoCountdown').textContent = '';
-} else if (!hasLive && autoRefreshEnabled) {
-toggleAutoRefresh();
-} else {
-btn.className = '';
-}
+  if (!hasLive && !autoRefreshEnabled) {
+    btn.className = 'disabled';
+    status.style.background = '#444';
+    label.textContent = '⏸️ 无直播';
+    document.getElementById('autoCountdown').textContent = '';
+  } else if (!hasLive && autoRefreshEnabled) {
+    toggleAutoRefresh();
+  } else {
+    btn.className = '';
+  }
 }
 
 // ================================================================
 // 数据获取与渲染
 // ================================================================
 async function refreshMatches() {
-document.getElementById('matchMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载比赛数据...</div>';
-try {
-var espnLeagues = ['GER.1', 'ENG.1', 'ESP.1', 'ITA.1', 'FRA.1', 'UCL', 'UEL'];
-if (espnLeagues.includes(currentLeague)) {
-var leagueCode = currentLeague;
-if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
-else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
-var r1 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
-var r2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/standings');
-matchData.m = (await r1.json()).events || [];
-matchData.t = (await r2.json()).children || [];
-console.log('积分榜原始数据:', matchData.t);
-renderEspnMatches();
-} else {
-var year = new Date().getFullYear();
-var r1 = await fetch('https://api.openligadb.de/getmatchdata/' + currentLeague);
-var r2 = await fetch('https://api.openligadb.de/getbltable/' + currentLeague + '/' + year);
-matchData.m = await r1.json();
-matchData.t = await r2.json();
-renderGermanMatches();
-}
-updateLiveButton();
-} catch(e) {
-document.getElementById('matchMain').innerHTML = '<div class="ld">❌ 错误: ' + e.message + '<br><button onclick="refreshMatches()" style="margin-top:14px;padding:10px 28px;background:linear-gradient(135deg,#4caf50,#2e7d32);border:none;border-radius:30px;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(76,175,80,0.15)">🔄 重试</button></div>';
-}
+  document.getElementById('matchMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载比赛数据...</div>';
+  try {
+    var espnLeagues = ['GER.1', 'ENG.1', 'ESP.1', 'ITA.1', 'FRA.1', 'UCL', 'UEL'];
+    if (espnLeagues.includes(currentLeague)) {
+      var leagueCode = currentLeague;
+      if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
+      else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
+      var r1 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
+      var r2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/standings');
+      matchData.m = (await r1.json()).events || [];
+      matchData.t = (await r2.json()).children || [];
+      renderEspnMatches();
+    } else {
+      var year = new Date().getFullYear();
+      var r1 = await fetch('https://api.openligadb.de/getmatchdata/' + currentLeague);
+      var r2 = await fetch('https://api.openligadb.de/getbltable/' + currentLeague + '/' + year);
+      matchData.m = await r1.json();
+      matchData.t = await r2.json();
+      renderGermanMatches();
+    }
+    updateLiveButton();
+  } catch(e) {
+    document.getElementById('matchMain').innerHTML = '<div class="ld">❌ 错误: ' + e.message + '<br><button onclick="refreshMatches()" style="margin-top:14px;padding:10px 28px;background:linear-gradient(135deg,#4caf50,#2e7d32);border:none;border-radius:30px;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(76,175,80,0.15)">🔄 重试</button></div>';
+  }
 }
 
 async function refreshLiveMatches() {
-try {
-var liveMatches = [];
-var allMatches = matchData.m || [];
-for (var i = 0; i < allMatches.length; i++) {
-var m = allMatches[i];
-var isLive = false;
-if (['GER.1','ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].includes(currentLeague)) {
-isLive = m.status && m.status.type && m.status.type.state === 'in';
-} else {
-isLive = !m.matchIsFinished && m.matchResults && m.matchResults.length > 0;
-}
-if (isLive) liveMatches.push(m);
-}
-if (liveMatches.length === 0) {
-if (autoRefreshEnabled) toggleAutoRefresh();
-updateLiveButton();
-return;
-}
-var espnLeagues = ['GER.1', 'ENG.1', 'ESP.1', 'ITA.1', 'FRA.1', 'UCL', 'UEL'];
-if (espnLeagues.includes(currentLeague)) {
-var leagueCode = currentLeague;
-if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
-else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
-var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
-var newData = (await r.json()).events || [];
-for (var i = 0; i < matchData.m.length; i++) {
-var oldMatch = matchData.m[i];
-var matchId = oldMatch.id;
-if (!matchId) continue;
-for (var j = 0; j < newData.length; j++) {
-if (newData[j].id === matchId) { matchData.m[i] = newData[j]; break; }
-}
-}
-} else {
-var year = new Date().getFullYear();
-var r = await fetch('https://api.openligadb.de/getmatchdata/' + currentLeague);
-var newData = await r.json();
-for (var i = 0; i < matchData.m.length; i++) {
-var oldMatch = matchData.m[i];
-var matchId = oldMatch.matchID;
-if (!matchId) continue;
-for (var j = 0; j < newData.length; j++) {
-if (newData[j].matchID === matchId) { matchData.m[i] = newData[j]; break; }
-}
-}
-}
-renderMatches();
-updateLiveButton();
-} catch(e) { console.warn('直播刷新失败:', e.message); }
+  try {
+    var liveMatches = [];
+    var allMatches = matchData.m || [];
+    for (var i = 0; i < allMatches.length; i++) {
+      var m = allMatches[i];
+      var isLive = false;
+      if (['GER.1','ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].includes(currentLeague)) {
+        isLive = m.status && m.status.type && m.status.type.state === 'in';
+      } else {
+        isLive = !m.matchIsFinished && m.matchResults && m.matchResults.length > 0;
+      }
+      if (isLive) liveMatches.push(m);
+    }
+    if (liveMatches.length === 0) {
+      if (autoRefreshEnabled) toggleAutoRefresh();
+      updateLiveButton();
+      return;
+    }
+    var espnLeagues = ['GER.1', 'ENG.1', 'ESP.1', 'ITA.1', 'FRA.1', 'UCL', 'UEL'];
+    if (espnLeagues.includes(currentLeague)) {
+      var leagueCode = currentLeague;
+      if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
+      else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
+      var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
+      var newData = (await r.json()).events || [];
+      for (var i = 0; i < matchData.m.length; i++) {
+        var oldMatch = matchData.m[i];
+        var matchId = oldMatch.id;
+        if (!matchId) continue;
+        for (var j = 0; j < newData.length; j++) {
+          if (newData[j].id === matchId) { matchData.m[i] = newData[j]; break; }
+        }
+      }
+    } else {
+      var year = new Date().getFullYear();
+      var r = await fetch('https://api.openligadb.de/getmatchdata/' + currentLeague);
+      var newData = await r.json();
+      for (var i = 0; i < matchData.m.length; i++) {
+        var oldMatch = matchData.m[i];
+        var matchId = oldMatch.matchID;
+        if (!matchId) continue;
+        for (var j = 0; j < newData.length; j++) {
+          if (newData[j].matchID === matchId) { matchData.m[i] = newData[j]; break; }
+        }
+      }
+    }
+    renderMatches();
+    updateLiveButton();
+  } catch(e) { console.warn('直播刷新失败:', e.message); }
 }
 
 var autoRefreshEnabled = false;
@@ -612,34 +662,34 @@ var countdownTimer = null;
 var countdownSeconds = 15;
 
 function toggleAutoRefresh() {
-if (!hasLiveMatches() && !autoRefreshEnabled) {
-return;
-}
-autoRefreshEnabled = !autoRefreshEnabled;
-var btn = document.getElementById('autoRefreshBtn');
-var status = document.getElementById('autoStatus');
-var label = document.getElementById('autoLabel');
-var countdown = document.getElementById('autoCountdown');
-if (autoRefreshEnabled) {
-btn.className = 'active';
-status.style.background = '#4caf50';
-status.className = 'pulse';
-label.textContent = '● 直播中';
-countdown.textContent = '15s';
-countdownSeconds = 15;
-refreshLiveMatches();
-autoRefreshTimer = setInterval(function() { refreshLiveMatches(); countdownSeconds = 15; updateCountdownDisplay(); }, 15000);
-countdownTimer = setInterval(function() { countdownSeconds--; if (countdownSeconds <= 0) countdownSeconds = 15; updateCountdownDisplay(); }, 1000);
-} else {
-btn.className = '';
-status.style.background = '#444';
-status.className = '';
-label.textContent = '⏸️ 直播';
-countdown.textContent = '';
-clearInterval(autoRefreshTimer); clearInterval(countdownTimer);
-autoRefreshTimer = null; countdownTimer = null;
-updateLiveButton();
-}
+  if (!hasLiveMatches() && !autoRefreshEnabled) {
+    return;
+  }
+  autoRefreshEnabled = !autoRefreshEnabled;
+  var btn = document.getElementById('autoRefreshBtn');
+  var status = document.getElementById('autoStatus');
+  var label = document.getElementById('autoLabel');
+  var countdown = document.getElementById('autoCountdown');
+  if (autoRefreshEnabled) {
+    btn.className = 'active';
+    status.style.background = '#4caf50';
+    status.className = 'pulse';
+    label.textContent = '● 直播中';
+    countdown.textContent = '15s';
+    countdownSeconds = 15;
+    refreshLiveMatches();
+    autoRefreshTimer = setInterval(function() { refreshLiveMatches(); countdownSeconds = 15; updateCountdownDisplay(); }, 15000);
+    countdownTimer = setInterval(function() { countdownSeconds--; if (countdownSeconds <= 0) countdownSeconds = 15; updateCountdownDisplay(); }, 1000);
+  } else {
+    btn.className = '';
+    status.style.background = '#444';
+    status.className = '';
+    label.textContent = '⏸️ 直播';
+    countdown.textContent = '';
+    clearInterval(autoRefreshTimer); clearInterval(countdownTimer);
+    autoRefreshTimer = null; countdownTimer = null;
+    updateLiveButton();
+  }
 }
 function updateCountdownDisplay() { var el = document.getElementById('autoCountdown'); if (el) el.textContent = countdownSeconds + 's'; }
 
@@ -647,97 +697,100 @@ function updateCountdownDisplay() { var el = document.getElementById('autoCountd
 // 渲染函数
 // ================================================================
 function renderMatches() {
-var s = document.getElementById('searchInput').value.toLowerCase();
-var m = matchData.m || [];
-if (s) {
-if (['GER.1','ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].includes(currentLeague)) {
-m = m.filter(function(x) {
-var c = x.competitions ? x.competitions[0] : null;
-if (!c || !c.competitors || c.competitors.length < 2) return false;
-return c.competitors[0].team.displayName.toLowerCase().indexOf(s) !== -1 ||
-c.competitors[1].team.displayName.toLowerCase().indexOf(s) !== -1;
-});
-} else {
-m = m.filter(function(x) {
-return (x.team1 && x.team1.teamName || '').toLowerCase().indexOf(s) !== -1 ||
-(x.team2 && x.team2.teamName || '').toLowerCase().indexOf(s) !== -1;
-});
-}
-}
-if (['GER.1','ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].includes(currentLeague)) {
-renderEspnMatches();
-} else {
-renderGermanMatches();
-}
-updateLiveButton();
-}
-
-function renderGermanMatches() {
-var s = document.getElementById('searchInput').value.toLowerCase();
-var m = matchData.m || [], t = matchData.t || [];
-if (s) {
-m = m.filter(function(x) {
-return (x.team1 && x.team1.teamName || '').toLowerCase().indexOf(s) !== -1 ||
-(x.team2 && x.team2.teamName || '').toLowerCase().indexOf(s) !== -1;
-});
-}
-var h = '';
-if (t && t.length) {
-h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
-for (var i = 0; i < t.length; i++) {
-var r = t[i];
-var icon = '';
-if (r.teamIconUrl) { icon = '<img src="' + r.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">'; }
-if (!icon && r.teamName) icon = '<span class="badge-sm">' + r.teamName.charAt(0).toUpperCase() + '</span>';
-var rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
-var gdClass = r.goalDiff > 0 ? 'gd-positive' : r.goalDiff < 0 ? 'gd-negative' : 'gd-zero';
-h += '<tr><td><span class="rank ' + rankClass + '">' + (i + 1) + '</span></td><td><div class="team-cell">' + icon + '<span>' + r.teamName + '</span></div></td><td class="stat">' + r.matches + '</td><td class="stat">' + r.won + '</td><td class="stat">' + r.draw + '</td><td class="stat">' + r.lost + '</td><td class="stat">' + r.goals + '</td><td class="stat">' + r.opponentGoals + '</td><td class="' + gdClass + '">' + (r.goalDiff > 0 ? '+' : '') + r.goalDiff + '</td><td class="points">' + r.points + '</td></tr>';
-}
-h += '</table></div></div></details>';
-}
-var live = m.filter(function(x) { return !x.matchIsFinished && x.matchResults && x.matchResults.length > 0; });
-var done = m.filter(function(x) { return x.matchIsFinished; });
-var up = m.filter(function(x) { return !x.matchIsFinished && (!x.matchResults || x.matchResults.length === 0); });
-if (live.length) h += '<div class="section-title"><span class="dot" style="background:#ff5252;animation:blink 1.2s infinite;"></span> 直播中</div><div class="grid">' + live.map(function(x) { return cardGerman(x, 'live'); }).join('') + '</div>';
-if (up.length) h += '<div class="section-title"><span class="dot" style="background:#4caf50;"></span> 即将开始</div><div class="grid">' + up.slice(0, 12).map(function(x) { return cardGerman(x, 'upcoming'); }).join('') + '</div>';
-if (done.length) h += '<div class="section-title"><span class="dot" style="background:#333;"></span> 已结束</div><div class="grid">' + done.slice(-12).map(function(x) { return cardGerman(x, 'finished'); }).join('') + '</div>';
-document.getElementById('matchMain').innerHTML = h || '<div class="ld">暂无数据</div>';
-}
-
-function cardGerman(m, status) {
-var ft = fmt(m.matchDateTime, offsetG);
-var ds = ft.date, ts = ft.time;
-var live = status === 'live';
-var done = status === 'finished';
-var sc = 'VS', cl = '';
-var name1 = m.team1 ? m.team1.teamName : '?';
-var name2 = m.team2 ? m.team2.teamName : '?';
-var teamId1 = m.team1 ? m.team1.teamId : null;
-var teamId2 = m.team2 ? m.team2.teamId : null;
-var icon1 = '', icon2 = '';
-if (m.team1 && m.team1.teamIconUrl) icon1 = '<img src="' + m.team1.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">';
-if (!icon1 && name1 !== '?') icon1 = getTeamBadge(name1, 24);
-if (m.team2 && m.team2.teamIconUrl) icon2 = '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">';
-if (!icon2 && name2 !== '?') icon2 = getTeamBadge(name2, 24);
-var display1 = icon1 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' <span class="info-icon">ℹ️</span></span>';
-var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' <span class="info-icon">ℹ️</span></span>';
-if (done || live) {
-var r = m.matchResults.find(function(x) { return x.resultName === 'Endergebnis'; }) || m.matchResults[0];
-var hs = r ? r.pointsTeam1 || 0 : 0, as = r ? r.pointsTeam2 || 0 : 0;
-sc = hs + '-' + as;
-if (done) {
-if (hs > as) { display1 = icon1 + ' <span class="team-link" style="color:#4caf50;font-weight:700;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ✔ <span class="info-icon">ℹ️</span></span>'; display2 = icon2 + ' <span style="color:#555;">' + name2 + '</span>'; cl = 'score-finished'; }
-else if (hs < as) { display1 = icon1 + ' <span style="color:#555;">' + name1 + '</span>'; display2 = icon2 + ' <span class="team-link" style="color:#4caf50;font-weight:700;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ✔ <span class="info-icon">ℹ️</span></span>'; cl = 'score-finished'; }
-else { display1 = icon1 + ' <span class="team-link" style="color:#ffd740;font-weight:700;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' <span class="info-icon">ℹ️</span></span>'; display2 = icon2 + ' <span class="team-link" style="color:#ffd740;font-weight:700;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' <span class="info-icon">ℹ️</span></span>'; cl = 'score-finished'; }
-} else { cl = 'score-live'; }
-}
-var statusTag = live ? '<span class="status-tag live">● 直播中</span>' : done ? '<span class="status-tag finished">✓ 已结束</span>' : '<span class="status-tag upcoming">⏰ 即将开始</span>';
-var botText = live ? '● 直播中' : done ? '✓ 已结束' : '';
-return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</span>' + statusTag + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid ' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
+  var s = document.getElementById('searchInput').value.toLowerCase();
+  var m = matchData.m || [];
+  if (s) {
+    if (['GER.1','ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].includes(currentLeague)) {
+      m = m.filter(function(x) {
+        var c = x.competitions ? x.competitions[0] : null;
+        if (!c || !c.competitors || c.competitors.length < 2) return false;
+        return c.competitors[0].team.displayName.toLowerCase().indexOf(s) !== -1 ||
+               c.competitors[1].team.displayName.toLowerCase().indexOf(s) !== -1;
+      });
+    } else {
+      m = m.filter(function(x) {
+        return (x.team1 && x.team1.teamName || '').toLowerCase().indexOf(s) !== -1 ||
+               (x.team2 && x.team2.teamName || '').toLowerCase().indexOf(s) !== -1;
+      });
+    }
+  }
+  if (['GER.1','ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].includes(currentLeague)) {
+    renderEspnMatches();
+  } else {
+    renderGermanMatches();
+  }
+  updateLiveButton();
 }
 
 // ================================================================
-// ESPN 积分榜修复 - 重写并添加调试
+// 德甲/德乙 渲染（原有）
+// ================================================================
+function renderGermanMatches() {
+  var s = document.getElementById('searchInput').value.toLowerCase();
+  var m = matchData.m || [], t = matchData.t || [];
+  if (s) {
+    m = m.filter(function(x) {
+      return (x.team1 && x.team1.teamName || '').toLowerCase().indexOf(s) !== -1 ||
+             (x.team2 && x.team2.teamName || '').toLowerCase().indexOf(s) !== -1;
+    });
+  }
+  var h = '';
+  if (t && t.length) {
+    h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
+    for (var i = 0; i < t.length; i++) {
+      var r = t[i];
+      var icon = '';
+      if (r.teamIconUrl) { icon = '<img src="' + r.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">'; }
+      if (!icon && r.teamName) icon = '<span class="badge-sm">' + r.teamName.charAt(0).toUpperCase() + '</span>';
+      var rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
+      var gdClass = r.goalDiff > 0 ? 'gd-positive' : r.goalDiff < 0 ? 'gd-negative' : 'gd-zero';
+      h += '<tr><td><span class="rank ' + rankClass + '">' + (i + 1) + '</span></td><td><div class="team-cell">' + icon + '<span>' + r.teamName + '</span></div></td><td class="stat">' + r.matches + '</td><td class="stat">' + r.won + '</td><td class="stat">' + r.draw + '</td><td class="stat">' + r.lost + '</td><td class="stat">' + r.goals + '</td><td class="stat">' + r.opponentGoals + '</td><td class="' + gdClass + '">' + (r.goalDiff > 0 ? '+' : '') + r.goalDiff + '</td><td class="points">' + r.points + '</td></tr>';
+    }
+    h += '</table></div></div></details>';
+  }
+  var live = m.filter(function(x) { return !x.matchIsFinished && x.matchResults && x.matchResults.length > 0; });
+  var done = m.filter(function(x) { return x.matchIsFinished; });
+  var up = m.filter(function(x) { return !x.matchIsFinished && (!x.matchResults || x.matchResults.length === 0); });
+  if (live.length) h += '<div class="section-title"><span class="dot" style="background:#ff5252;animation:blink 1.2s infinite;"></span> 直播中</div><div class="grid">' + live.map(function(x) { return cardGerman(x, 'live'); }).join('') + '</div>';
+  if (up.length) h += '<div class="section-title"><span class="dot" style="background:#4caf50;"></span> 即将开始</div><div class="grid">' + up.slice(0, 12).map(function(x) { return cardGerman(x, 'upcoming'); }).join('') + '</div>';
+  if (done.length) h += '<div class="section-title"><span class="dot" style="background:#333;"></span> 已结束</div><div class="grid">' + done.slice(-12).map(function(x) { return cardGerman(x, 'finished'); }).join('') + '</div>';
+  document.getElementById('matchMain').innerHTML = h || '<div class="ld">暂无数据</div>';
+}
+
+function cardGerman(m, status) {
+  var ft = fmt(m.matchDateTime, offsetG);
+  var ds = ft.date, ts = ft.time;
+  var live = status === 'live';
+  var done = status === 'finished';
+  var sc = 'VS', cl = '';
+  var name1 = m.team1 ? m.team1.teamName : '?';
+  var name2 = m.team2 ? m.team2.teamName : '?';
+  var teamId1 = m.team1 ? m.team1.teamId : null;
+  var teamId2 = m.team2 ? m.team2.teamId : null;
+  var icon1 = '', icon2 = '';
+  if (m.team1 && m.team1.teamIconUrl) icon1 = '<img src="' + m.team1.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">';
+  if (!icon1 && name1 !== '?') icon1 = getTeamBadge(name1, 24);
+  if (m.team2 && m.team2.teamIconUrl) icon2 = '<img src="' + m.team2.teamIconUrl + '" loading="lazy" onerror="this.style.display=\'none\'">';
+  if (!icon2 && name2 !== '?') icon2 = getTeamBadge(name2, 24);
+  var display1 = icon1 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' <span class="info-icon">ℹ️</span></span>';
+  var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' <span class="info-icon">ℹ️</span></span>';
+  if (done || live) {
+    var r = m.matchResults.find(function(x) { return x.resultName === 'Endergebnis'; }) || m.matchResults[0];
+    var hs = r ? r.pointsTeam1 || 0 : 0, as = r ? r.pointsTeam2 || 0 : 0;
+    sc = hs + '-' + as;
+    if (done) {
+      if (hs > as) { display1 = icon1 + ' <span class="team-link" style="color:#4caf50;font-weight:700;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ✔ <span class="info-icon">ℹ️</span></span>'; display2 = icon2 + ' <span style="color:#555;">' + name2 + '</span>'; cl = 'score-finished'; }
+      else if (hs < as) { display1 = icon1 + ' <span style="color:#555;">' + name1 + '</span>'; display2 = icon2 + ' <span class="team-link" style="color:#4caf50;font-weight:700;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ✔ <span class="info-icon">ℹ️</span></span>'; cl = 'score-finished'; }
+      else { display1 = icon1 + ' <span class="team-link" style="color:#ffd740;font-weight:700;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' <span class="info-icon">ℹ️</span></span>'; display2 = icon2 + ' <span class="team-link" style="color:#ffd740;font-weight:700;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' <span class="info-icon">ℹ️</span></span>'; cl = 'score-finished'; }
+    } else { cl = 'score-live'; }
+  }
+  var statusTag = live ? '<span class="status-tag live">● 直播中</span>' : done ? '<span class="status-tag finished">✓ 已结束</span>' : '<span class="status-tag upcoming">⏰ 即将开始</span>';
+  var botText = live ? '● 直播中' : done ? '✓ 已结束' : '';
+  return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + m.group.groupName : '') + '</span>' + statusTag + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid ' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + '</div></div>';
+}
+
+// ================================================================
+// ESPN 五大联赛/欧战 渲染 - 完整版（积分榜+球队信息+阵容）
 // ================================================================
 function renderEspnMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -754,68 +807,33 @@ function renderEspnMatches() {
   
   var h = '';
   
-  // ===== 修复：正确解析 ESPN 积分榜 =====
+  // ===== 积分榜 =====
   if (t && t.length > 0) {
     h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap"><div class="table-scroll">';
     
-    // 遍历每个 group（联赛分组）
     for (var gi = 0; gi < t.length; gi++) {
       var group = t[gi];
-      
-      // 获取分组名称
       var groupName = group.name || group.groupName || '积分榜';
-      h += '<div class="group-title">' + groupName + '</div>';
       
-      // 尝试多种路径获取 entries
+      // 获取 entries
       var entries = [];
-      
-      // 路径1: group.standings.entries
       if (group.standings && group.standings.entries) {
         entries = group.standings.entries;
-      }
-      // 路径2: group.entries
-      else if (group.entries) {
+      } else if (group.entries) {
         entries = group.entries;
-      }
-      // 路径3: 更深层嵌套 (欧冠/欧联有时是 data.children 结构)
-      else if (group.data && group.data.children && group.data.children.length > 0) {
-        for (var ci = 0; ci < group.data.children.length; ci++) {
-          var child = group.data.children[ci];
-          if (child.standings && child.standings.entries) {
-            entries = child.standings.entries;
-            groupName = child.name || groupName;
-            break;
-          }
-          if (child.entries) {
-            entries = child.entries;
-            groupName = child.name || groupName;
-            break;
-          }
-        }
-      }
-      // 路径4: 直接是 standings 数组
-      else if (group.standings) {
+      } else if (group.standings && Array.isArray(group.standings)) {
         entries = group.standings;
       }
       
-      // 如果 entries 是对象而不是数组，尝试提取
-      if (entries && typeof entries === 'object' && !Array.isArray(entries)) {
-        if (entries.entries) entries = entries.entries;
-        else entries = [];
-      }
+      if (!entries || entries.length === 0) continue;
       
-      if (!entries || entries.length === 0) {
-        h += '<div style="color:#444;padding:8px 0;">暂无积分数据 (调试: group结构=' + Object.keys(group).join(',') + ')</div>';
-        continue;
-      }
-      
+      h += '<div class="group-title">' + groupName + '</div>';
       h += '<table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
       
       for (var i = 0; i < entries.length; i++) {
         var e = entries[i];
         var stats = e.stats || [];
         
-        // 提取各项数据
         var played = stats[0] ? (stats[0].displayValue || stats[0].value || '0') : '0';
         var won = stats[1] ? (stats[1].displayValue || stats[1].value || '0') : '0';
         var drawn = stats[2] ? (stats[2].displayValue || stats[2].value || '0') : '0';
@@ -825,19 +843,23 @@ function renderEspnMatches() {
         var points = stats[6] ? (stats[6].displayValue || stats[6].value || '0') : '0';
         var goalDiff = stats[7] ? (stats[7].displayValue || stats[7].value || '0') : '0';
         
-        // 如果 points 是字符串且带 '+' 号，去除
         if (typeof points === 'string') points = points.replace(/\+/g, '');
         if (typeof goalDiff === 'string') goalDiff = goalDiff.replace(/\+/g, '');
         var gdNum = parseInt(goalDiff) || 0;
         
         var teamName = e.team ? (e.team.displayName || e.team.shortDisplayName || '未知') : '未知';
+        var teamId = e.team ? e.team.id : null;
         
-        // 排名样式
         var rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
         var gdClass = gdNum > 0 ? 'gd-positive' : gdNum < 0 ? 'gd-negative' : 'gd-zero';
         
+        // 获取联赛代码（用于球队信息和阵容）
+        var leagueCode = currentLeague;
+        if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
+        else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
+        
         h += '<tr><td><span class="rank ' + rankClass + '">' + (i + 1) + '</span></td>';
-        h += '<td><div class="team-cell"><span>' + teamName + '</span></div></td>';
+        h += '<td><div class="team-cell"><span style="cursor:pointer;border-bottom:2px solid transparent;transition:all 0.25s ease;" onclick="showEspnTeamInfo(\'' + leagueCode + '\',\'' + teamId + '\',\'' + teamName + '\')" onmouseover="this.style.borderBottomColor=\'#4caf50\';this.style.color=\'#a5d6a7\'" onmouseout="this.style.borderBottomColor=\'transparent\';this.style.color=\'#eee\'">' + teamName + ' <span style="font-size:10px;opacity:0.4;">ℹ️</span></span></div></td>';
         h += '<td class="stat">' + played + '</td>';
         h += '<td class="stat">' + won + '</td>';
         h += '<td class="stat">' + drawn + '</td>';
@@ -850,12 +872,9 @@ function renderEspnMatches() {
       h += '</table>';
     }
     h += '</div></div></details>';
-  } else {
-    // 没有积分榜数据时显示提示
-    h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap" style="padding:16px;color:#444;">暂无积分榜数据</div></details>';
   }
   
-  // 比赛分组
+  // ===== 比赛卡片 =====
   var live = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'in'; });
   var done = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'post'; });
   var up = m.filter(function(x) { return x.status && x.status.type && x.status.type.state === 'pre'; });
@@ -886,33 +905,40 @@ function cardEspn(m, status) {
   var logo1 = hh.team.logo ? '<img src="' + hh.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
   var logo2 = aa.team.logo ? '<img src="' + aa.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
   var isEuro = (currentLeague === 'UCL' || currentLeague === 'UEL');
-  var leagueType = currentLeague === 'UCL' ? 'UCL' : (currentLeague === 'UEL' ? 'UEL' : '');
-  var display1 = logo1 + ' <span style="font-weight:600;">' + name1 + '</span>';
-  var display2 = logo2 + ' <span style="font-weight:600;">' + name2 + '</span>';
+  var leagueCode = currentLeague;
+  if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
+  else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
+  
+  // 球队名称（带球队信息和阵容按钮）
+  var display1 = logo1 + ' <span style="cursor:pointer;border-bottom:2px solid transparent;transition:all 0.25s ease;font-weight:600;" onclick="showEspnTeamInfo(\'' + leagueCode + '\',\'' + teamId1 + '\',\'' + name1 + '\')" onmouseover="this.style.borderBottomColor=\'#4caf50\';this.style.color=\'#a5d6a7\'" onmouseout="this.style.borderBottomColor=\'transparent\';this.style.color=\'#eee\'">' + name1 + ' ℹ️</span>';
+  var display2 = logo2 + ' <span style="cursor:pointer;border-bottom:2px solid transparent;transition:all 0.25s ease;font-weight:600;" onclick="showEspnTeamInfo(\'' + leagueCode + '\',\'' + teamId2 + '\',\'' + name2 + '\')" onmouseover="this.style.borderBottomColor=\'#4caf50\';this.style.color=\'#a5d6a7\'" onmouseout="this.style.borderBottomColor=\'transparent\';this.style.color=\'#eee\'">' + name2 + ' ℹ️</span>';
+  
   var cl = done ? 'score-finished' : (live ? 'score-live' : '');
   if (done) {
-    if (hScore > aScore) { display1 = logo1 + ' <span style="color:#4caf50;font-weight:700;">' + name1 + ' ✔</span>'; display2 = logo2 + ' <span style="color:#555;">' + name2 + '</span>'; }
-    else if (hScore < aScore) { display1 = logo1 + ' <span style="color:#555;">' + name1 + '</span>'; display2 = logo2 + ' <span style="color:#4caf50;font-weight:700;">' + name2 + ' ✔</span>'; }
-    else { display1 = logo1 + ' <span style="color:#ffd740;font-weight:700;">' + name1 + '</span>'; display2 = logo2 + ' <span style="color:#ffd740;font-weight:700;">' + name2 + '</span>'; }
+    if (hScore > aScore) { display1 = logo1 + ' <span style="cursor:pointer;color:#4caf50;font-weight:700;" onclick="showEspnTeamInfo(\'' + leagueCode + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ✔ ℹ️</span>'; display2 = logo2 + ' <span style="color:#555;">' + name2 + '</span>'; }
+    else if (hScore < aScore) { display1 = logo1 + ' <span style="color:#555;">' + name1 + '</span>'; display2 = logo2 + ' <span style="cursor:pointer;color:#4caf50;font-weight:700;" onclick="showEspnTeamInfo(\'' + leagueCode + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ✔ ℹ️</span>'; }
+    else { display1 = logo1 + ' <span style="cursor:pointer;color:#ffd740;font-weight:700;" onclick="showEspnTeamInfo(\'' + leagueCode + '\',\'' + teamId1 + '\',\'' + name1 + '\')">' + name1 + ' ℹ️</span>'; display2 = logo2 + ' <span style="cursor:pointer;color:#ffd740;font-weight:700;" onclick="showEspnTeamInfo(\'' + leagueCode + '\',\'' + teamId2 + '\',\'' + name2 + '\')">' + name2 + ' ℹ️</span>'; }
   }
+  
   var isPenalty = false;
   if (m.status && m.status.type && m.status.type.detail) {
     if (m.status.type.detail.toLowerCase().indexOf('penalty') !== -1) isPenalty = true;
   }
+  
   var statusTag = live ? '<span class="status-tag live">● 直播中</span>' : done ? '<span class="status-tag finished">✓ 已结束</span>' : '<span class="status-tag upcoming">⏰ 即将开始</span>';
   var botText = live ? '● 直播中' : done ? '✓ 已结束' : '';
   if (done && isPenalty) botText += ' ⚽点球';
-  var rosterBtns = '';
-  if (isEuro) {
-    rosterBtns = '<button onclick="showRoster(\'' + leagueType + '\',\'' + teamId1 + '\',\'' + name1 + '\')">📋 ' + name1 + '</button><button onclick="showRoster(\'' + leagueType + '\',\'' + teamId2 + '\',\'' + name2 + '\')">📋 ' + name2 + '</button>';
-  }
+  
+  // 阵容按钮（所有联赛都显示）
+  var rosterBtns = '<button onclick="showEspnRoster(\'' + leagueCode + '\',\'' + teamId1 + '\',\'' + name1 + '\')">📋 ' + name1 + '</button><button onclick="showEspnRoster(\'' + leagueCode + '\',\'' + teamId2 + '\',\'' + name2 + '\')">📋 ' + name2 + '</button>';
+  
   return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + '</span>' + statusTag + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid ' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + ' ' + rosterBtns + '</div></div>';
 }
 
 function filterMatches() { renderMatches(); }
 
 // ================================================================
-// 足球新闻模块
+// 足球新闻模块（完整保留，内容太多省略，保持原有功能）
 // ================================================================
 var allRumors = [];
 var rumorTab = 'all';
