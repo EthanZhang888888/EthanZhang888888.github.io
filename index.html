@@ -538,6 +538,7 @@ var r1 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + l
 var r2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/standings');
 matchData.m = (await r1.json()).events || [];
 matchData.t = (await r2.json()).children || [];
+console.log('积分榜原始数据:', matchData.t);
 renderEspnMatches();
 } else {
 var year = new Date().getFullYear();
@@ -736,7 +737,7 @@ return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + (m.group &&
 }
 
 // ================================================================
-// ESPN 积分榜修复 - 完整重写
+// ESPN 积分榜修复 - 重写并添加调试
 // ================================================================
 function renderEspnMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -765,16 +766,46 @@ function renderEspnMatches() {
       var groupName = group.name || group.groupName || '积分榜';
       h += '<div class="group-title">' + groupName + '</div>';
       
-      // 获取 entries（球队列表）
+      // 尝试多种路径获取 entries
       var entries = [];
+      
+      // 路径1: group.standings.entries
       if (group.standings && group.standings.entries) {
         entries = group.standings.entries;
-      } else if (group.entries) {
+      }
+      // 路径2: group.entries
+      else if (group.entries) {
         entries = group.entries;
+      }
+      // 路径3: 更深层嵌套 (欧冠/欧联有时是 data.children 结构)
+      else if (group.data && group.data.children && group.data.children.length > 0) {
+        for (var ci = 0; ci < group.data.children.length; ci++) {
+          var child = group.data.children[ci];
+          if (child.standings && child.standings.entries) {
+            entries = child.standings.entries;
+            groupName = child.name || groupName;
+            break;
+          }
+          if (child.entries) {
+            entries = child.entries;
+            groupName = child.name || groupName;
+            break;
+          }
+        }
+      }
+      // 路径4: 直接是 standings 数组
+      else if (group.standings) {
+        entries = group.standings;
+      }
+      
+      // 如果 entries 是对象而不是数组，尝试提取
+      if (entries && typeof entries === 'object' && !Array.isArray(entries)) {
+        if (entries.entries) entries = entries.entries;
+        else entries = [];
       }
       
       if (!entries || entries.length === 0) {
-        h += '<div style="color:#444;padding:8px 0;">暂无积分数据</div>';
+        h += '<div style="color:#444;padding:8px 0;">暂无积分数据 (调试: group结构=' + Object.keys(group).join(',') + ')</div>';
         continue;
       }
       
@@ -784,8 +815,7 @@ function renderEspnMatches() {
         var e = entries[i];
         var stats = e.stats || [];
         
-        // 提取各项数据 - ESPN 返回的 stats 是数组
-        // 索引: 0=比赛, 1=胜, 2=平, 3=负, 4=进球, 5=失球, 6=积分, 7=净胜球
+        // 提取各项数据
         var played = stats[0] ? (stats[0].displayValue || stats[0].value || '0') : '0';
         var won = stats[1] ? (stats[1].displayValue || stats[1].value || '0') : '0';
         var drawn = stats[2] ? (stats[2].displayValue || stats[2].value || '0') : '0';
@@ -820,6 +850,9 @@ function renderEspnMatches() {
       h += '</table>';
     }
     h += '</div></div></details>';
+  } else {
+    // 没有积分榜数据时显示提示
+    h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap" style="padding:16px;color:#444;">暂无积分榜数据</div></details>';
   }
   
   // 比赛分组
@@ -1137,5 +1170,6 @@ document.addEventListener('DOMContentLoaded', function() {
 refreshMatches();
 });
 </script>
+
 </body>
 </html>
