@@ -14,7 +14,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Ar
 body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 20% 50%,rgba(46,125,50,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(76,175,80,0.05) 0%,transparent 40%),radial-gradient(ellipse at 50% 80%,rgba(27,94,32,0.06) 0%,transparent 50%);z-index:0;pointer-events:none}
 body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
 
-/* ===== 主足球背景 ===== */
 .football-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;opacity:0.35}
 .football-bg .main-ball{position:absolute;width:750px;height:750px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#888,#222);top:50%;left:50%;margin-left:-375px;margin-top:-375px;animation:drift 25s ease-in-out infinite,spin 40s linear infinite,breath 6s ease-in-out infinite;box-shadow:inset -40px -40px 100px rgba(0,0,0,0.9),inset 40px 40px 100px rgba(255,255,255,0.12),0 0 150px rgba(0,0,0,0.5)}
 .football-bg .main-ball::before{content:'';position:absolute;top:-2%;left:-2%;width:104%;height:104%;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,0.08),transparent 60%)}
@@ -240,7 +239,6 @@ h1{font-size:1.3em}
 </head>
 <body>
 
-<!-- ===== 主足球背景 ===== -->
 <div class="football-bg">
   <div class="main-ball">
     <div class="pattern">
@@ -265,7 +263,6 @@ h1{font-size:1.3em}
 <a href="#" onclick="switchPage('transfer')" id="navTransfer">📰 足球新闻</a>
 </div>
 
-<!-- ===== PAGE 1: MATCH DATA ===== -->
 <div class="page active" id="pageMatch">
 <div class="league-nav" id="leagueNav">
   <button class="on" onclick="setLeague('GER.1')"><span class="icon">🇩🇪</span> 德甲</button>
@@ -310,7 +307,6 @@ h1{font-size:1.3em}
 <div id="matchMain"><div class="ld"><div class="spinner"></div><br>加载比赛数据...</div></div>
 </div>
 
-<!-- ===== PAGE 2: FOOTBALL NEWS ===== -->
 <div class="page" id="pageTransfer">
 <div class="league-nav" id="rumorNav">
 <button class="on" onclick="switchRumorTab('all')">🌍 全部</button>
@@ -418,51 +414,132 @@ return { date: month + '/' + day, time: hours + ':' + minutes };
 }
 
 // ================================================================
-// 球队信息与阵容 - 统一处理五大联赛 + 欧冠/欧联
+// 通用积分榜解析函数 - 尝试所有可能的数据路径
 // ================================================================
+function extractStandings(data) {
+  var results = [];
+  
+  // 如果数据为空
+  if (!data) return results;
+  
+  // 如果是数组
+  if (Array.isArray(data)) {
+    for (var i = 0; i < data.length; i++) {
+      var item = data[i];
+      var extracted = extractStandings(item);
+      if (extracted && extracted.length > 0) {
+        results = results.concat(extracted);
+      }
+    }
+    return results;
+  }
+  
+  // 如果是对象
+  if (typeof data === 'object') {
+    // 路径1: 直接的 standings 对象
+    if (data.standings && data.standings.entries && Array.isArray(data.standings.entries)) {
+      results.push({
+        name: data.name || data.groupName || '积分榜',
+        entries: data.standings.entries
+      });
+      return results;
+    }
+    
+    // 路径2: 直接的 entries
+    if (data.entries && Array.isArray(data.entries)) {
+      results.push({
+        name: data.name || data.groupName || '积分榜',
+        entries: data.entries
+      });
+      return results;
+    }
+    
+    // 路径3: standings 是数组
+    if (data.standings && Array.isArray(data.standings)) {
+      results.push({
+        name: data.name || data.groupName || '积分榜',
+        entries: data.standings
+      });
+      return results;
+    }
+    
+    // 路径4: 嵌套在 children 中
+    if (data.children && Array.isArray(data.children)) {
+      for (var j = 0; j < data.children.length; j++) {
+        var child = data.children[j];
+        var extracted = extractStandings(child);
+        if (extracted && extracted.length > 0) {
+          results = results.concat(extracted);
+        }
+      }
+      return results;
+    }
+    
+    // 路径5: 嵌套在 data 中
+    if (data.data && data.data.children) {
+      for (var k = 0; k < data.data.children.length; k++) {
+        var child2 = data.data.children[k];
+        var extracted2 = extractStandings(child2);
+        if (extracted2 && extracted2.length > 0) {
+          results = results.concat(extracted2);
+        }
+      }
+      return results;
+    }
+    
+    // 路径6: 检查是否每个元素都有 team 属性（可能是 entries 数组）
+    if (data.team) {
+      // 单个条目，包装成数组
+      results.push({
+        name: '积分榜',
+        entries: [data]
+      });
+      return results;
+    }
+    
+    // 路径7: 检查是否有 stats 数组（可能是 entry）
+    if (data.stats && Array.isArray(data.stats)) {
+      results.push({
+        name: '积分榜',
+        entries: [data]
+      });
+      return results;
+    }
+  }
+  
+  return results;
+}
 
-// 缓存球队信息和阵容
+// ================================================================
+// 球队信息与阵容 - 五大联赛/欧战
+// ================================================================
 var teamInfoCache = {};
 var rosterCache = {};
 
-// 获取球队信息（五大联赛/欧战）
 async function fetchTeamInfo(leagueCode, teamId) {
   var key = leagueCode + '_' + teamId;
-  if (teamInfoCache[key]) {
-    return teamInfoCache[key];
-  }
+  if (teamInfoCache[key]) return teamInfoCache[key];
   try {
-    // ESPN 球队信息 API
     var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams/' + teamId;
     var response = await fetch(url);
     var data = await response.json();
     teamInfoCache[key] = data;
     return data;
-  } catch(e) {
-    console.warn('获取球队信息失败:', e);
-    return null;
-  }
+  } catch(e) { return null; }
 }
 
-// 获取球队阵容（五大联赛/欧战）
 async function fetchTeamRoster(leagueCode, teamId) {
   var key = 'roster_' + leagueCode + '_' + teamId;
-  if (rosterCache[key]) {
-    return rosterCache[key];
-  }
+  if (rosterCache[key]) return rosterCache[key];
   try {
     var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams/' + teamId + '/roster';
     var response = await fetch(url);
     var data = await response.json();
     rosterCache[key] = data;
     return data;
-  } catch(e) {
-    console.warn('获取阵容失败:', e);
-    return null;
-  }
+  } catch(e) { return null; }
 }
 
-// 显示球队信息弹窗（统一处理）
 async function showEspnTeamInfo(leagueCode, teamId, teamName) {
   var data = await fetchTeamInfo(leagueCode, teamId);
   if (!data || !data.team) {
@@ -478,16 +555,9 @@ async function showEspnTeamInfo(leagueCode, teamId, teamName) {
   if (team.venue) {
     html += '<div class="info-item"><span class="label">主场</span>' + (team.venue.fullName || team.venue.name || '未知') + '</div>';
   }
-  if (team.record) {
-    var wins = team.record.items ? team.record.items.filter(function(r) { return r.type === 'win'; }).length : 0;
-    var losses = team.record.items ? team.record.items.filter(function(r) { return r.type === 'loss'; }).length : 0;
-    var ties = team.record.items ? team.record.items.filter(function(r) { return r.type === 'tie'; }).length : 0;
-    html += '<div class="info-item"><span class="label">战绩</span>胜 ' + wins + ' / 平 ' + ties + ' / 负 ' + losses + '</div>';
-  }
   showModal('ℹ️ ' + (team.displayName || teamName), html);
 }
 
-// 显示球队阵容弹窗（统一处理）
 async function showEspnRoster(leagueCode, teamId, teamName) {
   var data = await fetchTeamRoster(leagueCode, teamId);
   if (!data || !data.athletes || data.athletes.length === 0) {
@@ -588,7 +658,10 @@ async function refreshMatches() {
       var r1 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
       var r2 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/standings');
       matchData.m = (await r1.json()).events || [];
-      matchData.t = (await r2.json()).children || [];
+      var standingsData = await r2.json();
+      matchData.t = standingsData.children || [];
+      // 打印到控制台帮助调试
+      console.log('📊 ESPN积分榜原始数据:', JSON.stringify(standingsData, null, 2));
       renderEspnMatches();
     } else {
       var year = new Date().getFullYear();
@@ -662,9 +735,7 @@ var countdownTimer = null;
 var countdownSeconds = 15;
 
 function toggleAutoRefresh() {
-  if (!hasLiveMatches() && !autoRefreshEnabled) {
-    return;
-  }
+  if (!hasLiveMatches() && !autoRefreshEnabled) return;
   autoRefreshEnabled = !autoRefreshEnabled;
   var btn = document.getElementById('autoRefreshBtn');
   var status = document.getElementById('autoStatus');
@@ -693,9 +764,6 @@ function toggleAutoRefresh() {
 }
 function updateCountdownDisplay() { var el = document.getElementById('autoCountdown'); if (el) el.textContent = countdownSeconds + 's'; }
 
-// ================================================================
-// 渲染函数
-// ================================================================
 function renderMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
   var m = matchData.m || [];
@@ -790,7 +858,7 @@ function cardGerman(m, status) {
 }
 
 // ================================================================
-// ESPN 五大联赛/欧战 渲染 - 完整版（积分榜+球队信息+阵容）
+// ESPN 五大联赛/欧战 渲染 - 使用通用解析函数
 // ================================================================
 function renderEspnMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -807,23 +875,16 @@ function renderEspnMatches() {
   
   var h = '';
   
-  // ===== 积分榜 =====
-  if (t && t.length > 0) {
+  // ===== 使用通用解析函数提取积分榜 =====
+  var standingsGroups = extractStandings(t);
+  
+  if (standingsGroups && standingsGroups.length > 0) {
     h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap"><div class="table-scroll">';
     
-    for (var gi = 0; gi < t.length; gi++) {
-      var group = t[gi];
-      var groupName = group.name || group.groupName || '积分榜';
-      
-      // 获取 entries
-      var entries = [];
-      if (group.standings && group.standings.entries) {
-        entries = group.standings.entries;
-      } else if (group.entries) {
-        entries = group.entries;
-      } else if (group.standings && Array.isArray(group.standings)) {
-        entries = group.standings;
-      }
+    for (var gi = 0; gi < standingsGroups.length; gi++) {
+      var group = standingsGroups[gi];
+      var groupName = group.name || '积分榜';
+      var entries = group.entries || [];
       
       if (!entries || entries.length === 0) continue;
       
@@ -853,7 +914,6 @@ function renderEspnMatches() {
         var rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
         var gdClass = gdNum > 0 ? 'gd-positive' : gdNum < 0 ? 'gd-negative' : 'gd-zero';
         
-        // 获取联赛代码（用于球队信息和阵容）
         var leagueCode = currentLeague;
         if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
         else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
@@ -872,6 +932,10 @@ function renderEspnMatches() {
       h += '</table>';
     }
     h += '</div></div></details>';
+  } else {
+    // 没有积分榜数据 - 显示调试信息
+    var debugStr = JSON.stringify(t).substring(0, 300);
+    h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap" style="padding:16px;color:#666;">暂无积分榜数据<br><span style="font-size:11px;color:#444;">数据结构: ' + debugStr + '...</span><br><span style="font-size:11px;color:#444;">请在控制台查看完整数据 (F12 → Console)</span></div></details>';
   }
   
   // ===== 比赛卡片 =====
@@ -904,12 +968,10 @@ function cardEspn(m, status) {
   var teamId1 = hh.team.id, teamId2 = aa.team.id;
   var logo1 = hh.team.logo ? '<img src="' + hh.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
   var logo2 = aa.team.logo ? '<img src="' + aa.team.logo + '" loading="lazy" onerror="this.style.display=\'none\'">' : '';
-  var isEuro = (currentLeague === 'UCL' || currentLeague === 'UEL');
   var leagueCode = currentLeague;
   if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
   else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
   
-  // 球队名称（带球队信息和阵容按钮）
   var display1 = logo1 + ' <span style="cursor:pointer;border-bottom:2px solid transparent;transition:all 0.25s ease;font-weight:600;" onclick="showEspnTeamInfo(\'' + leagueCode + '\',\'' + teamId1 + '\',\'' + name1 + '\')" onmouseover="this.style.borderBottomColor=\'#4caf50\';this.style.color=\'#a5d6a7\'" onmouseout="this.style.borderBottomColor=\'transparent\';this.style.color=\'#eee\'">' + name1 + ' ℹ️</span>';
   var display2 = logo2 + ' <span style="cursor:pointer;border-bottom:2px solid transparent;transition:all 0.25s ease;font-weight:600;" onclick="showEspnTeamInfo(\'' + leagueCode + '\',\'' + teamId2 + '\',\'' + name2 + '\')" onmouseover="this.style.borderBottomColor=\'#4caf50\';this.style.color=\'#a5d6a7\'" onmouseout="this.style.borderBottomColor=\'transparent\';this.style.color=\'#eee\'">' + name2 + ' ℹ️</span>';
   
@@ -929,7 +991,6 @@ function cardEspn(m, status) {
   var botText = live ? '● 直播中' : done ? '✓ 已结束' : '';
   if (done && isPenalty) botText += ' ⚽点球';
   
-  // 阵容按钮（所有联赛都显示）
   var rosterBtns = '<button onclick="showEspnRoster(\'' + leagueCode + '\',\'' + teamId1 + '\',\'' + name1 + '\')">📋 ' + name1 + '</button><button onclick="showEspnRoster(\'' + leagueCode + '\',\'' + teamId2 + '\',\'' + name2 + '\')">📋 ' + name2 + '</button>';
   
   return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + '</span>' + statusTag + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid ' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + ' ' + rosterBtns + '</div></div>';
@@ -938,7 +999,7 @@ function cardEspn(m, status) {
 function filterMatches() { renderMatches(); }
 
 // ================================================================
-// 足球新闻模块（完整保留，内容太多省略，保持原有功能）
+// 足球新闻模块
 // ================================================================
 var allRumors = [];
 var rumorTab = 'all';
