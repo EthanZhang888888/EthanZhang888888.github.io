@@ -217,6 +217,9 @@ h1 .live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;backg
 .modal-box .player-item .num{color:#444;font-weight:600;min-width:32px;font-size:11px}
 .modal-box .player-item .pos{color:#4caf50;margin-left:auto;font-size:11px;font-weight:600;background:rgba(76,175,80,0.06);padding:2px 10px;border-radius:10px}
 
+.debug-box{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:16px;margin:12px 0;font-size:12px;color:#666;overflow:auto;max-height:300px;font-family:monospace;white-space:pre-wrap;word-break:break-all;position:relative;z-index:2}
+.debug-box .label{color:#4caf50;font-weight:700;font-size:13px;margin-bottom:6px;display:block}
+
 @media(max-width:640px){
 h1{font-size:1.3em}
 .main-nav a{padding:8px 14px;font-size:12px}
@@ -303,6 +306,9 @@ h1{font-size:1.3em}
   </div>
   <span class="tz-display" id="tzDisplayESPN">+8h</span>
 </div>
+
+<!-- 调试信息显示区 -->
+<div id="debugContainer" style="display:none;"></div>
 
 <div id="matchMain"><div class="ld"><div class="spinner"></div><br>加载比赛数据...</div></div>
 </div>
@@ -414,104 +420,7 @@ return { date: month + '/' + day, time: hours + ':' + minutes };
 }
 
 // ================================================================
-// 通用积分榜解析函数 - 尝试所有可能的数据路径
-// ================================================================
-function extractStandings(data) {
-  var results = [];
-  
-  // 如果数据为空
-  if (!data) return results;
-  
-  // 如果是数组
-  if (Array.isArray(data)) {
-    for (var i = 0; i < data.length; i++) {
-      var item = data[i];
-      var extracted = extractStandings(item);
-      if (extracted && extracted.length > 0) {
-        results = results.concat(extracted);
-      }
-    }
-    return results;
-  }
-  
-  // 如果是对象
-  if (typeof data === 'object') {
-    // 路径1: 直接的 standings 对象
-    if (data.standings && data.standings.entries && Array.isArray(data.standings.entries)) {
-      results.push({
-        name: data.name || data.groupName || '积分榜',
-        entries: data.standings.entries
-      });
-      return results;
-    }
-    
-    // 路径2: 直接的 entries
-    if (data.entries && Array.isArray(data.entries)) {
-      results.push({
-        name: data.name || data.groupName || '积分榜',
-        entries: data.entries
-      });
-      return results;
-    }
-    
-    // 路径3: standings 是数组
-    if (data.standings && Array.isArray(data.standings)) {
-      results.push({
-        name: data.name || data.groupName || '积分榜',
-        entries: data.standings
-      });
-      return results;
-    }
-    
-    // 路径4: 嵌套在 children 中
-    if (data.children && Array.isArray(data.children)) {
-      for (var j = 0; j < data.children.length; j++) {
-        var child = data.children[j];
-        var extracted = extractStandings(child);
-        if (extracted && extracted.length > 0) {
-          results = results.concat(extracted);
-        }
-      }
-      return results;
-    }
-    
-    // 路径5: 嵌套在 data 中
-    if (data.data && data.data.children) {
-      for (var k = 0; k < data.data.children.length; k++) {
-        var child2 = data.data.children[k];
-        var extracted2 = extractStandings(child2);
-        if (extracted2 && extracted2.length > 0) {
-          results = results.concat(extracted2);
-        }
-      }
-      return results;
-    }
-    
-    // 路径6: 检查是否每个元素都有 team 属性（可能是 entries 数组）
-    if (data.team) {
-      // 单个条目，包装成数组
-      results.push({
-        name: '积分榜',
-        entries: [data]
-      });
-      return results;
-    }
-    
-    // 路径7: 检查是否有 stats 数组（可能是 entry）
-    if (data.stats && Array.isArray(data.stats)) {
-      results.push({
-        name: '积分榜',
-        entries: [data]
-      });
-      return results;
-    }
-  }
-  
-  return results;
-}
-
-// ================================================================
-// 球队信息与阵容 - 五大联赛/欧战
+// 球队信息与阵容
 // ================================================================
 var teamInfoCache = {};
 var rosterCache = {};
@@ -575,7 +484,6 @@ async function showEspnRoster(leagueCode, teamId, teamName) {
   showModal('阵容 ' + teamName, html);
 }
 
-// 德甲/德乙 球队信息（原有）
 function showTeamInfo(teamId, teamName) {
   var table = matchData.t || [];
   if (!table || table.length === 0) {
@@ -649,6 +557,7 @@ function updateLiveButton() {
 // ================================================================
 async function refreshMatches() {
   document.getElementById('matchMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载比赛数据...</div>';
+  document.getElementById('debugContainer').style.display = 'none';
   try {
     var espnLeagues = ['GER.1', 'ENG.1', 'ESP.1', 'ITA.1', 'FRA.1', 'UCL', 'UEL'];
     if (espnLeagues.includes(currentLeague)) {
@@ -660,8 +569,10 @@ async function refreshMatches() {
       matchData.m = (await r1.json()).events || [];
       var standingsData = await r2.json();
       matchData.t = standingsData.children || [];
-      // 打印到控制台帮助调试
-      console.log('📊 ESPN积分榜原始数据:', JSON.stringify(standingsData, null, 2));
+      
+      // 显示调试信息
+      showDebugInfo(standingsData);
+      
       renderEspnMatches();
     } else {
       var year = new Date().getFullYear();
@@ -677,93 +588,68 @@ async function refreshMatches() {
   }
 }
 
-async function refreshLiveMatches() {
-  try {
-    var liveMatches = [];
-    var allMatches = matchData.m || [];
-    for (var i = 0; i < allMatches.length; i++) {
-      var m = allMatches[i];
-      var isLive = false;
-      if (['GER.1','ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].includes(currentLeague)) {
-        isLive = m.status && m.status.type && m.status.type.state === 'in';
-      } else {
-        isLive = !m.matchIsFinished && m.matchResults && m.matchResults.length > 0;
-      }
-      if (isLive) liveMatches.push(m);
-    }
-    if (liveMatches.length === 0) {
-      if (autoRefreshEnabled) toggleAutoRefresh();
-      updateLiveButton();
-      return;
-    }
-    var espnLeagues = ['GER.1', 'ENG.1', 'ESP.1', 'ITA.1', 'FRA.1', 'UCL', 'UEL'];
-    if (espnLeagues.includes(currentLeague)) {
-      var leagueCode = currentLeague;
-      if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
-      else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
-      var r = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
-      var newData = (await r.json()).events || [];
-      for (var i = 0; i < matchData.m.length; i++) {
-        var oldMatch = matchData.m[i];
-        var matchId = oldMatch.id;
-        if (!matchId) continue;
-        for (var j = 0; j < newData.length; j++) {
-          if (newData[j].id === matchId) { matchData.m[i] = newData[j]; break; }
-        }
-      }
-    } else {
-      var year = new Date().getFullYear();
-      var r = await fetch('https://api.openligadb.de/getmatchdata/' + currentLeague);
-      var newData = await r.json();
-      for (var i = 0; i < matchData.m.length; i++) {
-        var oldMatch = matchData.m[i];
-        var matchId = oldMatch.matchID;
-        if (!matchId) continue;
-        for (var j = 0; j < newData.length; j++) {
-          if (newData[j].matchID === matchId) { matchData.m[i] = newData[j]; break; }
-        }
-      }
-    }
-    renderMatches();
-    updateLiveButton();
-  } catch(e) { console.warn('直播刷新失败:', e.message); }
-}
-
-var autoRefreshEnabled = false;
-var autoRefreshTimer = null;
-var countdownTimer = null;
-var countdownSeconds = 15;
-
-function toggleAutoRefresh() {
-  if (!hasLiveMatches() && !autoRefreshEnabled) return;
-  autoRefreshEnabled = !autoRefreshEnabled;
-  var btn = document.getElementById('autoRefreshBtn');
-  var status = document.getElementById('autoStatus');
-  var label = document.getElementById('autoLabel');
-  var countdown = document.getElementById('autoCountdown');
-  if (autoRefreshEnabled) {
-    btn.className = 'active';
-    status.style.background = '#4caf50';
-    status.className = 'pulse';
-    label.textContent = '● 直播中';
-    countdown.textContent = '15s';
-    countdownSeconds = 15;
-    refreshLiveMatches();
-    autoRefreshTimer = setInterval(function() { refreshLiveMatches(); countdownSeconds = 15; updateCountdownDisplay(); }, 15000);
-    countdownTimer = setInterval(function() { countdownSeconds--; if (countdownSeconds <= 0) countdownSeconds = 15; updateCountdownDisplay(); }, 1000);
-  } else {
-    btn.className = '';
-    status.style.background = '#444';
-    status.className = '';
-    label.textContent = '⏸️ 直播';
-    countdown.textContent = '';
-    clearInterval(autoRefreshTimer); clearInterval(countdownTimer);
-    autoRefreshTimer = null; countdownTimer = null;
-    updateLiveButton();
+// 显示调试信息
+function showDebugInfo(data) {
+  var container = document.getElementById('debugContainer');
+  container.style.display = 'block';
+  var jsonStr = JSON.stringify(data, null, 2);
+  // 限制长度
+  if (jsonStr.length > 5000) {
+    jsonStr = jsonStr.substring(0, 5000) + '\n... (截断，数据过长)';
   }
+  container.innerHTML = '<div class="debug-box"><span class="label">🔍 调试信息 - 积分榜原始数据结构</span><span style="color:#888;font-size:11px;">（以下是ESPN返回的原始数据，用于定位积分榜路径）</span>\n\n' + jsonStr + '</div>';
 }
-function updateCountdownDisplay() { var el = document.getElementById('autoCountdown'); if (el) el.textContent = countdownSeconds + 's'; }
 
+// ================================================================
+// 积分榜通用提取函数
+// ================================================================
+function extractStandings(data) {
+  var results = [];
+  if (!data) return results;
+  
+  // 如果是数组
+  if (Array.isArray(data)) {
+    for (var i = 0; i < data.length; i++) {
+      var sub = extractStandings(data[i]);
+      results = results.concat(sub);
+    }
+    return results;
+  }
+  
+  // 如果是对象
+  if (typeof data === 'object') {
+    // 检查是否有 entries（最常见的路径）
+    if (data.standings && data.standings.entries && Array.isArray(data.standings.entries)) {
+      results.push({ name: data.name || '积分榜', entries: data.standings.entries });
+      return results;
+    }
+    if (data.entries && Array.isArray(data.entries)) {
+      results.push({ name: data.name || '积分榜', entries: data.entries });
+      return results;
+    }
+    // 检查 children
+    if (data.children && Array.isArray(data.children)) {
+      for (var j = 0; j < data.children.length; j++) {
+        var sub2 = extractStandings(data.children[j]);
+        results = results.concat(sub2);
+      }
+      return results;
+    }
+    // 检查 data.children
+    if (data.data && data.data.children) {
+      for (var k = 0; k < data.data.children.length; k++) {
+        var sub3 = extractStandings(data.data.children[k]);
+        results = results.concat(sub3);
+      }
+      return results;
+    }
+  }
+  return results;
+}
+
+// ================================================================
+// 渲染函数
+// ================================================================
 function renderMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
   var m = matchData.m || [];
@@ -791,7 +677,7 @@ function renderMatches() {
 }
 
 // ================================================================
-// 德甲/德乙 渲染（原有）
+// 德甲/德乙 渲染
 // ================================================================
 function renderGermanMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -858,7 +744,7 @@ function cardGerman(m, status) {
 }
 
 // ================================================================
-// ESPN 五大联赛/欧战 渲染 - 使用通用解析函数
+// ESPN 五大联赛/欧战 渲染
 // ================================================================
 function renderEspnMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -875,7 +761,7 @@ function renderEspnMatches() {
   
   var h = '';
   
-  // ===== 使用通用解析函数提取积分榜 =====
+  // ===== 使用通用提取函数 =====
   var standingsGroups = extractStandings(t);
   
   if (standingsGroups && standingsGroups.length > 0) {
@@ -933,9 +819,8 @@ function renderEspnMatches() {
     }
     h += '</div></div></details>';
   } else {
-    // 没有积分榜数据 - 显示调试信息
-    var debugStr = JSON.stringify(t).substring(0, 300);
-    h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap" style="padding:16px;color:#666;">暂无积分榜数据<br><span style="font-size:11px;color:#444;">数据结构: ' + debugStr + '...</span><br><span style="font-size:11px;color:#444;">请在控制台查看完整数据 (F12 → Console)</span></div></details>';
+    // 没有积分榜数据 - 显示提示，但调试信息已经在上面显示了
+    h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap" style="padding:16px;color:#666;">⏳ 积分榜数据解析中...<br><span style="font-size:11px;color:#444;">请查看上方的「调试信息」框，里面有ESPN返回的原始数据结构</span></div></details>';
   }
   
   // ===== 比赛卡片 =====
