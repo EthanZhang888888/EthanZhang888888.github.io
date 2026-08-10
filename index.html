@@ -388,11 +388,10 @@ var offsetESPN = 8;
 var currentSeason = new Date().getFullYear();
 
 // ================================================================
-// 球队 Logo 缓存 - 从 ESPN 球队列表接口提取（无需比赛数据）
+// 球队 Logo 缓存 - 从 ESPN 球队列表接口提取
 // ================================================================
 var teamLogoCache = {};
 
-// 英文名 -> 中文名映射表
 var nameMap = {
   // 英超
   'Manchester City':'曼城','Arsenal':'阿森纳','Liverpool':'利物浦',
@@ -435,7 +434,6 @@ var nameMap = {
   'Elversberg':'埃尔沃斯堡','Paderborn':'帕德博恩'
 };
 
-// 从 ESPN 球队列表接口获取队徽
 async function fetchLogosFromTeamsAPI(leagueCode) {
   try {
     var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams';
@@ -450,10 +448,8 @@ async function fetchLogosFromTeamsAPI(leagueCode) {
           if (team && team.logos && team.logos.length > 0) {
             var logoUrl = team.logos[0].href || team.logos[0].url;
             if (logoUrl) {
-              // 存英文名
               if (team.displayName) teamLogoCache[team.displayName] = logoUrl;
               if (team.shortDisplayName) teamLogoCache[team.shortDisplayName] = logoUrl;
-              // 存中文名
               for (var en in nameMap) {
                 if (team.displayName && team.displayName.indexOf(en) !== -1) {
                   teamLogoCache[nameMap[en]] = logoUrl;
@@ -759,7 +755,6 @@ async function refreshMatches() {
       var r2 = await fetch('https://api.openligadb.de/getbltable/' + currentLeague + '/' + year);
       matchData.m = await r1.json();
       matchData.t = await r2.json();
-      // 从 OpenLigaDB 提取队徽
       for (var i = 0; i < matchData.t.length; i++) {
         var row = matchData.t[i];
         if (row.teamIconUrl) {
@@ -772,7 +767,6 @@ async function refreshMatches() {
       if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
       else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
       
-      // 并行请求：比赛数据 + 球队列表（用于队徽）
       var r1 = fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
       var r2 = fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams');
       
@@ -782,7 +776,6 @@ async function refreshMatches() {
       
       matchData.m = scoreboardData.events || [];
       
-      // 从球队列表中提取队徽
       if (teamsData.sports && teamsData.sports[0] && teamsData.sports[0].leagues) {
         var league = teamsData.sports[0].leagues[0];
         if (league.teams) {
@@ -793,7 +786,6 @@ async function refreshMatches() {
               if (logoUrl) {
                 if (team.displayName) teamLogoCache[team.displayName] = logoUrl;
                 if (team.shortDisplayName) teamLogoCache[team.shortDisplayName] = logoUrl;
-                // 中文名映射
                 for (var en in nameMap) {
                   if (team.displayName && team.displayName.indexOf(en) !== -1) {
                     teamLogoCache[nameMap[en]] = logoUrl;
@@ -817,7 +809,7 @@ async function refreshMatches() {
     }
     updateLiveButton();
   } catch(e) {
-    document.getElementById('matchMain').innerHTML = '<div class="ld">❌ 错误: ' + e.message + '<br><button onclick="refreshMatches()" style="margin-top:14px;padding:10px 28px;background:linear-gradient(135deg,#4caf50,#2e7d32);border:none;border-radius:30px;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(76,175,80,0.15)">🔄 重试</button></div>';
+    document.getElementById('matchMain').innerHTML = '<div class="ld">❌ 错误: ' + e.message + '<br><span style="color:#666;font-size:12px;">请确保网络连接正常，或尝试刷新页面</span><br><button onclick="refreshMatches()" style="margin-top:14px;padding:10px 28px;background:linear-gradient(135deg,#4caf50,#2e7d32);border:none;border-radius:30px;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(76,175,80,0.15)">🔄 重试</button></div>';
   }
 }
 
@@ -1147,7 +1139,7 @@ showEspnRoster = async function(leagueCode, idOrName, teamName) {
 function filterMatches() { renderMatches(); }
 
 // ================================================================
-// 足球新闻模块（完整保留）
+// 足球新闻模块
 // ================================================================
 var allRumors = [];
 var rumorTab = 'all';
