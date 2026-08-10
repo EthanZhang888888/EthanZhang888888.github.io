@@ -387,25 +387,37 @@ var offsetESPN = 8;
 var currentSeason = new Date().getFullYear();
 
 // ================================================================
-// 球队 Logo 缓存（从 ESPN 比赛数据中提取）
+// 球队 Logo 缓存 - 直接从 ESPN 比赛数据中提取
 // ================================================================
 var teamLogoCache = {};
 
-function getTeamLogoFromCache(teamName) {
-  if (teamLogoCache[teamName]) return teamLogoCache[teamName];
+// 从比赛数据中提取所有球队 Logo
+function extractLogosFromMatches() {
   var m = matchData.m || [];
   for (var i = 0; i < m.length; i++) {
     var c = m[i].competitions ? m[i].competitions[0] : null;
     if (!c || !c.competitors) continue;
     for (var j = 0; j < c.competitors.length; j++) {
       var team = c.competitors[j].team;
-      if (team.displayName === teamName || team.shortDisplayName === teamName || 
-          teamName.indexOf(team.displayName) !== -1 || team.displayName.indexOf(teamName) !== -1) {
-        if (team.logo) {
-          teamLogoCache[teamName] = team.logo;
-          return team.logo;
+      var name = team.displayName || team.shortDisplayName || '';
+      if (name && team.logo) {
+        teamLogoCache[name] = team.logo;
+        // 也存短名称
+        if (team.shortDisplayName && team.shortDisplayName !== name) {
+          teamLogoCache[team.shortDisplayName] = team.logo;
         }
       }
+    }
+  }
+}
+
+function getTeamLogoUrl(teamName) {
+  // 先尝试精确匹配
+  if (teamLogoCache[teamName]) return teamLogoCache[teamName];
+  // 尝试包含匹配
+  for (var key in teamLogoCache) {
+    if (teamName.indexOf(key) !== -1 || key.indexOf(teamName) !== -1) {
+      return teamLogoCache[key];
     }
   }
   return null;
@@ -413,10 +425,11 @@ function getTeamLogoFromCache(teamName) {
 
 function getTeamLogoHtml(teamName, size) {
   size = size || 22;
-  var logo = getTeamLogoFromCache(teamName);
+  var logo = getTeamLogoUrl(teamName);
   if (logo) {
     return '<img src="' + logo + '" class="team-logo-img" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">';
   }
+  // 降级方案：彩色文字徽章
   var colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e84393','#00b894','#6c5ce7','#fd79a8','#0984e3','#fdcb6e','#e17055','#00cec9','#6c5ce7','#fd79a8','#00b894'];
   var idx = 0;
   for (var i = 0; i < teamName.length; i++) idx += teamName.charCodeAt(i);
@@ -681,6 +694,8 @@ async function refreshMatches() {
       else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
       var r1 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
       matchData.m = (await r1.json()).events || [];
+      // 提取 Logo
+      extractLogosFromMatches();
       matchData.t = customStandings[currentLeague] ? [customStandings[currentLeague]] : [];
       renderCustomMatches();
     }
@@ -860,7 +875,7 @@ function cardGerman(m, status) {
 }
 
 // ================================================================
-// 自定义积分榜渲染 - 使用 ESPN 真实队徽
+// 自定义积分榜渲染 - 使用从 ESPN 提取的真实队徽
 // ================================================================
 function renderCustomMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -882,7 +897,6 @@ function renderCustomMatches() {
     var leagueData = t[0];
     var teams = leagueData.teams || [];
     
-    // 2026-27 赛季开赛日期
     var seasonStartDates = {
       'ENG.1': '2026年8月15日',
       'ESP.1': '2026年8月16日',
@@ -951,7 +965,6 @@ function cardCustom(m, status) {
   var name2 = aa.team.displayName || aa.team.shortDisplayName || '?';
   var teamId1 = hh.team.id, teamId2 = aa.team.id;
   
-  // 使用 ESPN 真实队徽
   var logo1 = hh.team.logo ? '<img src="' + hh.team.logo + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">' : getTeamBadge(name1, 24);
   var logo2 = aa.team.logo ? '<img src="' + aa.team.logo + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">' : getTeamBadge(name2, 24);
   
@@ -1011,7 +1024,7 @@ showEspnRoster = async function(leagueCode, idOrName, teamName) {
 function filterMatches() { renderMatches(); }
 
 // ================================================================
-// 足球新闻模块（完整保留）
+// 足球新闻模块
 // ================================================================
 var allRumors = [];
 var rumorTab = 'all';
