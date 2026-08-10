@@ -391,7 +391,6 @@ var currentSeason = new Date().getFullYear();
 // ================================================================
 var teamLogoCache = {};
 
-// 从 ESPN 比赛数据中提取 Logo
 function extractLogosFromMatches() {
   var m = matchData.m || [];
   for (var i = 0; i < m.length; i++) {
@@ -400,57 +399,34 @@ function extractLogosFromMatches() {
     for (var j = 0; j < c.competitors.length; j++) {
       var team = c.competitors[j].team;
       if (team && team.logo) {
-        // 存多个名称变体
         if (team.displayName) teamLogoCache[team.displayName] = team.logo;
         if (team.shortDisplayName && team.shortDisplayName !== team.displayName) {
           teamLogoCache[team.shortDisplayName] = team.logo;
         }
-        // 存中文名映射（如果队名包含中文关键词）
         var nameMap = {
-          'Manchester City': '曼城',
-          'Arsenal': '阿森纳',
-          'Liverpool': '利物浦',
-          'Chelsea': '切尔西',
-          'Tottenham': '热刺',
-          'Newcastle': '纽卡斯尔',
-          'Manchester United': '曼联',
-          'Aston Villa': '阿斯顿维拉',
-          'West Ham': '西汉姆联',
-          'Brighton': '布莱顿',
-          'Real Madrid': '皇家马德里',
-          'Barcelona': '巴塞罗那',
-          'Atletico Madrid': '马德里竞技',
-          'Athletic Club': '毕尔巴鄂',
-          'Real Sociedad': '皇家社会',
-          'Sevilla': '塞维利亚',
-          'Valencia': '瓦伦西亚',
-          'Villarreal': '比利亚雷亚尔',
-          'Real Betis': '贝蒂斯',
-          'Girona': '赫罗纳',
-          'Inter Milan': '国际米兰',
-          'AC Milan': 'AC米兰',
-          'Juventus': '尤文图斯',
-          'Roma': '罗马',
-          'Napoli': '那不勒斯',
-          'Lazio': '拉齐奥',
-          'Atalanta': '亚特兰大',
-          'Fiorentina': '佛罗伦萨',
-          'Bologna': '博洛尼亚',
-          'Torino': '都灵',
-          'PSG': '巴黎圣日耳曼',
-          'Monaco': '摩纳哥',
-          'Lyon': '里昂',
-          'Marseille': '马赛',
-          'Lille': '里尔',
-          'Nice': '尼斯',
-          'Lens': '朗斯',
-          'Rennes': '雷恩',
-          'Strasbourg': '斯特拉斯堡',
-          'Nantes': '南特',
-          'Dortmund': '多特蒙德',
-          'Bayern Munich': '拜仁慕尼黑',
-          'Leverkusen': '勒沃库森',
-          'Benfica': '本菲卡'
+          'Manchester City':'曼城','Arsenal':'阿森纳','Liverpool':'利物浦','Chelsea':'切尔西',
+          'Tottenham':'热刺','Newcastle':'纽卡斯尔','Manchester United':'曼联',
+          'Aston Villa':'阿斯顿维拉','West Ham':'西汉姆联','Brighton':'布莱顿','Wolves':'狼队',
+          'Crystal Palace':'水晶宫','Fulham':'富勒姆','Brentford':'布伦特福德','Everton':'埃弗顿',
+          'Bournemouth':'伯恩茅斯','Nottingham Forest':'诺丁汉森林','Ipswich':'伊普斯维奇',
+          'Leicester':'莱斯特城','Southampton':'南安普顿',
+          'Real Madrid':'皇家马德里','Barcelona':'巴塞罗那','Atletico Madrid':'马德里竞技',
+          'Athletic Club':'毕尔巴鄂','Real Sociedad':'皇家社会','Sevilla':'塞维利亚',
+          'Valencia':'瓦伦西亚','Villarreal':'比利亚雷亚尔','Real Betis':'贝蒂斯','Girona':'赫罗纳',
+          'Osasuna':'奥萨苏纳','Celta Vigo':'塞尔塔','Mallorca':'马略卡','Rayo Vallecano':'巴列卡诺',
+          'Las Palmas':'拉斯帕尔马斯','Alaves':'阿拉维斯','Leganes':'莱加内斯','Espanyol':'西班牙人',
+          'Getafe':'赫塔菲','Valladolid':'巴拉多利德',
+          'Inter Milan':'国际米兰','AC Milan':'AC米兰','Juventus':'尤文图斯','Roma':'罗马',
+          'Napoli':'那不勒斯','Lazio':'拉齐奥','Atalanta':'亚特兰大','Fiorentina':'佛罗伦萨',
+          'Bologna':'博洛尼亚','Torino':'都灵','Genoa':'热那亚','Monza':'蒙扎','Verona':'维罗纳',
+          'Lecce':'莱切','Udinese':'乌迪内斯','Cagliari':'卡利亚里','Empoli':'恩波利',
+          'Parma':'帕尔马','Como':'科莫','Venezia':'威尼斯',
+          'PSG':'巴黎圣日耳曼','Monaco':'摩纳哥','Lyon':'里昂','Marseille':'马赛','Lille':'里尔',
+          'Nice':'尼斯','Lens':'朗斯','Rennes':'雷恩','Strasbourg':'斯特拉斯堡','Nantes':'南特',
+          'Reims':'兰斯','Brest':'布雷斯特','Toulouse':'图卢兹','Montpellier':'蒙彼利埃',
+          'Clermont':'克莱蒙','Lorient':'洛里昂','Troyes':'特鲁瓦','Ajaccio':'阿雅克肖',
+          'Auxerre':'欧塞尔','Angers':'昂热',
+          'Dortmund':'多特蒙德','Bayern Munich':'拜仁慕尼黑','Leverkusen':'勒沃库森','Benfica':'本菲卡'
         };
         for (var en in nameMap) {
           if (team.displayName && team.displayName.indexOf(en) !== -1) {
@@ -467,9 +443,7 @@ function extractLogosFromMatches() {
 
 function getTeamLogoUrl(teamName) {
   if (!teamName) return null;
-  // 精确匹配
   if (teamLogoCache[teamName]) return teamLogoCache[teamName];
-  // 遍历查找包含匹配
   for (var key in teamLogoCache) {
     if (teamName.indexOf(key) !== -1 || key.indexOf(teamName) !== -1) {
       return teamLogoCache[key];
@@ -484,7 +458,6 @@ function getTeamLogoHtml(teamName, size) {
   if (logo) {
     return '<img src="' + logo + '" class="team-logo-img" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">';
   }
-  // 降级方案
   var colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e84393','#00b894','#6c5ce7','#fd79a8','#0984e3','#fdcb6e','#e17055','#00cec9','#6c5ce7','#fd79a8','#00b894'];
   var idx = 0;
   for (var i = 0; i < teamName.length; i++) idx += teamName.charCodeAt(i);
@@ -495,7 +468,7 @@ function getTeamLogoHtml(teamName, size) {
 }
 
 // ================================================================
-// 自制积分榜数据（2026-27赛季 - 空积分榜）
+// 自制积分榜数据（2026-27赛季 - 仅五大联赛）
 // ================================================================
 var customStandings = {
   'ENG.1': {
@@ -511,7 +484,17 @@ var customStandings = {
       { name: '纽卡斯尔', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
       { name: '曼联', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
       { name: '西汉姆联', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '布莱顿', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
+      { name: '布莱顿', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '狼队', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '水晶宫', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '富勒姆', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '布伦特福德', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '埃弗顿', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '伯恩茅斯', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '诺丁汉森林', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '伊普斯维奇', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '莱斯特城', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '南安普顿', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
     ]
   },
   'ESP.1': {
@@ -527,7 +510,17 @@ var customStandings = {
       { name: '贝蒂斯', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
       { name: '比利亚雷亚尔', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
       { name: '瓦伦西亚', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '塞维利亚', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
+      { name: '塞维利亚', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '奥萨苏纳', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '塞尔塔', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '马略卡', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '巴列卡诺', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '拉斯帕尔马斯', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '阿拉维斯', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '莱加内斯', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '西班牙人', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '赫塔菲', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '巴拉多利德', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
     ]
   },
   'ITA.1': {
@@ -543,7 +536,17 @@ var customStandings = {
       { name: '拉齐奥', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
       { name: '佛罗伦萨', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
       { name: '那不勒斯', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '都灵', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
+      { name: '都灵', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '热那亚', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '蒙扎', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '维罗纳', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '莱切', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '乌迪内斯', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '卡利亚里', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '恩波利', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '帕尔马', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '科莫', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '威尼斯', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
     ]
   },
   'FRA.1': {
@@ -559,35 +562,17 @@ var customStandings = {
       { name: '马赛', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
       { name: '雷恩', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
       { name: '斯特拉斯堡', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '南特', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
-    ]
-  },
-  'UCL': {
-    name: '🏆 欧冠 2026-27',
-    season: '2026-27',
-    teams: [
-      { name: '皇家马德里', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '多特蒙德', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '拜仁慕尼黑', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '巴黎圣日耳曼', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '曼城', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '阿森纳', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '巴塞罗那', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '马德里竞技', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
-    ]
-  },
-  'UEL': {
-    name: '🏆 欧联 2026-27',
-    season: '2026-27',
-    teams: [
-      { name: '亚特兰大', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '勒沃库森', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '罗马', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '马赛', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '利物浦', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '西汉姆联', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: 'AC米兰', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
-      { name: '本菲卡', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
+      { name: '南特', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '兰斯', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '布雷斯特', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '图卢兹', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '蒙彼利埃', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '克莱蒙', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '洛里昂', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '特鲁瓦', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '阿雅克肖', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '欧塞尔', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 },
+      { name: '昂热', played: 0, won: 0, drawn: 0, lost: 0, goalsFor: 0, goalsAgainst: 0, points: 0 }
     ]
   }
 };
@@ -628,7 +613,6 @@ async function showEspnRoster(leagueCode, teamId, teamName) {
   showModal('阵容 ' + teamName, html);
 }
 
-// 德甲球队信息（OpenLigaDB）
 function showTeamInfo(teamId, teamName) {
   var table = matchData.t || [];
   if (!table || table.length === 0) {
@@ -750,7 +734,12 @@ async function refreshMatches() {
       var r1 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
       matchData.m = (await r1.json()).events || [];
       extractLogosFromMatches();
-      matchData.t = customStandings[currentLeague] ? [customStandings[currentLeague]] : [];
+      // 欧冠/欧联不显示积分榜
+      if (currentLeague === 'UCL' || currentLeague === 'UEL') {
+        matchData.t = [];
+      } else {
+        matchData.t = customStandings[currentLeague] ? [customStandings[currentLeague]] : [];
+      }
       renderCustomMatches();
     }
     updateLiveButton();
@@ -869,7 +858,6 @@ function renderGermanMatches() {
     h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
     for (var i = 0; i < t.length; i++) {
       var r = t[i];
-      // 使用 OpenLigaDB 自带的队徽
       var icon = '';
       if (r.teamIconUrl) {
         icon = '<img src="' + r.teamIconUrl + '" style="width:22px;height:22px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" loading="lazy" onerror="this.style.display=\'none\'">';
@@ -938,7 +926,7 @@ function cardGerman(m, status) {
 }
 
 // ================================================================
-// 自定义积分榜渲染 - 使用从 ESPN 提取的真实队徽
+// 自定义积分榜渲染 - 五大联赛显示积分榜，欧冠/欧联不显示
 // ================================================================
 function renderCustomMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -955,8 +943,16 @@ function renderCustomMatches() {
   
   var h = '';
   
-  // 渲染自制积分榜
-  if (t && t.length > 0) {
+  // 判断是否为欧冠/欧联
+  var isKnockout = (currentLeague === 'UCL' || currentLeague === 'UEL');
+  
+  if (isKnockout) {
+    // 欧冠/欧联：显示淘汰赛制提示，不显示积分榜
+    var competitionName = currentLeague === 'UCL' ? '欧冠' : '欧联';
+    var startDate = currentLeague === 'UCL' ? '2026年9月15日' : '2026年9月16日';
+    h += '<div class="season-notice" style="margin:12px 0;"><span class="icon">🏆</span>' + competitionName + ' 2026-27 赛季为淘汰赛制<br><span class="sub">小组赛阶段将于 <span class="date">' + startDate + '</span> 开赛 · 敬请期待</span></div>';
+  } else if (t && t.length > 0) {
+    // 五大联赛：显示积分榜
     var leagueData = t[0];
     var teams = leagueData.teams || [];
     
@@ -964,19 +960,15 @@ function renderCustomMatches() {
       'ENG.1': '2026年8月15日',
       'ESP.1': '2026年8月16日',
       'ITA.1': '2026年8月17日',
-      'FRA.1': '2026年8月15日',
-      'UCL': '2026年9月15日',
-      'UEL': '2026年9月16日'
+      'FRA.1': '2026年8月15日'
     };
     var startDate = seasonStartDates[currentLeague] || '2026年8月中旬';
     
-    h += '<details class="details" open><summary>📈 积分榜 - ' + leagueData.name + '</summary>';
-    
-    h += '<div class="season-notice"><span class="icon">📅</span>2026-27 赛季将于 <span class="date">' + startDate + '</span> 开赛<br><span class="sub">当前为赛季备战期 · 积分榜暂为空</span></div>';
+    h += '<details class="details" open><summary>📈 积分榜 - ' + leagueData.name + ' (' + teams.length + '队)</summary>';
+    h += '<div class="season-notice"><span class="icon">📅</span>2026-27 赛季将于 <span class="date">' + startDate + '</span> 开赛<br><span class="sub">当前为赛季备战期 · 所有球队 0 场 0 分</span></div>';
     
     if (teams.length > 0) {
       h += '<div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
-      
       for (var i = 0; i < teams.length; i++) {
         var r = teams[i];
         var gd = r.goalsFor - r.goalsAgainst;
@@ -1059,7 +1051,6 @@ function cardCustom(m, status) {
   return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + '</span>' + statusTag + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid ' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + ' ' + rosterBtns + '</div></div>';
 }
 
-// 兼容德甲阵容查询
 var originalShowEspnRoster = showEspnRoster;
 showEspnRoster = async function(leagueCode, idOrName, teamName) {
   if (leagueCode === 'GER.1' && isNaN(idOrName)) {
