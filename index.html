@@ -581,9 +581,11 @@ var customStandings = {
 // 从 ESPN 比赛数据更新积分榜
 // ================================================================
 function updateStandingsFromMatches(leagueData, matches) {
-  // 复制一份积分榜数据
-  var updatedTeams = leagueData.teams.map(function(t) {
-    return {
+  // 创建球队数据映射
+  var teamMap = {};
+  for (var i = 0; i < leagueData.teams.length; i++) {
+    var t = leagueData.teams[i];
+    teamMap[t.name] = {
       name: t.name,
       played: 0,
       won: 0,
@@ -593,9 +595,9 @@ function updateStandingsFromMatches(leagueData, matches) {
       goalsAgainst: 0,
       points: 0
     };
-  });
+  }
   
-  // 遍历所有比赛
+  // 遍历所有比赛，只处理已结束的
   for (var i = 0; i < matches.length; i++) {
     var match = matches[i];
     var c = match.competitions ? match.competitions[0] : null;
@@ -621,52 +623,58 @@ function updateStandingsFromMatches(leagueData, matches) {
     var homeGoals = parseInt(hsRaw) || 0;
     var awayGoals = parseInt(asRaw) || 0;
     
-    // 查找主队和客队在积分榜中的位置（通过队名匹配）
-    var homeIdx = -1, awayIdx = -1;
-    for (var j = 0; j < updatedTeams.length; j++) {
-      var teamName = updatedTeams[j].name;
-      // 尝试多种匹配方式
-      if (homeName.indexOf(teamName) !== -1 || teamName.indexOf(homeName) !== -1) {
-        homeIdx = j;
+    // 查找匹配的球队
+    var homeTeam = null, awayTeam = null;
+    var homeKey = null, awayKey = null;
+    
+    for (var key in teamMap) {
+      if (homeName.indexOf(key) !== -1 || key.indexOf(homeName) !== -1) {
+        homeTeam = teamMap[key];
+        homeKey = key;
       }
-      if (awayName.indexOf(teamName) !== -1 || teamName.indexOf(awayName) !== -1) {
-        awayIdx = j;
+      if (awayName.indexOf(key) !== -1 || key.indexOf(awayName) !== -1) {
+        awayTeam = teamMap[key];
+        awayKey = key;
       }
     }
     
-    // 如果找不到匹配，跳过
-    if (homeIdx === -1 || awayIdx === -1) continue;
+    if (!homeTeam || !awayTeam) continue;
     
-    // 更新主队数据
-    updatedTeams[homeIdx].played += 1;
-    updatedTeams[homeIdx].goalsFor += homeGoals;
-    updatedTeams[homeIdx].goalsAgainst += awayGoals;
+    // 更新主队
+    homeTeam.played += 1;
+    homeTeam.goalsFor += homeGoals;
+    homeTeam.goalsAgainst += awayGoals;
     if (homeGoals > awayGoals) {
-      updatedTeams[homeIdx].won += 1;
-      updatedTeams[homeIdx].points += 3;
+      homeTeam.won += 1;
+      homeTeam.points += 3;
     } else if (homeGoals === awayGoals) {
-      updatedTeams[homeIdx].drawn += 1;
-      updatedTeams[homeIdx].points += 1;
+      homeTeam.drawn += 1;
+      homeTeam.points += 1;
     } else {
-      updatedTeams[homeIdx].lost += 1;
+      homeTeam.lost += 1;
     }
     
-    // 更新客队数据
-    updatedTeams[awayIdx].played += 1;
-    updatedTeams[awayIdx].goalsFor += awayGoals;
-    updatedTeams[awayIdx].goalsAgainst += homeGoals;
+    // 更新客队
+    awayTeam.played += 1;
+    awayTeam.goalsFor += awayGoals;
+    awayTeam.goalsAgainst += homeGoals;
     if (awayGoals > homeGoals) {
-      updatedTeams[awayIdx].won += 1;
-      updatedTeams[awayIdx].points += 3;
+      awayTeam.won += 1;
+      awayTeam.points += 3;
     } else if (awayGoals === homeGoals) {
-      updatedTeams[awayIdx].drawn += 1;
-      updatedTeams[awayIdx].points += 1;
+      awayTeam.drawn += 1;
+      awayTeam.points += 1;
     } else {
-      updatedTeams[awayIdx].lost += 1;
+      awayTeam.lost += 1;
     }
   }
   
-  return updatedTeams;
+  // 转回数组
+  var result = [];
+  for (var key in teamMap) {
+    result.push(teamMap[key]);
+  }
+  return result;
 }
 
 // ================================================================
@@ -1072,7 +1080,7 @@ function cardGerman(m, status) {
 }
 
 // ================================================================
-// 自定义积分榜渲染 - 使用手动制作的积分榜 + ESPN 比赛数据更新
+// 五大联赛渲染 - 使用手动积分榜 + ESPN 比赛数据
 // ================================================================
 function renderCustomMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -1097,7 +1105,6 @@ function renderCustomMatches() {
     var startDate = currentLeague === 'UCL' ? '2026年9月15日' : '2026年9月16日';
     h += '<div class="season-notice" style="margin:12px 0;"><span class="icon">🏆</span>' + competitionName + ' 2026-27 赛季为淘汰赛制<br><span class="sub">小组赛阶段将于 <span class="date">' + startDate + '</span> 开赛 · 敬请期待</span></div>';
   } else if (t && t.length > 0) {
-    // 使用手动制作的积分榜（已通过 ESPN 比赛数据更新）
     var leagueData = t[0];
     var teams = leagueData.teams || [];
     
@@ -1124,7 +1131,7 @@ function renderCustomMatches() {
       var logoHtml = getTeamLogoHtml(r.name, 22);
       
       h += '<tr><td><span class="rank ' + rankClass + '">' + (i + 1) + '</span></td>';
-      h += '<td><div class="team-cell">' + logoHtml + '<span style="cursor:pointer;border-bottom:2px solid transparent;transition:all 0.25s ease;" onclick="showEspnRoster(\'' + leagueCode + '\',\'' + r.name + '\',\'' + r.name + '\')" onmouseover="this.style.borderBottomColor=\'#4caf50\';this.style.color=\'#a5d6a7\'" onmouseout="this.style.borderBottomColor=\'transparent\';this.style.color=\'#eee\'">' + r.name + ' ℹ️</span></div></td>';
+      h += '<td><div class="team-cell">' + logoHtml + '<span>' + r.name + '</span></div></td>';
       h += '<td class="stat">' + r.played + '</td>';
       h += '<td class="stat">' + r.won + '</td>';
       h += '<td class="stat">' + r.drawn + '</td>';
