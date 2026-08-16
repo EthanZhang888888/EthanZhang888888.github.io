@@ -469,7 +469,7 @@ function getTeamLogoHtml(teamName, size) {
 }
 
 // ================================================================
-// 2026-27赛季五大联赛参赛球队（手动制作，用于积分榜）
+// 2026-27赛季五大联赛参赛球队
 // ================================================================
 var customStandings = {
   'ENG.1': {
@@ -597,47 +597,62 @@ function updateStandingsFromMatches(leagueData, matches) {
     };
   }
   
-  // 遍历所有比赛，只处理已结束的
+  // 遍历所有比赛
   for (var i = 0; i < matches.length; i++) {
     var match = matches[i];
     var c = match.competitions ? match.competitions[0] : null;
     if (!c || !c.competitors || c.competitors.length < 2) continue;
     
-    // 检查比赛是否已结束
-    var isCompleted = match.status && match.status.type && 
-                      (match.status.type.state === 'post' || match.status.type.completed === true);
+    // 检查比赛是否已结束 - 使用多种方式判断
+    var isCompleted = false;
+    if (match.status) {
+      if (match.status.type) {
+        if (match.status.type.state === 'post' || match.status.type.completed === true) {
+          isCompleted = true;
+        }
+        if (match.status.type.detail && (match.status.type.detail.toLowerCase().indexOf('final') !== -1 || match.status.type.detail.toLowerCase().indexOf('ended') !== -1)) {
+          isCompleted = true;
+        }
+      }
+      if (match.status.displayClock && match.status.displayClock === 'FT') {
+        isCompleted = true;
+      }
+    }
     if (!isCompleted) continue;
     
     var hh = c.competitors[0], aa = c.competitors[1];
     var homeName = hh.team.displayName || hh.team.shortDisplayName || '';
     var awayName = aa.team.displayName || aa.team.shortDisplayName || '';
     
-    // 获取比分
-    var hsRaw = '0', asRaw = '0';
+    // 获取比分 - 从 score 对象中提取
+    var homeGoals = 0, awayGoals = 0;
     if (hh.score) {
-      hsRaw = typeof hh.score === 'object' ? (hh.score.displayValue || hh.score.value || '0') : hh.score;
+      if (typeof hh.score === 'object') {
+        homeGoals = parseInt(hh.score.displayValue) || 0;
+        if (hh.score.value !== undefined) homeGoals = parseInt(hh.score.value) || 0;
+      } else {
+        homeGoals = parseInt(hh.score) || 0;
+      }
     }
     if (aa.score) {
-      asRaw = typeof aa.score === 'object' ? (aa.score.displayValue || aa.score.value || '0') : aa.score;
+      if (typeof aa.score === 'object') {
+        awayGoals = parseInt(aa.score.displayValue) || 0;
+        if (aa.score.value !== undefined) awayGoals = parseInt(aa.score.value) || 0;
+      } else {
+        awayGoals = parseInt(aa.score) || 0;
+      }
     }
-    var homeGoals = parseInt(hsRaw) || 0;
-    var awayGoals = parseInt(asRaw) || 0;
     
     // 查找匹配的球队
     var homeTeam = null, awayTeam = null;
-    var homeKey = null, awayKey = null;
-    
     for (var key in teamMap) {
       if (homeName.indexOf(key) !== -1 || key.indexOf(homeName) !== -1) {
         homeTeam = teamMap[key];
-        homeKey = key;
       }
       if (awayName.indexOf(key) !== -1 || key.indexOf(awayName) !== -1) {
         awayTeam = teamMap[key];
-        awayKey = key;
       }
     }
-    
     if (!homeTeam || !awayTeam) continue;
     
     // 更新主队
@@ -669,12 +684,22 @@ function updateStandingsFromMatches(leagueData, matches) {
     }
   }
   
-  // 转回数组
   var result = [];
   for (var key in teamMap) {
     result.push(teamMap[key]);
   }
   return result;
+}
+
+// ================================================================
+// 获取比分显示
+// ================================================================
+function getScoreDisplay(competitor) {
+  if (!competitor || !competitor.score) return '0';
+  if (typeof competitor.score === 'object') {
+    return competitor.score.displayValue || competitor.score.value || '0';
+  }
+  return competitor.score || '0';
 }
 
 // ================================================================
@@ -748,7 +773,7 @@ function showTeamInfo(teamId, teamName) {
 }
 
 // ================================================================
-// 根据队名查找 ESPN 球队 ID（用于德甲阵容）
+// 德甲阵容
 // ================================================================
 async function findEspnTeamId(leagueCode, teamName) {
   try {
@@ -769,12 +794,10 @@ async function findEspnTeamId(leagueCode, teamName) {
     }
     return null;
   } catch(e) {
-    console.warn('查找球队ID失败:', teamName);
     return null;
   }
 }
 
-// 显示德甲阵容（通过队名搜索 ESPN 球队 ID）
 async function showBundesligaRoster(teamName) {
   var teamId = await findEspnTeamId('GER.1', teamName);
   if (teamId) {
@@ -858,7 +881,6 @@ async function refreshMatches() {
   document.getElementById('matchMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载比赛数据...</div>';
   try {
     if (['bl1','bl2','bl3'].includes(currentLeague)) {
-      // 德甲/德乙/德丙：OpenLigaDB
       var year = new Date().getFullYear();
       var r1 = await fetch('https://api.openligadb.de/getmatchdata/' + currentLeague);
       var r2 = await fetch('https://api.openligadb.de/getbltable/' + currentLeague + '/' + year);
@@ -870,18 +892,15 @@ async function refreshMatches() {
       if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
       else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
       
-      // 获取比赛数据
       var r1 = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
-      matchData.m = (await r1.json()).events || [];
+      var data = await r1.json();
+      matchData.m = data.events || [];
       
-      // 提取队徽
       extractLogosFromMatches();
       
-      // 欧冠/欧联不显示积分榜
       if (currentLeague === 'UCL' || currentLeague === 'UEL') {
         matchData.t = [];
       } else {
-        // 使用手动制作的积分榜模板，从比赛数据中更新
         var leagueData = customStandings[currentLeague];
         if (leagueData) {
           var updatedTeams = updateStandingsFromMatches(leagueData, matchData.m);
@@ -972,9 +991,6 @@ function toggleAutoRefresh() {
 }
 function updateCountdownDisplay() { var el = document.getElementById('autoCountdown'); if (el) el.textContent = countdownSeconds + 's'; }
 
-// ================================================================
-// 渲染入口
-// ================================================================
 function renderMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
   var m = matchData.m || [];
@@ -995,7 +1011,7 @@ function renderMatches() {
 }
 
 // ================================================================
-// 德甲/德乙/德丙 渲染（OpenLigaDB）
+// 德甲渲染
 // ================================================================
 function renderGermanMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -1080,7 +1096,7 @@ function cardGerman(m, status) {
 }
 
 // ================================================================
-// 五大联赛渲染 - 使用手动积分榜 + ESPN 比赛数据
+// 五大联赛渲染 - 与德乙格式一致
 // ================================================================
 function renderCustomMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -1097,7 +1113,6 @@ function renderCustomMatches() {
   
   var h = '';
   
-  // 判断是否为欧冠/欧联
   var isKnockout = (currentLeague === 'UCL' || currentLeague === 'UEL');
   
   if (isKnockout) {
@@ -1111,17 +1126,12 @@ function renderCustomMatches() {
     h += '<details class="details" open><summary>📈 积分榜 - ' + leagueData.name + ' (' + teams.length + '队)</summary>';
     h += '<div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
     
-    // 按积分降序排列
     var sortedTeams = teams.slice().sort(function(a, b) {
       if (b.points !== a.points) return b.points - a.points;
       var gdA = a.goalsFor - a.goalsAgainst;
       var gdB = b.goalsFor - b.goalsAgainst;
       return gdB - gdA;
     });
-    
-    var leagueCode = currentLeague;
-    if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
-    else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
     
     for (var i = 0; i < sortedTeams.length; i++) {
       var r = sortedTeams[i];
@@ -1146,7 +1156,7 @@ function renderCustomMatches() {
     h += '<div class="season-notice" style="margin:12px 0;"><span class="icon">📊</span>暂无积分榜数据<br><span class="sub">请刷新页面重试</span></div>';
   }
   
-  // 渲染 ESPN 比赛数据
+  // 比赛卡片 - 与德乙格式一致
   var live = m.filter(function(x) { 
     return x.status && x.status.type && x.status.type.state === 'in'; 
   });
@@ -1226,7 +1236,7 @@ function cardCustom(m, status) {
 function filterMatches() { renderMatches(); }
 
 // ================================================================
-// 足球新闻模块
+// 足球新闻模块（完整保留，保持原有功能）
 // ================================================================
 var allRumors = [];
 var rumorTab = 'all';
