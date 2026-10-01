@@ -407,7 +407,6 @@ var currentSeason = new Date().getFullYear();
 // ================================================================
 var teamLogoCache = {};
 
-// 启动时从 localStorage 恢复历史队徽
 try {
   var savedLogos = JSON.parse(localStorage.getItem('teamLogoCache') || '{}');
   for (var _k in savedLogos) {
@@ -672,7 +671,6 @@ async function refreshMatches() {
       extractLogosFromMatches();
       renderCustomMatches();
 
-      // 异步预抓全联赛队徽
       prefetchLeagueLogos(leagueCode);
     }
     updateLiveButton();
@@ -783,14 +781,8 @@ function renderGermanMatches() {
 
   if (t && t.length) {
     h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
-    var logoDirty = false;
     for (var i = 0; i < t.length; i++) {
       var r = t[i];
-      // 顺手把德甲队徽写入缓存
-      if (r.teamIconUrl && r.teamName && !teamLogoCache[r.teamName]) {
-        teamLogoCache[r.teamName] = r.teamIconUrl;
-        logoDirty = true;
-      }
       var icon = '';
       if (r.teamIconUrl) {
         icon = '<img src="' + escapeHtml(r.teamIconUrl) + '" style="width:22px;height:22px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" loading="lazy" onerror="this.style.display=\'none\'">';
@@ -803,7 +795,6 @@ function renderGermanMatches() {
       h += '<tr><td><span class="rank ' + rankClass + '">' + (i + 1) + '</span></td><td><div class="team-cell">' + icon + '<span>' + escapeHtml(r.teamName) + '</span></div></td><td class="stat">' + r.matches + '</td><td class="stat">' + r.won + '</td><td class="stat">' + r.draw + '</td><td class="stat">' + r.lost + '</td><td class="stat">' + r.goals + '</td><td class="stat">' + r.opponentGoals + '</td><td class="' + gdClass + '">' + (r.goalDiff > 0 ? '+' : '') + r.goalDiff + '</td><td class="points">' + r.points + '</td></tr>';
     }
     h += '</table></div></div></details>';
-    if (logoDirty) saveTeamLogoCache();
   }
 
   m = m.slice().sort(function(a, b) {
@@ -831,15 +822,39 @@ function cardGerman(m, status) {
   var name2 = m.team2 ? m.team2.teamName : '?';
   var teamId1 = m.team1 ? m.team1.teamId : null;
   var teamId2 = m.team2 ? m.team2.teamId : null;
+
+  // 德甲队徽查找：先看比赛数据自带，再从积分榜按队名模糊匹配
+  function findGermanLogo(teamName) {
+    if (!teamName || teamName === '?') return '';
+    if (m.team1 && m.team1.teamName === teamName && m.team1.teamIconUrl) return m.team1.teamIconUrl;
+    if (m.team2 && m.team2.teamName === teamName && m.team2.teamIconUrl) return m.team2.teamIconUrl;
+    var table = matchData.t || [];
+    var clean = teamName.replace(/[^a-zA-Z0-9äöüÄÖÜß]/g, '').toLowerCase();
+    for (var i = 0; i < table.length; i++) {
+      var row = table[i];
+      if (!row.teamIconUrl || !row.teamName) continue;
+      var rowClean = row.teamName.replace(/[^a-zA-Z0-9äöüÄÖÜß]/g, '').toLowerCase();
+      if (row.teamName === teamName || rowClean === clean ||
+          rowClean.indexOf(clean) !== -1 || clean.indexOf(rowClean) !== -1) {
+        return row.teamIconUrl;
+      }
+    }
+    return '';
+  }
+
   var icon1 = '', icon2 = '';
-  if (m.team1 && m.team1.teamIconUrl) {
-    icon1 = '<img src="' + escapeHtml(m.team1.teamIconUrl) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" loading="lazy" onerror="this.style.display=\'none\'">';
+  var logo1 = findGermanLogo(name1);
+  var logo2 = findGermanLogo(name2);
+  if (logo1) {
+    icon1 = '<img src="' + escapeHtml(logo1) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" loading="lazy" onerror="this.style.display=\'none\'">';
+  } else if (name1 !== '?') {
+    icon1 = getTeamBadge(name1, 24);
   }
-  if (!icon1 && name1 !== '?') icon1 = getTeamBadge(name1, 24);
-  if (m.team2 && m.team2.teamIconUrl) {
-    icon2 = '<img src="' + escapeHtml(m.team2.teamIconUrl) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" loading="lazy" onerror="this.style.display=\'none\'">';
+  if (logo2) {
+    icon2 = '<img src="' + escapeHtml(logo2) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" loading="lazy" onerror="this.style.display=\'none\'">';
+  } else if (name2 !== '?') {
+    icon2 = getTeamBadge(name2, 24);
   }
-  if (!icon2 && name2 !== '?') icon2 = getTeamBadge(name2, 24);
 
   var display1 = icon1 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + escapeHtml(name1) + '\')">' + escapeHtml(name1) + ' <span class="info-icon">ℹ️</span></span>';
   var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + escapeHtml(name2) + '\')">' + escapeHtml(name2) + ' <span class="info-icon">ℹ️</span></span>';
@@ -951,7 +966,6 @@ function renderCustomMatches() {
           var teamName = translateTeamName(rawName);
           var teamId = e.team ? e.team.id : null;
 
-          // 从 standings 顺手补抓队徽
           if (e.team && e.team.logos && e.team.logos.length > 0) {
             var logoUrl = e.team.logos[0].href || e.team.logos[0].url;
             if (logoUrl && rawName && !teamLogoCache[rawName]) {
@@ -1046,8 +1060,12 @@ function cardCustom(m, status) {
   var name2 = translateTeamName(rawName2);
   var teamId1 = hh.team.id, teamId2 = aa.team.id;
 
-  var logo1 = hh.team.logo ? '<img src="' + escapeHtml(hh.team.logo) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">' : getTeamBadge(name1, 24);
-  var logo2 = aa.team.logo ? '<img src="' + escapeHtml(aa.team.logo) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">' : getTeamBadge(name2, 24);
+  var logo1 = hh.team.logo
+    ? '<img src="' + escapeHtml(hh.team.logo) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">'
+    : getTeamLogoHtml(rawName1, 24);
+  var logo2 = aa.team.logo
+    ? '<img src="' + escapeHtml(aa.team.logo) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">'
+    : getTeamLogoHtml(rawName2, 24);
 
   var leagueCode = currentLeague;
   if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
@@ -1115,7 +1133,7 @@ async function showEspnRoster(leagueCode, teamId, teamName) {
   showModal('阵容 ' + teamName, html);
 }
 
-// 德甲球队信息（OpenLigaDB）
+// 德甲球队信息
 function showTeamInfo(teamId, teamName) {
   var table = matchData.t || [];
   if (!table || table.length === 0) {
@@ -1247,7 +1265,6 @@ function switchRumorTag(tag) {
 
 async function fetchWithProxy(url) {
   var proxies = [
-    'https://api.cors.lol/?url=',
     'https://api.allorigins.win/raw?url='
   ];
   for (var p = 0; p < proxies.length; p++) {
@@ -1348,7 +1365,6 @@ async function fetchAllRumors() {
   document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载足球新闻...</div>';
   allRumors = [];
 
-  // RSS 源 + ESPN JSON 源并行抓取
   var rssPromises = RSS_SOURCES.map(function(source) { return fetchRSSSource(source); });
   var espnPromises = ESPN_NEWS_LEAGUES.map(function(source) { return fetchESPNNews(source); });
 
