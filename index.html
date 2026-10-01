@@ -347,7 +347,8 @@ h1{font-size:1.3em}
 <p>📰 本页仅显示新闻摘要（不超过150字），完整内容请点击「阅读原文」跳转查看。<br>
 数据来源: <a href="https://www.skysports.com/" target="_blank" rel="noopener">Sky Sports</a> |
 <a href="https://www.transfermarkt.com/" target="_blank" rel="noopener">Transfermarkt</a> |
-<a href="https://www.bbc.com/sport/football" target="_blank" rel="noopener">BBC Sport</a><br>
+<a href="https://www.bbc.com/sport/football" target="_blank" rel="noopener">BBC Sport</a> |
+<a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a><br>
 队徽来源于 ESPN 公开数据 · 仅供个人学习参考<br>
 版权归各俱乐部及其授权方所有</p>
 </div>
@@ -402,9 +403,24 @@ var offsetESPN = 8;
 var currentSeason = new Date().getFullYear();
 
 // ================================================================
-// 球队 Logo 缓存
+// 球队 Logo 缓存（持久化到 localStorage）
 // ================================================================
 var teamLogoCache = {};
+
+// 启动时从 localStorage 恢复历史队徽
+try {
+  var savedLogos = JSON.parse(localStorage.getItem('teamLogoCache') || '{}');
+  for (var _k in savedLogos) {
+    if (savedLogos[_k]) teamLogoCache[_k] = savedLogos[_k];
+  }
+  console.log('已恢复队徽缓存 ' + Object.keys(teamLogoCache).length + ' 条');
+} catch(e) { console.warn('恢复队徽缓存失败:', e.message); }
+
+function saveTeamLogoCache() {
+  try {
+    localStorage.setItem('teamLogoCache', JSON.stringify(teamLogoCache));
+  } catch(e) { console.warn('保存队徽缓存失败:', e.message); }
+}
 
 var TEAM_NAME_MAP = {
   'Manchester City':'曼城','Arsenal':'阿森纳','Liverpool':'利物浦','Chelsea':'切尔西',
@@ -449,12 +465,60 @@ function extractLogosFromMatches() {
     for (var j = 0; j < c.competitors.length; j++) {
       var team = c.competitors[j].team;
       if (team && team.logo) {
-        if (team.displayName) teamLogoCache[team.displayName] = team.logo;
-        if (team.shortDisplayName && team.shortDisplayName !== team.displayName) {
+        if (team.displayName && !teamLogoCache[team.displayName]) teamLogoCache[team.displayName] = team.logo;
+        if (team.shortDisplayName && team.shortDisplayName !== team.displayName && !teamLogoCache[team.shortDisplayName]) {
           teamLogoCache[team.shortDisplayName] = team.logo;
         }
       }
     }
+  }
+  saveTeamLogoCache();
+}
+
+// ================================================================
+// 预抓全联赛队徽
+// ================================================================
+var prefetchedLeagues = {};
+
+async function prefetchLeagueLogos(leagueCode) {
+  if (prefetchedLeagues[leagueCode]) return;
+  try {
+    var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams';
+    var resp = await fetch(url);
+    var data = await resp.json();
+
+    var teams = null;
+    if (data.sports && data.sports[0] && data.sports[0].leagues && data.sports[0].leagues[0]) {
+      teams = data.sports[0].leagues[0].teams;
+    }
+    if (!teams) return;
+
+    var added = 0;
+    for (var i = 0; i < teams.length; i++) {
+      var t = teams[i].team;
+      if (!t || !t.logos || t.logos.length === 0) continue;
+      var logoUrl = t.logos[0].href || t.logos[0].url;
+      if (!logoUrl) continue;
+
+      if (t.displayName && !teamLogoCache[t.displayName]) { teamLogoCache[t.displayName] = logoUrl; added++; }
+      if (t.shortDisplayName && t.shortDisplayName !== t.displayName && !teamLogoCache[t.shortDisplayName]) {
+        teamLogoCache[t.shortDisplayName] = logoUrl;
+      }
+      if (t.name && !teamLogoCache[t.name]) { teamLogoCache[t.name] = logoUrl; }
+      if (t.abbreviation && !teamLogoCache[t.abbreviation]) { teamLogoCache[t.abbreviation] = logoUrl; }
+    }
+
+    prefetchedLeagues[leagueCode] = true;
+
+    if (added > 0) {
+      saveTeamLogoCache();
+      console.log('预抓队徽 [' + leagueCode + '] 新增 ' + added + ' 条');
+      if (['bl1','bl2','bl3'].indexOf(currentLeague) === -1) {
+        renderCustomMatches();
+      }
+    }
+  } catch(e) {
+    console.warn('预抓队徽失败 [' + leagueCode + ']:', e.message);
   }
 }
 
@@ -496,7 +560,7 @@ function isSeasonStarted() {
 }
 
 // ================================================================
-// 时区格式化（用 Date 运算，避免跨月 bug）
+// 时区格式化
 // ================================================================
 function fmt(dateStr, offset) {
   var d = new Date(dateStr);
@@ -537,7 +601,7 @@ function updateDisplay(id, val) {
 }
 
 // ================================================================
-// 直播检测（覆盖德系 + ESPN 双数据源）
+// 直播检测
 // ================================================================
 function hasLiveMatches() {
   var m = matchData.m || [];
@@ -595,7 +659,6 @@ async function refreshMatches() {
       if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
       else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
 
-      // 并行请求：比赛数据（site/v2）+ 积分榜数据（apis/v2）
       var r1 = fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
       var r2 = fetch('https://site.api.espn.com/apis/v2/sports/soccer/' + leagueCode + '/standings');
 
@@ -608,6 +671,9 @@ async function refreshMatches() {
 
       extractLogosFromMatches();
       renderCustomMatches();
+
+      // 异步预抓全联赛队徽
+      prefetchLeagueLogos(leagueCode);
     }
     updateLiveButton();
   } catch(e) {
@@ -717,8 +783,14 @@ function renderGermanMatches() {
 
   if (t && t.length) {
     h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
+    var logoDirty = false;
     for (var i = 0; i < t.length; i++) {
       var r = t[i];
+      // 顺手把德甲队徽写入缓存
+      if (r.teamIconUrl && r.teamName && !teamLogoCache[r.teamName]) {
+        teamLogoCache[r.teamName] = r.teamIconUrl;
+        logoDirty = true;
+      }
       var icon = '';
       if (r.teamIconUrl) {
         icon = '<img src="' + escapeHtml(r.teamIconUrl) + '" style="width:22px;height:22px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" loading="lazy" onerror="this.style.display=\'none\'">';
@@ -731,6 +803,7 @@ function renderGermanMatches() {
       h += '<tr><td><span class="rank ' + rankClass + '">' + (i + 1) + '</span></td><td><div class="team-cell">' + icon + '<span>' + escapeHtml(r.teamName) + '</span></div></td><td class="stat">' + r.matches + '</td><td class="stat">' + r.won + '</td><td class="stat">' + r.draw + '</td><td class="stat">' + r.lost + '</td><td class="stat">' + r.goals + '</td><td class="stat">' + r.opponentGoals + '</td><td class="' + gdClass + '">' + (r.goalDiff > 0 ? '+' : '') + r.goalDiff + '</td><td class="points">' + r.points + '</td></tr>';
     }
     h += '</table></div></div></details>';
+    if (logoDirty) saveTeamLogoCache();
   }
 
   m = m.slice().sort(function(a, b) {
@@ -870,12 +943,22 @@ function renderCustomMatches() {
       if (hasEspnStandings && seasonStarted) {
         h += '<details class="details" open><summary>📈 积分榜 - ' + escapeHtml(leagueName) + '</summary>';
         h += '<div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
+        var logoDirty = false;
         for (var i = 0; i < espnEntries.length; i++) {
           var e = espnEntries[i];
           var stats = e.stats || [];
           var rawName = e.team ? (e.team.displayName || e.team.shortDisplayName || '未知') : '未知';
           var teamName = translateTeamName(rawName);
           var teamId = e.team ? e.team.id : null;
+
+          // 从 standings 顺手补抓队徽
+          if (e.team && e.team.logos && e.team.logos.length > 0) {
+            var logoUrl = e.team.logos[0].href || e.team.logos[0].url;
+            if (logoUrl && rawName && !teamLogoCache[rawName]) {
+              teamLogoCache[rawName] = logoUrl;
+              logoDirty = true;
+            }
+          }
 
           var played = statVal(stats, ['gamesplayed','gp','played'], '0');
           var won = statVal(stats, ['wins','w'], '0');
@@ -911,6 +994,7 @@ function renderCustomMatches() {
           h += '<td class="points">' + escapeHtml(points) + '</td></tr>';
         }
         h += '</table></div></div></details>';
+        if (logoDirty) saveTeamLogoCache();
       } else if (!seasonStarted) {
         h += '<div class="season-notice" style="margin:12px 0;"><span class="icon">⏳</span>2026-27 赛季将于 8月中旬开赛<br><span class="sub">当前为赛季备战期 · 积分榜暂为空</span></div>';
       } else {
@@ -1067,7 +1151,7 @@ function showTeamInfo(teamId, teamName) {
 }
 
 // ================================================================
-// 德甲阵容（通过队名搜索 ESPN 球队 ID）
+// 德甲阵容
 // ================================================================
 async function findEspnTeamId(leagueCode, teamName) {
   try {
@@ -1110,10 +1194,20 @@ var rumorTab = 'all';
 var currentRumorTag = 'all';
 var isLoadingRumors = false;
 
+// Sky Sports 保留，BBC 换官方地址，Transfermarkt 换 .de/rss/news
 var RSS_SOURCES = [
-{ name: 'Sky Sports', url: 'https://www.skysports.com/rss/12040' },
-{ name: 'Transfermarkt', url: 'https://www.transfermarkt.com/rss/feed' },
-{ name: 'BBC Sport', url: 'https://feeds.bbci.co.uk/sport/football/rss.xml' }
+  { name: 'Sky Sports', url: 'https://www.skysports.com/rss/12040' },
+  { name: 'Transfermarkt', url: 'https://www.transfermarkt.de/rss/news' },
+  { name: 'BBC Sport', url: 'http://newsrss.bbc.co.uk/rss/sportonline_uk_edition/football/rss.xml' }
+];
+
+// ESPN 新闻源（JSON，不走代理）
+var ESPN_NEWS_LEAGUES = [
+  { name: 'ESPN - 英超', league: 'eng.1' },
+  { name: 'ESPN - 西甲', league: 'esp.1' },
+  { name: 'ESPN - 德甲', league: 'ger.1' },
+  { name: 'ESPN - 意甲', league: 'ita.1' },
+  { name: 'ESPN - 法甲', league: 'fra.1' }
 ];
 
 var TAG_KEYWORDS = {
@@ -1153,6 +1247,7 @@ function switchRumorTag(tag) {
 
 async function fetchWithProxy(url) {
   var proxies = [
+    'https://api.cors.lol/?url=',
     'https://api.allorigins.win/raw?url='
   ];
   for (var p = 0; p < proxies.length; p++) {
@@ -1164,7 +1259,6 @@ async function fetchWithProxy(url) {
       clearTimeout(timeout);
       if (response.ok) {
         var text = await response.text();
-        // 内容校验：只接受真正的 RSS/Atom XML
         if (text && (text.indexOf('<rss') !== -1 || text.indexOf('<feed') !== -1 || text.indexOf('<item') !== -1)) {
           return text;
         }
@@ -1209,6 +1303,43 @@ async function fetchRSSSource(source) {
   } catch(e) { return []; }
 }
 
+// ESPN JSON 新闻抓取
+async function fetchESPNNews(source) {
+  try {
+    var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + source.league + '/news';
+    var resp = await fetch(url);
+    var data = await resp.json();
+
+    if (!data.articles || !Array.isArray(data.articles)) return [];
+
+    var results = [];
+    for (var i = 0; i < data.articles.length; i++) {
+      var a = data.articles[i];
+      if (!a.headline || !a.links) continue;
+
+      var link = '';
+      if (a.links && a.links.web && a.links.web.href) link = a.links.web.href;
+      if (!link && a.links && a.links.mobile && a.links.mobile.href) link = a.links.mobile.href;
+      if (!link) continue;
+
+      var summary = a.description || a.headline;
+      if (summary.length > 150) summary = summary.substring(0, 150) + '...';
+
+      results.push({
+        title: a.headline,
+        link: link,
+        pubDate: a.published || a.lastModified || new Date().toUTCString(),
+        summary: summary,
+        source: source.name
+      });
+    }
+    return results;
+  } catch(e) {
+    console.warn('ESPN 新闻抓取失败 [' + source.league + ']:', e.message);
+    return [];
+  }
+}
+
 async function fetchAllRumors() {
   if (isLoadingRumors) return;
   isLoadingRumors = true;
@@ -1216,9 +1347,14 @@ async function fetchAllRumors() {
   if (statusEl) statusEl.textContent = '加载 RSS...';
   document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载足球新闻...</div>';
   allRumors = [];
-  var promises = RSS_SOURCES.map(function(source) { return fetchRSSSource(source); });
-  var results = await Promise.all(promises);
-  results.forEach(function(items) { allRumors = allRumors.concat(items); });
+
+  // RSS 源 + ESPN JSON 源并行抓取
+  var rssPromises = RSS_SOURCES.map(function(source) { return fetchRSSSource(source); });
+  var espnPromises = ESPN_NEWS_LEAGUES.map(function(source) { return fetchESPNNews(source); });
+
+  var allResults = await Promise.all(rssPromises.concat(espnPromises));
+  allResults.forEach(function(items) { allRumors = allRumors.concat(items); });
+
   var seen = new Set();
   allRumors = allRumors.filter(function(item) {
     var key = item.title.substring(0, 60).toLowerCase();
@@ -1260,7 +1396,7 @@ function renderRumors() {
     var timeStr = isNaN(date.getTime()) ? '' : date.toLocaleDateString('zh-CN', {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
     var safeLink = escapeHtml(item.link || '#');
     var icons = { 'Sky Sports': '🎯', 'Transfermarkt': '⚽', 'BBC Sport': '📺' };
-    var icon = icons[item.source] || '📰';
+    var icon = icons[item.source] || (item.source.indexOf('ESPN') === 0 ? '📡' : '📰');
     var detectedTag = detectNewsTag(item.title + ' ' + item.summary);
     var tagDisplay = detectedTag ? '<span class="news-tag">' + detectedTag + '</span>' : '';
     html += '<div class="card"><div class="source-row"><span class="source">' + icon + ' ' + escapeHtml(item.source) + '</span>' + (timeStr ? '<span class="source-tag">' + escapeHtml(timeStr) + '</span>' : '') + '</div><div class="title"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(item.title) + '</a></div>' + (item.summary ? '<div class="summary">' + escapeHtml(item.summary) + '</div>' : '') + '<div class="meta"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="read-link">📖 阅读原文 →</a>' + tagDisplay + '</div></div>';
