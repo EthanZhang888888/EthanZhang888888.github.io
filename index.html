@@ -397,8 +397,8 @@ function showModal(title, html) {
 // ================================================================
 var matchData = { m: [], t: [] };
 var currentLeague = 'bl1';
-var offsetG = 8;      // 德系数据源为 UTC，默认按北京时间 +8
-var offsetESPN = 8;   // 五大联赛默认按北京时间 +8
+var offsetG = 8;
+var offsetESPN = 8;
 var currentSeason = new Date().getFullYear();
 
 // ================================================================
@@ -406,7 +406,6 @@ var currentSeason = new Date().getFullYear();
 // ================================================================
 var teamLogoCache = {};
 
-// 英文名 → 中文名映射（仅用于 UI 显示）
 var TEAM_NAME_MAP = {
   'Manchester City':'曼城','Arsenal':'阿森纳','Liverpool':'利物浦','Chelsea':'切尔西',
   'Tottenham':'热刺','Newcastle':'纽卡斯尔','Manchester United':'曼联',
@@ -497,7 +496,7 @@ function isSeasonStarted() {
 }
 
 // ================================================================
-// 时区格式化 —— 使用 Date 运算避免跨月 bug
+// 时区格式化（用 Date 运算，避免跨月 bug）
 // ================================================================
 function fmt(dateStr, offset) {
   var d = new Date(dateStr);
@@ -538,7 +537,7 @@ function updateDisplay(id, val) {
 }
 
 // ================================================================
-// 直播检测 —— 覆盖德系 + ESPN 双数据源
+// 直播检测（覆盖德系 + ESPN 双数据源）
 // ================================================================
 function hasLiveMatches() {
   var m = matchData.m || [];
@@ -596,10 +595,11 @@ async function refreshMatches() {
       if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
       else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
 
-      var results = await Promise.all([
-        fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard'),
-        fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/standings')
-      ]);
+      // 并行请求：比赛数据（site/v2）+ 积分榜数据（apis/v2）
+      var r1 = fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
+      var r2 = fetch('https://site.api.espn.com/apis/v2/sports/soccer/' + leagueCode + '/standings');
+
+      var results = await Promise.all([r1, r2]);
       var scoreboardData = await results[0].json();
       var standingsData = await results[1].json();
 
@@ -634,14 +634,12 @@ async function refreshLiveMatches() {
       }
       renderGermanMatches();
     } else {
-      // ESPN：重新拉取 scoreboard 并替换 live 场次
       var leagueCode = currentLeague;
       if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
       else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
       var resp = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
       var data = await resp.json();
       var newEvents = data.events || [];
-      // 用 id 匹配替换
       for (var i = 0; i < matchData.m.length; i++) {
         var oldId = matchData.m[i].id;
         if (!oldId) continue;
@@ -692,7 +690,7 @@ function toggleAutoRefresh() {
 function updateCountdownDisplay() { var el = document.getElementById('autoCountdown'); if (el) el.textContent = countdownSeconds + 's'; }
 
 // ================================================================
-// 渲染入口 —— 移除死代码
+// 渲染入口
 // ================================================================
 function renderMatches() {
   if (['bl1','bl2','bl3'].indexOf(currentLeague) !== -1) {
@@ -735,7 +733,6 @@ function renderGermanMatches() {
     h += '</table></div></div></details>';
   }
 
-  // 按时间排序后再分组
   m = m.slice().sort(function(a, b) {
     return new Date(a.matchDateTime) - new Date(b.matchDateTime);
   });
@@ -810,7 +807,7 @@ function cardGerman(m, status) {
 }
 
 // ================================================================
-// ESPN 积分榜辅助函数
+// ESPN 积分榜字段辅助
 // ================================================================
 function getStat(stats, names) {
   if (!stats) return null;
@@ -833,7 +830,7 @@ function statVal(stats, names, fallback) {
 }
 
 // ================================================================
-// 自定义积分榜 + 比赛渲染
+// 五大联赛 + 欧战 渲染
 // ================================================================
 function renderCustomMatches() {
   var s = document.getElementById('searchInput').value.toLowerCase();
@@ -1034,7 +1031,7 @@ async function showEspnRoster(leagueCode, teamId, teamName) {
   showModal('阵容 ' + teamName, html);
 }
 
-// 德甲球队信息
+// 德甲球队信息（OpenLigaDB）
 function showTeamInfo(teamId, teamName) {
   var table = matchData.t || [];
   if (!table || table.length === 0) {
@@ -1114,9 +1111,9 @@ var currentRumorTag = 'all';
 var isLoadingRumors = false;
 
 var RSS_SOURCES = [
-  { name: 'Sky Sports', url: 'https://www.skysports.com/rss/12040' },
-  { name: 'Transfermarkt', url: 'https://www.transfermarkt.com/rss/feed' },
-  { name: 'BBC Sport', url: 'https://newsrss.bbc.co.uk/rss/sportonline_uk_edition/football/rss.xml' }
+{ name: 'Sky Sports', url: 'https://www.skysports.com/rss/12040' },
+{ name: 'Transfermarkt', url: 'https://www.transfermarkt.com/rss/feed' },
+{ name: 'BBC Sport', url: 'https://feeds.bbci.co.uk/sport/football/rss.xml' }
 ];
 
 var TAG_KEYWORDS = {
@@ -1156,20 +1153,23 @@ function switchRumorTag(tag) {
 
 async function fetchWithProxy(url) {
   var proxies = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?'
+    'https://api.allorigins.win/raw?url='
   ];
   for (var p = 0; p < proxies.length; p++) {
     try {
       var proxyUrl = proxies[p] + encodeURIComponent(url);
       var controller = new AbortController();
-      var timeout = setTimeout(function() { controller.abort(); }, 15000);
+      var timeout = setTimeout(function() { controller.abort(); }, 20000);
       var response = await fetch(proxyUrl, { signal: controller.signal });
       clearTimeout(timeout);
       if (response.ok) {
-        return await response.text();
+        var text = await response.text();
+        // 内容校验：只接受真正的 RSS/Atom XML
+        if (text && (text.indexOf('<rss') !== -1 || text.indexOf('<feed') !== -1 || text.indexOf('<item') !== -1)) {
+          return text;
+        }
       }
-    } catch(e) { console.warn('代理 ' + p + ' 失败'); }
+    } catch(e) { console.warn('代理 ' + p + ' 失败: ' + e.message); }
   }
   return null;
 }
@@ -1277,7 +1277,6 @@ function detectNewsTag(text) {
     var keywords = TAG_KEYWORDS[tag];
     for (var i = 0; i < keywords.length; i++) {
       var kw = keywords[i].toLowerCase();
-      // 短词用词边界匹配，避免误伤
       if (kw.length <= 4) {
         if (new RegExp('\\b' + kw + '\\b').test(lower)) return tagNames[tag] || tag;
       } else {
@@ -1329,7 +1328,7 @@ function switchRumorTab(tab) {
 function filterRumors() { renderRumors(); }
 
 // ================================================================
-// 页面切换 —— 合并清理逻辑，不再覆盖函数
+// 页面切换
 // ================================================================
 function switchPage(page) {
   if (autoRefreshEnabled) toggleAutoRefresh();
