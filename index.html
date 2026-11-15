@@ -273,7 +273,6 @@
                     </div>
                     <input type="range" id="velocitySlider" min="0.0" max="6.0" step="0.2" value="3.0">
                 </div>
-                <!-- 补全：阻尼 & 恢复系数（原代码引用但缺失） -->
                 <div class="param hidden" id="paramDamping">
                     <div class="param-header">
                         <div class="param-label"><i class="fas fa-water"></i>阻尼系数</div>
@@ -323,7 +322,6 @@
                     </div>
                     <input type="range" id="frictionSlider" min="0.05" max="0.80" step="0.01" value="0.30">
                 </div>
-                <!-- 新增：木板-地面摩擦系数 μ₂ -->
                 <div class="param hidden" id="paramFriction2">
                     <div class="param-header">
                         <div class="param-label"><i class="fas fa-hand"></i>木板-地面 μ₂</div>
@@ -435,7 +433,7 @@
 
 <script>
 (function() {
-    // ===== DOM 元素 =====
+    // ===== DOM =====
     const canvas = document.getElementById('physicsCanvas');
     const ctx = canvas.getContext('2d');
     const canvasWrap = document.getElementById('canvasWrap');
@@ -521,7 +519,7 @@
     const paramBeltAngle = document.getElementById('paramBeltAngle');
     const paramBoardVel = document.getElementById('paramBoardVel');
 
-    // ===== 全局状态 =====
+    // ===== 状态 =====
     let currentModel = 'bounce';
     let isPaused = false;
     let showTrajectory = false;
@@ -532,8 +530,8 @@
     let damping = 0.02;
     let restitution = 0.85;
     let isIdealMode = false;
-    let frictionCoeff = 0.30;   // μ₁ 物块-木板 / 物块-传送带
-    let frictionCoeff2 = 0.10;  // μ₂ 木板-地面
+    let frictionCoeff = 0.30;
+    let frictionCoeff2 = 0.10;
     let beltSpeed = 2.0;
     let beltAngle = 30;
     let boardInitVel = 2.0;
@@ -591,7 +589,6 @@
     let energyHistory = [];
     let ballTrail = [];
 
-    // ===== 工具 =====
     function recordEnergy() {
         energyHistory.push({ ek: displayKinetic, ep: displayPotential, e: displayMechanical });
         if (energyHistory.length > MAX_HISTORY) energyHistory.shift();
@@ -609,7 +606,6 @@
         pendulumState.omega = -pendulumInitialAngle * omega0 * Math.sin(omega0 * pendulumTime);
         ball.x = PENDULUM_PIVOT_X + len * Math.sin(pendulumState.angle);
         ball.y = PENDULUM_PIVOT_Y + len * Math.cos(pendulumState.angle);
-        // 速度垂直于摆线，保留 omega 符号
         ball.vx = len * pendulumState.omega * Math.cos(pendulumState.angle);
         ball.vy = -len * pendulumState.omega * Math.sin(pendulumState.angle);
     }
@@ -627,7 +623,7 @@
         ball.vy = 0;
     }
 
-    // ===== 板块模型（高中标准，双摩擦 + 撞墙惯性 + 共速防抖） =====
+    // ===== 板块 =====
     function updateBlock() {
         const dt = 1 / 60;
         const mu1 = frictionCoeff;
@@ -688,7 +684,6 @@
             } else {
                 blockState.blockV = vNew;
                 blockState.boardV = vNew;
-                // 地面摩擦生热（共速滑行阶段）
                 const dCommon = (vNew + vCommon) / 2 * dt;
                 heatQ += fGroundMax * Math.abs(dCommon) / (PX_PER_METER * PX_PER_METER);
             }
@@ -697,7 +692,6 @@
         blockState.blockX += blockState.blockV * dt;
         blockState.boardX += blockState.boardV * dt;
 
-        // 木板撞墙：只清零板速，物块保留惯性
         if (blockState.boardX < LEFT_WALL) {
             blockState.boardX = LEFT_WALL;
             blockState.boardV = 0;
@@ -706,8 +700,6 @@
             blockState.boardX = RIGHT_WALL - blockState.boardW;
             blockState.boardV = 0;
         }
-
-        // 物块边界约束
         if (blockState.blockX < blockState.boardX) {
             blockState.blockX = blockState.boardX;
             blockState.blockV = blockState.boardV;
@@ -723,7 +715,7 @@
         ball.vy = 0;
     }
 
-    // ===== 水平传送带（高中标准） =====
+    // ===== 水平传送带 =====
     function updateConveyor() {
         const dt = 1 / 60;
         const mu = frictionCoeff;
@@ -755,7 +747,6 @@
         conveyorState.blockX += conveyorState.blockV * dt;
         conveyorState.beltDashOffset -= vBelt * dt;
 
-        // 到右端：保持速度离开（不归零）
         if (conveyorState.blockX + conveyorState.blockW > conveyorState.beltRight) {
             conveyorState.blockX = conveyorState.beltRight - conveyorState.blockW;
         }
@@ -769,7 +760,7 @@
         motorEnergy = 0.5 * mass * finalV * finalV + heatQ;
     }
 
-    // ===== 倾斜传送带（高中标准，含 μ vs tanθ 校验） =====
+    // ===== 倾斜传送带 =====
     function updateConveyorTilt() {
         const dt = 1 / 60;
         const mu = frictionCoeff;
@@ -802,12 +793,10 @@
             heatQ += Math.abs(frictionForce) * dRel / (PX_PER_METER * PX_PER_METER);
             frictionWork += frictionForce * dBlock / (PX_PER_METER * PX_PER_METER);
         } else {
-            // 共速后判断 μ ≥ tanθ
             if (mu >= tanTheta) {
                 tiltConveyorState.blockV = vBelt;
                 frictionForce = mass * gSin;
             } else {
-                // 静摩擦不足，下滑重新进入滑动
                 const aSlip = mu * gCos - gSin;
                 const oldV = tiltConveyorState.blockV;
                 tiltConveyorState.blockV += aSlip * dt;
@@ -927,7 +916,7 @@
             const len = pendulumState.length;
             const angle = pendulumState.angle;
             h = (len / 100) * (1 - Math.cos(angle));
-            potential = ballState.mass * G_ACCEL * h;  // 修正：用 9.8 而非像素重力
+            potential = ballState.mass * G_ACCEL * h;
         } else if (currentModel === 'spring') {
             kinetic = 0.5 * ballState.mass * v * v;
             const k = springState.stiffness * 100;
@@ -1075,11 +1064,14 @@
             stepCount++; updateReportAndBars(); return;
         }
 
-        // 自由落体
+        // ===== 自由落体 =====
         let dampCoeff = isIdealMode ? 0 : damping;
         let restCoeff = isIdealMode ? 1.0 : restitution;
 
-        if (!isIdealMode) { ball.vx *= (1 - dampCoeff * 0.4); ball.vy *= (1 - dampCoeff * 0.4); }
+        if (!isIdealMode) {
+            ball.vx *= (1 - dampCoeff * 0.4);
+            ball.vy *= (1 - dampCoeff * 0.4);
+        }
         ball.vy += GRAVITY;
         ball.x += ball.vx;
         ball.y += ball.vy;
@@ -1087,22 +1079,58 @@
         ballTrail.push({ x: ball.x, y: ball.y });
         if (ballTrail.length > 20) ballTrail.shift();
 
+        // 地面碰撞
         if (ball.y + ball.radius > GROUND_Y) {
-            ball.y = GROUND_Y - ball.radius;
-            if (Math.abs(ball.vy) > 0.05) {
+            if (isIdealMode) {
+                // 镜面反射：落多少弹多少，势能严格还原
+                ball.y = 2 * (GROUND_Y - ball.radius) - ball.y;
+                ball.vy = -ball.vy;
+            } else {
+                ball.y = GROUND_Y - ball.radius;
+                if (Math.abs(ball.vy) > 0.05) {
+                    ball.vy = -ball.vy * restCoeff;
+                    ball.vx *= (1 - dampCoeff * 0.2);
+                } else ball.vy = 0;
+            }
+        }
+        // 左右墙
+        if (ball.x - ball.radius < LEFT_WALL) {
+            if (isIdealMode) {
+                ball.x = 2 * (LEFT_WALL + ball.radius) - ball.x;
+                ball.vx = -ball.vx;
+            } else {
+                ball.x = LEFT_WALL + ball.radius;
+                ball.vx = -ball.vx * restCoeff;
+            }
+        } else if (ball.x + ball.radius > RIGHT_WALL) {
+            if (isIdealMode) {
+                ball.x = 2 * (RIGHT_WALL - ball.radius) - ball.x;
+                ball.vx = -ball.vx;
+            } else {
+                ball.x = RIGHT_WALL - ball.radius;
+                ball.vx = -ball.vx * restCoeff;
+            }
+        }
+        // 天花板
+        if (ball.y - ball.radius < 20) {
+            if (isIdealMode) {
+                ball.y = 2 * (20 + ball.radius) - ball.y;
+                ball.vy = -ball.vy;
+            } else {
+                ball.y = 20 + ball.radius;
                 ball.vy = -ball.vy * restCoeff;
-                if (!isIdealMode) ball.vx *= (1 - dampCoeff * 0.2);
-            } else ball.vy = 0;
+            }
         }
-        if (ball.x - ball.radius < LEFT_WALL) { ball.x = LEFT_WALL + ball.radius; ball.vx = -ball.vx * restCoeff; }
-        else if (ball.x + ball.radius > RIGHT_WALL) { ball.x = RIGHT_WALL - ball.radius; ball.vx = -ball.vx * restCoeff; }
-        if (ball.y - ball.radius < 20) { ball.y = 20 + ball.radius; ball.vy = -ball.vy * restCoeff; }
 
-        const speedSq = ball.vx * ball.vx + ball.vy * ball.vy;
-        if (!isIdealMode && speedSq < REST_THRESHOLD) {
-            ball.vx = 0; ball.vy = 0;
-            if (ball.y + ball.radius > GROUND_Y - 1) ball.y = GROUND_Y - ball.radius;
+        // 实际模式下的静止判定
+        if (!isIdealMode) {
+            const speedSq = ball.vx * ball.vx + ball.vy * ball.vy;
+            if (speedSq < REST_THRESHOLD) {
+                ball.vx = 0; ball.vy = 0;
+                if (ball.y + ball.radius > GROUND_Y - 1) ball.y = GROUND_Y - ball.radius;
+            }
         }
+
         if (showTrajectory && stepCount % 2 === 0) {
             trajectoryPoints.push({ x: ball.x, y: ball.y });
             if (trajectoryPoints.length > 5000) trajectoryPoints.splice(0, 100);
@@ -1131,6 +1159,7 @@
             recordEnergy(); drawEnergyChart(); return;
         }
 
+        // ===== 自由落体分支 =====
         if (!isIdealMode && currentModel === 'bounce') {
             const sq = ball.vx * ball.vx + ball.vy * ball.vy;
             if (ball.y + ball.radius >= GROUND_Y - 0.5 && sq < REST_THRESHOLD) {
@@ -1142,10 +1171,18 @@
 
         let e = calcMechanicalEnergy(ball);
         let rk = e.kinetic, rp = e.potential, rm = e.total;
-        displayLoss = isIdealMode ? 0 : Math.max(0, initialMechanicalEnergy - rm);
 
-        if (!isIdealMode) {
-            if (rm > displayMechanical && displayMechanical > 0.001) { rm = displayMechanical; rk = displayKinetic; rp = displayPotential; }
+        if (isIdealMode) {
+            // 理想：E 严格等于初始机械能，Ep 由当前高度决定，Ek 反推
+            rm = initialMechanicalEnergy;
+            rp = e.potential;
+            rk = Math.max(0, rm - rp);
+            displayLoss = 0;
+        } else {
+            displayLoss = Math.max(0, initialMechanicalEnergy - rm);
+            if (rm > displayMechanical && displayMechanical > 0.001) {
+                rm = displayMechanical; rk = displayKinetic; rp = displayPotential;
+            }
             if (rm < ZERO_THRESHOLD) {
                 forceBallRest();
                 updateDisplay(0, 0, 0, initialMechanicalEnergy);
@@ -1271,7 +1308,6 @@
         drawArea('e', '#34d399', 'rgba(52, 211, 153, 0.25)', 'rgba(52, 211, 153, 0.02)');
     }
 
-    // ===== 滑块显示 =====
     function updateSlidersDisplay() {
         massVal.textContent = massSlider.value;
         velVal.textContent = velocitySlider.value;
@@ -1288,7 +1324,6 @@
         boardVelVal.textContent = boardVelSlider.value;
     }
 
-    // ===== 理想模式 =====
     function setIdealMode(enable) {
         isIdealMode = enable;
         if (enable) {
@@ -1311,7 +1346,6 @@
 
     idealToggle.addEventListener('click', function(e) { e.stopPropagation(); setIdealMode(!isIdealMode); });
 
-    // ===== 滑块事件 =====
     function onSliderChange() {
         mass = parseFloat(massSlider.value);
         initialVelocity = parseFloat(velocitySlider.value);
@@ -1365,7 +1399,6 @@
     beltAngleSlider.addEventListener('input', onSliderChange);
     boardVelSlider.addEventListener('input', onSliderChange);
 
-    // ===== 轨迹 =====
     trajectoryToggle.addEventListener('click', function(e) {
         e.stopPropagation();
         showTrajectory = !showTrajectory;
@@ -1373,7 +1406,6 @@
         trajectoryPoints = [];
     });
 
-    // ===== 暂停 =====
     function togglePause() {
         isPaused = !isPaused;
         if (isPaused) {
@@ -1392,7 +1424,6 @@
     pauseBtn.addEventListener('click', togglePause);
     resetBtn.addEventListener('click', resetSimulation);
 
-    // ===== 拖拽 =====
     function getMousePos(e) {
         const rect = canvas.getBoundingClientRect();
         const sx = canvas.width / rect.width, sy = canvas.height / rect.height;
@@ -1476,7 +1507,6 @@
     window.addEventListener('touchmove', onPointerMove, { passive: false });
     window.addEventListener('touchend', onPointerUp, { passive: false });
 
-    // ===== 绘图 =====
     function drawScene() {
         const grad = ctx.createLinearGradient(0, 0, 0, 560);
         grad.addColorStop(0, '#0d1526'); grad.addColorStop(1, '#060a12');
@@ -1630,7 +1660,6 @@
             ctx.strokeRect(tiltConveyorState.blockX, bly, tiltConveyorState.blockW, tiltConveyorState.blockH);
             ctx.fillStyle = 'rgba(168, 184, 212, 0.7)'; ctx.fillText('物块', tiltConveyorState.blockX + 13, bly - 5);
 
-            // 划痕沿斜面绘制
             if (scratchLength > 0.01) {
                 const Lpx = Math.min(scratchLength * PX_PER_METER, rx - lx);
                 const endX = lx + Lpx;
@@ -1702,6 +1731,10 @@
             const h = Math.max(0, (GROUND_Y - ball.y - ball.radius) / 100);
             ctx.fillText(`h = ${h.toFixed(2)} m`, 20, 30);
             ctx.fillText(`m = ${ball.mass.toFixed(2)} kg`, 20, 50);
+            if (isIdealMode) {
+                ctx.fillStyle = 'rgba(52, 211, 153, 0.8)'; ctx.font = '12px -apple-system, sans-serif';
+                ctx.fillText('理想模式 · 机械能严格守恒', 20, 72);
+            }
         }
 
         if (isPaused) {
@@ -1711,7 +1744,6 @@
         }
     }
 
-    // ===== 导出 =====
     function handleExport(type) {
         let ms = '';
         if (currentModel === 'pendulum') ms = '单摆（理想）';
@@ -1769,7 +1801,6 @@
     exportReportBtn.addEventListener('click', () => handleExport('report'));
     exportQuestionBtn.addEventListener('click', () => handleExport('question'));
 
-    // ===== 启动 =====
     updateSlidersDisplay();
     switchModel('bounce');
 
