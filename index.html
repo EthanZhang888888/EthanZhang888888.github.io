@@ -2,1649 +2,237 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>足球数据中心</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+<title>物理沙盒</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-::-webkit-scrollbar{width:6px}
-::-webkit-scrollbar-track{background:#0a120a}
-::-webkit-scrollbar-thumb{background:linear-gradient(180deg,#4caf50,#2e7d32);border-radius:3px}
-
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#0a120a;color:#eee;padding:10px;min-height:100vh;position:relative;overflow-x:hidden}
-body::before{content:'';position:fixed;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(ellipse at 20% 50%,rgba(46,125,50,0.08) 0%,transparent 50%),radial-gradient(ellipse at 80% 20%,rgba(76,175,80,0.05) 0%,transparent 40%),radial-gradient(ellipse at 50% 80%,rgba(27,94,32,0.06) 0%,transparent 50%);z-index:0;pointer-events:none}
-body::after{content:'';position:fixed;top:0;left:0;width:100%;height:100%;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");pointer-events:none;z-index:0}
-
-.football-bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;overflow:hidden;opacity:0.35}
-.football-bg .main-ball{position:absolute;width:750px;height:750px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#888,#222);top:50%;left:50%;margin-left:-375px;margin-top:-375px;animation:drift 25s ease-in-out infinite,spin 40s linear infinite,breath 6s ease-in-out infinite;box-shadow:inset -40px -40px 100px rgba(0,0,0,0.9),inset 40px 40px 100px rgba(255,255,255,0.12),0 0 150px rgba(0,0,0,0.5)}
-.football-bg .main-ball::before{content:'';position:absolute;top:-2%;left:-2%;width:104%;height:104%;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,0.08),transparent 60%)}
-.football-bg .pattern{position:absolute;width:100%;height:100%;top:0;left:0}
-.football-bg .pentagon{position:absolute;background:rgba(255,255,255,0.12);border:1.5px solid rgba(255,255,255,0.15);clip-path:polygon(50% 0%,100% 38%,81% 100%,19% 100%,0% 38%);animation:float 10s ease-in-out infinite alternate}
-.football-bg .pentagon:nth-child(1){top:8%;left:18%;width:55px;height:55px;animation-delay:0s}
-.football-bg .pentagon:nth-child(2){top:12%;right:22%;width:50px;height:50px;animation-delay:1.2s}
-.football-bg .pentagon:nth-child(3){bottom:18%;left:12%;width:60px;height:60px;animation-delay:2.4s}
-.football-bg .pentagon:nth-child(4){bottom:22%;right:18%;width:48px;height:48px;animation-delay:3.6s}
-.football-bg .pentagon:nth-child(5){top:42%;left:3%;width:45px;height:45px;animation-delay:4.8s}
-.football-bg .pentagon:nth-child(6){top:38%;right:5%;width:52px;height:52px;animation-delay:6s}
-.football-bg .pentagon:nth-child(7){bottom:38%;left:5%;width:42px;height:42px;animation-delay:7.2s}
-.football-bg .pentagon:nth-child(8){bottom:42%;right:8%;width:55px;height:55px;animation-delay:8.4s}
-.football-bg .pentagon:nth-child(9){top:58%;left:22%;width:40px;height:40px;animation-delay:1.8s}
-.football-bg .pentagon:nth-child(10){top:52%;right:25%;width:44px;height:44px;animation-delay:4.2s}
-.football-bg .pentagon:nth-child(11){bottom:8%;left:38%;width:38px;height:38px;animation-delay:6.6s}
-.football-bg .pentagon:nth-child(12){top:15%;left:48%;width:48px;height:48px;animation-delay:3s}
-.football-bg .pentagon:nth-child(13){bottom:15%;right:42%;width:42px;height:42px;animation-delay:5.4s}
-.football-bg .pentagon:nth-child(14){top:30%;left:12%;width:35px;height:35px;animation-delay:7.8s}
-.football-bg .pentagon:nth-child(15){bottom:30%;right:15%;width:38px;height:38px;animation-delay:2.2s}
-.football-bg .line{position:absolute;background:rgba(255,255,255,0.03);border-radius:50%;border:1px solid rgba(255,255,255,0.04)}
-.football-bg .line:nth-child(16){width:280px;height:280px;top:50%;left:50%;transform:translate(-50%,-50%)}
-.football-bg .line:nth-child(17){width:420px;height:420px;top:50%;left:50%;transform:translate(-50%,-50%)}
-.football-bg .line:nth-child(18){width:560px;height:560px;top:50%;left:50%;transform:translate(-50%,-50%)}
-
-@keyframes drift{
-0%{transform:translate(0,0) rotate(0deg)}
-12.5%{transform:translate(60px,-40px) rotate(45deg)}
-25%{transform:translate(100px,0) rotate(90deg)}
-37.5%{transform:translate(60px,40px) rotate(135deg)}
-50%{transform:translate(0,60px) rotate(180deg)}
-62.5%{transform:translate(-60px,40px) rotate(225deg)}
-75%{transform:translate(-100px,0) rotate(270deg)}
-87.5%{transform:translate(-60px,-40px) rotate(315deg)}
-100%{transform:translate(0,0) rotate(360deg)}
-}
-@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
-@keyframes breath{0%,100%{transform:scale(1)}50%{transform:scale(1.03)}}
-@keyframes float{0%{transform:translateY(0px) rotate(0deg);opacity:0.3}100%{transform:translateY(-25px) rotate(20deg);opacity:0.8}}
-
-h1{text-align:center;margin:20px 0 10px;font-size:2em;font-weight:800;background:linear-gradient(135deg,#66bb6a,#a5d6a7,#66bb6a);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:gradientShift 4s ease-in-out infinite;position:relative;z-index:2;letter-spacing:-0.5px;text-shadow:0 0 60px rgba(76,175,80,0.15)}
-@keyframes gradientShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-h1 .badge{font-size:12px;background:rgba(76,175,80,0.15);color:#a5d6a7;padding:3px 16px;border-radius:20px;margin-left:12px;-webkit-text-fill-color:#a5d6a7;font-weight:500;border:1px solid rgba(76,175,80,0.1);vertical-align:middle;backdrop-filter:blur(4px)}
-h1 .live-dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#4caf50;margin-right:8px;-webkit-text-fill-color:initial;animation:pulse-dot 1.5s ease-in-out infinite;vertical-align:middle}
-@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);box-shadow:0 0 0 0 rgba(76,175,80,0.4)}50%{opacity:0.6;transform:scale(0.85);box-shadow:0 0 20px 8px rgba(76,175,80,0)}}
-
-.main-nav{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:16px 0 14px;position:relative;z-index:2}
-.main-nav a{padding:10px 28px;border-radius:30px;border:1px solid rgba(76,175,80,0.15);background:rgba(255,255,255,0.02);color:#8bc34a;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none;transition:all 0.35s cubic-bezier(0.4,0,0.2,1);backdrop-filter:blur(12px);position:relative;overflow:hidden}
-.main-nav a::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(76,175,80,0.1),transparent);transition:left 0.6s ease}
-.main-nav a:hover::before{left:100%}
-.main-nav a:hover{background:rgba(76,175,80,0.08);border-color:rgba(76,175,80,0.3);transform:translateY(-2px);box-shadow:0 8px 30px rgba(76,175,80,0.08)}
-.main-nav a.on{background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;border-color:#4caf50;box-shadow:0 4px 25px rgba(76,175,80,0.25),inset 0 1px 0 rgba(255,255,255,0.1)}
-.main-nav a.on::before{display:none}
-
-.league-nav{display:flex;flex-wrap:wrap;justify-content:center;gap:5px;margin:10px 0;position:relative;z-index:2}
-.league-nav button{padding:7px 16px;border-radius:20px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:#666;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.25s ease;backdrop-filter:blur(4px)}
-.league-nav button:hover{background:rgba(76,175,80,0.06);color:#b8d9b0;border-color:rgba(76,175,80,0.15);transform:translateY(-1px)}
-.league-nav button.on{background:rgba(76,175,80,0.12);color:#4caf50;border-color:#4caf50;box-shadow:0 0 30px rgba(76,175,80,0.04)}
-.league-nav button .icon{margin-right:4px}
-
-.tz-row{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 16px;align-items:center;padding:8px 18px;background:rgba(255,255,255,0.015);border-radius:14px;border:1px solid rgba(255,255,255,0.03);backdrop-filter:blur(12px);position:relative;z-index:2}
-.tz-label{color:#444;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px}
-.tz-group{display:flex;align-items:center;gap:2px;background:rgba(255,255,255,0.02);border-radius:14px;padding:2px;border:1px solid rgba(255,255,255,0.03)}
-.tz-group button{background:transparent;border:none;color:#4caf50;padding:3px 12px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;transition:all 0.2s ease}
-.tz-group button:hover{background:rgba(76,175,80,0.1)}
-.tz-display{color:#ffd740;font-size:12px;min-width:40px;font-weight:700}
-.tz-divider{color:#222;font-size:12px;padding:0 2px}
-
-.bar{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0;align-items:center;position:relative;z-index:2}
-.bar input{flex:1;padding:10px 20px;border-radius:30px;border:1px solid rgba(255,255,255,0.04);background:rgba(255,255,255,0.02);color:#eee;font-size:13px;min-width:140px;transition:all 0.3s ease;backdrop-filter:blur(8px)}
-.bar input:focus{outline:none;border-color:rgba(76,175,80,0.2);background:rgba(255,255,255,0.04);box-shadow:0 0 40px rgba(76,175,80,0.02)}
-.bar input::placeholder{color:#333}
-.bar button{padding:10px 22px;border-radius:30px;border:none;background:linear-gradient(135deg,#4caf50,#2e7d32);color:#fff;font-weight:700;font-size:13px;cursor:pointer;transition:all 0.3s ease;box-shadow:0 4px 20px rgba(76,175,80,0.15);position:relative;overflow:hidden}
-.bar button::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:radial-gradient(circle,rgba(255,255,255,0.1),transparent 60%);opacity:0;transition:opacity 0.3s}
-.bar button:hover::after{opacity:1}
-.bar button:hover{transform:translateY(-2px);box-shadow:0 8px 35px rgba(76,175,80,0.25)}
-.bar .count{color:#444;font-size:12px;font-weight:500;margin-left:4px}
-
-#autoRefreshBtn{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#666;min-width:110px;display:flex;align-items:center;gap:6px;padding:10px 16px;border-radius:30px;font-weight:600;font-size:13px;cursor:pointer;transition:all 0.3s ease;box-shadow:none}
-#autoRefreshBtn:hover{background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.08)}
-#autoRefreshBtn.active{background:rgba(76,175,80,0.08);border-color:rgba(76,175,80,0.2);color:#4caf50}
-#autoRefreshBtn.disabled{opacity:0.4;cursor:not-allowed;pointer-events:none}
-#autoRefreshBtn .pulse{animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.3;transform:scale(0.7)}}
-
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;position:relative;z-index:2}
-.card{background:rgba(255,255,255,0.015);border-radius:20px;padding:18px;border:1px solid rgba(255,255,255,0.03);transition:all 0.5s cubic-bezier(0.23,1,0.32,1);backdrop-filter:blur(12px);animation:fadeUp 0.6s cubic-bezier(0.23,1,0.32,1) forwards;opacity:0;position:relative;overflow:hidden}
-.card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(76,175,80,0.1),transparent);opacity:0;transition:opacity 0.6s}
-.card:hover::before{opacity:1}
-.card:nth-child(1){animation-delay:0.03s}
-.card:nth-child(2){animation-delay:0.06s}
-.card:nth-child(3){animation-delay:0.09s}
-.card:nth-child(4){animation-delay:0.12s}
-.card:nth-child(5){animation-delay:0.15s}
-.card:nth-child(6){animation-delay:0.18s}
-.card:nth-child(7){animation-delay:0.21s}
-.card:nth-child(8){animation-delay:0.24s}
-.card:nth-child(9){animation-delay:0.27s}
-.card:nth-child(10){animation-delay:0.30s}
-.card:nth-child(11){animation-delay:0.33s}
-.card:nth-child(12){animation-delay:0.36s}
-@keyframes fadeUp{from{opacity:0;transform:translateY(24px) scale(0.98)}to{opacity:1;transform:translateY(0) scale(1)}}
-.card:hover{background:rgba(255,255,255,0.025);border-color:rgba(76,175,80,0.08);transform:translateY(-4px);box-shadow:0 20px 60px rgba(0,0,0,0.3)}
-
-.card .top{color:#444;font-size:10px;font-weight:600;margin-bottom:10px;display:flex;justify-content:space-between;letter-spacing:0.5px;text-transform:uppercase}
-.card .top .status-tag{padding:2px 10px;border-radius:10px;font-size:9px;font-weight:700}
-.card .top .status-tag.live{background:rgba(255,82,82,0.15);color:#ff5252;animation:blink 1.2s infinite}
-.card .top .status-tag.finished{background:rgba(255,255,255,0.04);color:#444}
-.card .top .status-tag.upcoming{background:rgba(76,175,80,0.08);color:#4caf50}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
-
-.card .row{display:flex;align-items:center;gap:10px}
-.card .side{flex:1;font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px}
-.card .side img{width:24px;height:24px;border-radius:50%;object-fit:contain;flex-shrink:0;background:rgba(255,255,255,0.02);padding:2px}
-.card .side.r{justify-content:flex-end;text-align:right}
-.card .side .win{color:#4caf50;font-weight:700}
-.card .side .lose{color:#555;font-weight:400}
-.card .side .draw{color:#ffd740;font-weight:700}
-.card .side .team-link{cursor:pointer;text-decoration:none;border-bottom:2px solid transparent;transition:all 0.25s ease;position:relative}
-.card .side .team-link:hover{border-bottom-color:#4caf50;color:#a5d6a7}
-.card .side .team-link .info-icon{font-size:10px;opacity:0.4;transition:opacity 0.2s}
-.card .side .team-link:hover .info-icon{opacity:1}
-.card .mid{font-size:1.6em;font-weight:800;color:#4caf50;min-width:50px;text-align:center;font-variant-numeric:tabular-nums;letter-spacing:-1px}
-.card .mid.score-live{color:#ffd740}
-.card .mid.score-finished{color:#4caf50}
-.card .bot{font-size:11px;color:#444;text-align:center;margin-top:10px;display:flex;flex-wrap:wrap;justify-content:center;gap:4px}
-.card .bot button{background:rgba(76,175,80,0.04);border:1px solid rgba(76,175,80,0.06);color:#4caf50;border-radius:14px;padding:3px 14px;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.25s ease}
-.card .bot button:hover{background:rgba(76,175,80,0.1);border-color:rgba(76,175,80,0.15);transform:scale(1.02)}
-
-.card .source-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
-.card .source{color:#4caf50;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px}
-.card .source-tag{background:rgba(255,255,255,0.04);color:#555;padding:0 10px;border-radius:12px;font-size:9px}
-.card .title{font-size:14px;font-weight:600;margin:6px 0;color:#eee;line-height:1.4}
-.card .title a{color:#eee;text-decoration:none;transition:color 0.2s}
-.card .title a:hover{color:#ffd740}
-.card .summary{color:#888;font-size:12px;line-height:1.6;margin:4px 0;flex:1}
-.card .meta{color:#555;font-size:10px;margin-top:10px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;border-top:1px solid rgba(255,255,255,0.04);padding-top:8px}
-.card .meta .read-link{color:#ffd740;text-decoration:none;font-weight:600;font-size:11px;transition:all 0.2s ease}
-.card .meta .read-link:hover{color:#fff3b0;text-decoration:underline}
-.card .meta .tag{background:rgba(76,175,80,0.1);color:#4caf50;padding:0 10px;border-radius:12px;font-size:9px;font-weight:600}
-.card .meta .news-tag{background:rgba(255,215,64,0.08);color:#ffd740;padding:0 10px;border-radius:12px;font-size:9px;font-weight:600}
-
-.standings-wrap{background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.03);overflow:hidden;margin:4px 0 8px}
-.standings-wrap .table-scroll{overflow-x:auto}
-.standings-wrap table{width:100%;border-collapse:collapse;font-size:13px}
-.standings-wrap th{background:rgba(76,175,80,0.05);padding:12px 14px;text-align:left;color:#4caf50;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid rgba(76,175,80,0.05)}
-.standings-wrap td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.015);transition:background 0.2s}
-.standings-wrap tr:last-child td{border-bottom:none}
-.standings-wrap tr:hover td{background:rgba(255,255,255,0.02)}
-.standings-wrap .rank{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;font-weight:800;font-size:12px;margin-right:8px;flex-shrink:0}
-.standings-wrap .rank.gold{background:linear-gradient(135deg,#ffd700,#f9a825);color:#1a1a1a;box-shadow:0 2px 12px rgba(255,215,0,0.3)}
-.standings-wrap .rank.silver{background:linear-gradient(135deg,#e0e0e0,#bdbdbd);color:#1a1a1a;box-shadow:0 2px 12px rgba(189,189,189,0.2)}
-.standings-wrap .rank.bronze{background:linear-gradient(135deg,#e8a87c,#d4845a);color:#fff;box-shadow:0 2px 12px rgba(212,132,90,0.25)}
-.standings-wrap .rank.normal{color:#444;font-weight:600;background:rgba(255,255,255,0.02)}
-.standings-wrap .team-cell{display:flex;align-items:center;gap:8px;font-weight:600;color:#eee}
-.standings-wrap .team-cell .team-logo-img{width:22px;height:22px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0}
-.standings-wrap .team-cell .team-logo-fallback{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;text-transform:uppercase}
-.standings-wrap .stat{font-weight:500;color:#aaa}
-.standings-wrap .gd-positive{color:#4caf50;font-weight:700}
-.standings-wrap .gd-negative{color:#ff5252;font-weight:700}
-.standings-wrap .gd-zero{color:#444;font-weight:600}
-.standings-wrap .points{font-weight:800;color:#4caf50;font-size:15px}
-.standings-wrap .group-title{color:#ffd740;font-weight:700;font-size:14px;padding:12px 0 6px;letter-spacing:0.5px;display:flex;align-items:center;gap:8px}
-.standings-wrap .group-title::before{content:'🏆';font-size:16px}
-
-.season-notice{background:rgba(255,215,0,0.05);border:1px solid rgba(255,215,0,0.1);border-radius:12px;padding:16px 20px;text-align:center;margin:8px 0 12px;color:#ffd740;font-size:13px}
-.season-notice .icon{font-size:24px;display:block;margin-bottom:4px}
-.season-notice .sub{color:#888;font-size:12px;margin-top:2px}
-.season-notice .date{color:#4caf50;font-weight:700}
-
-.details{margin:6px 0}
-.details summary{color:#4caf50;cursor:pointer;padding:12px 0;font-size:15px;font-weight:700;transition:color 0.2s;display:flex;align-items:center;gap:8px;list-style:none}
-.details summary::-webkit-details-marker{display:none}
-.details summary:hover{color:#a5d6a7}
-.details summary::after{content:'▾';margin-left:auto;font-size:12px;color:#444;transition:transform 0.3s}
-.details[open] summary::after{transform:rotate(180deg)}
-.group-title{color:#ffd740;margin:16px 0 8px;font-weight:700;font-size:14px;letter-spacing:0.3px;display:flex;align-items:center;gap:8px}
-.team-badge{width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;text-transform:uppercase}
-.ld{text-align:center;padding:60px 20px;color:#444;font-size:14px;font-weight:500}
-.empty{text-align:center;padding:60px 20px;color:#333;font-size:14px;font-weight:500}
-
-.footer-note{margin-top:50px;padding:20px;background:rgba(255,255,255,0.01);border-radius:16px;border:1px solid rgba(255,255,255,0.02);text-align:center;position:relative;z-index:2}
-.footer-note p{color:#222;font-size:11px;line-height:1.8}
-.footer-note a{color:#ffd740;text-decoration:none;transition:color 0.2s}
-.footer-note a:hover{color:#fff3b0;text-decoration:underline}
-
-#backTop{position:fixed;bottom:24px;right:24px;background:linear-gradient(135deg,#4caf50,#2e7d32);border:none;border-radius:50%;width:48px;height:48px;font-size:20px;cursor:pointer;box-shadow:0 4px 25px rgba(76,175,80,0.2);color:#fff;transition:all 0.3s ease;display:none;z-index:999}
-#backTop:hover{transform:scale(1.1) translateY(-4px);box-shadow:0 8px 40px rgba(76,175,80,0.3)}
-
-.spinner{display:inline-block;width:40px;height:40px;border:2px solid rgba(76,175,80,0.05);border-top-color:#4caf50;border-radius:50%;animation:spin 0.8s cubic-bezier(0.4,0,0.2,1) infinite;box-shadow:0 0 30px rgba(76,175,80,0.02)}
-@keyframes spin{to{transform:rotate(360deg)}}
-.page{display:none}
-.page.active{display:block}
-
-.modal-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);backdrop-filter:blur(16px);z-index:1000;display:flex;justify-content:center;align-items:center;padding:20px;animation:fadeIn 0.3s ease}
-@keyframes fadeIn{from{opacity:0}to{opacity:1}}
-.modal-box{background:linear-gradient(160deg,#161616,#0d0d0d);border:1px solid rgba(76,175,80,0.08);border-radius:24px;max-width:520px;width:100%;max-height:80vh;overflow-y:auto;padding:32px;color:#eee;position:relative;box-shadow:0 40px 100px rgba(0,0,0,0.5);animation:slideUp 0.4s cubic-bezier(0.23,1,0.32,1)}
-@keyframes slideUp{from{opacity:0;transform:translateY(30px) scale(0.96)}to{opacity:1;transform:translateY(0) scale(1)}}
-.modal-box h3{color:#4caf50;margin-bottom:18px;font-size:22px;font-weight:700;display:flex;align-items:center;gap:10px}
-.modal-box .close{position:absolute;top:16px;right:20px;background:none;border:none;color:#444;font-size:28px;cursor:pointer;transition:color 0.2s}
-.modal-box .close:hover{color:#eee}
-.modal-box .info-item{padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.02);font-size:13px;display:flex;align-items:center;gap:14px}
-.modal-box .info-item .label{color:#444;min-width:60px;font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:0.5px}
-.modal-box .info-item img{border-radius:10px;max-width:56px;max-height:56px}
-.modal-box .player-item{padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.02);font-size:13px;display:flex;align-items:center;gap:8px}
-.modal-box .player-item .num{color:#444;font-weight:600;min-width:32px;font-size:11px}
-.modal-box .player-item .pos{color:#4caf50;margin-left:auto;font-size:11px;font-weight:600;background:rgba(76,175,80,0.06);padding:2px 10px;border-radius:10px}
-
-.section-title{color:#ffd740;font-weight:700;font-size:14px;margin:18px 0 8px;display:flex;align-items:center;gap:8px;position:relative;z-index:2}
-.section-title .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
-
-@media(max-width:640px){
-h1{font-size:1.3em}
-.main-nav a{padding:8px 14px;font-size:12px}
-.league-nav button{padding:5px 10px;font-size:10px}
-.grid{grid-template-columns:1fr}
-.card .side{font-size:13px}
-.card .mid{font-size:1.3em}
-.tz-row{flex-wrap:wrap;gap:4px;padding:6px 12px}
-.tz-divider{display:none}
-.bar input{min-width:80px;font-size:12px}
-.bar button{font-size:12px;padding:8px 16px}
-#autoRefreshBtn{min-width:80px;font-size:11px;padding:8px 12px}
-.modal-box{padding:20px}
-.standings-wrap table{font-size:12px}
-.standings-wrap th,.standings-wrap td{padding:8px 10px}
-}
-@media(min-width:641px) and (max-width:1024px){.grid{grid-template-columns:repeat(2,1fr)}}
-@media(min-width:1025px){.grid{grid-template-columns:repeat(3,1fr)}}
+:root{--bg-0:#070b14;--glass:rgba(18,28,46,0.65);--glass-strong:rgba(22,34,54,0.85);--border:rgba(120,180,255,0.10);--border-strong:rgba(120,180,255,0.20);--text-0:#eaf2ff;--text-1:#a8b8d4;--text-2:#6b7d99;--accent:#4fc3f7;--accent-2:#7c6cff;--accent-glow:rgba(79,195,247,0.35);--green:#34d399;--orange:#fb923c;--blue:#60a5fa;--red:#f87171;--radius-lg:28px;--radius-md:18px;--radius-sm:12px;--shadow-lg:0 24px 60px -20px rgba(0,0,0,0.6),0 8px 24px -8px rgba(0,0,0,0.4)}
+*{margin:0;padding:0;box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Inter',Roboto,system-ui,sans-serif}
+html,body{height:100%}
+body{background:var(--bg-0);color:var(--text-0);min-height:100vh;display:flex;justify-content:center;align-items:center;padding:24px;position:relative;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 80% 50% at 20% 0%,rgba(79,195,247,0.08),transparent 60%),radial-gradient(ellipse 60% 40% at 80% 100%,rgba(124,108,255,0.08),transparent 60%);pointer-events:none;z-index:0}
+.app{width:100%;max-width:1480px;position:relative;z-index:1;animation:fadeIn 0.8s cubic-bezier(0.16,1,0.3,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;margin-bottom:32px;gap:16px}
+.brand{display:flex;align-items:center;gap:16px}
+.brand-icon{width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--accent),var(--accent-2));display:flex;align-items:center;justify-content:center;font-size:24px;color:#0a1020;box-shadow:0 8px 24px -4px var(--accent-glow),inset 0 1px 0 rgba(255,255,255,0.3)}
+.brand-text h1{font-size:1.5rem;font-weight:700;letter-spacing:-0.03em;line-height:1.2}
+.brand-text p{font-size:0.78rem;color:var(--text-2);margin-top:2px;letter-spacing:0.02em}
+.badge-pro{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:100px;background:linear-gradient(135deg,rgba(251,146,60,0.15),rgba(251,146,60,0.08));border:1px solid rgba(251,146,60,0.25);color:#fbbf24;font-size:0.8rem;font-weight:600}
+.main-layout{display:grid;grid-template-columns:1fr 400px;gap:24px}
+@media(max-width:1080px){.main-layout{grid-template-columns:1fr}}
+.stage{background:var(--glass);backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;box-shadow:var(--shadow-lg);position:relative;overflow:hidden}
+.stage::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(120,180,255,0.3),transparent)}
+.stage-toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px}
+.toolbar-left{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mode-tabs{display:flex;background:rgba(0,0,0,0.3);border-radius:14px;padding:4px;border:1px solid var(--border);gap:2px;flex-wrap:wrap}
+.mode-tabs button{background:transparent;border:none;padding:7px 13px;border-radius:10px;font-size:0.74rem;font-weight:600;color:var(--text-2);cursor:pointer;transition:all 0.25s;white-space:nowrap}
+.mode-tabs button:hover:not(.active){color:var(--text-1);background:rgba(120,180,255,0.05)}
+.mode-tabs button.active{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#0a1020;box-shadow:0 4px 12px -2px var(--accent-glow)}
+.toggle-btn{display:flex;align-items:center;gap:8px;padding:7px 13px;border-radius:12px;background:rgba(0,0,0,0.25);border:1px solid var(--border);font-size:0.74rem;font-weight:600;color:var(--text-1);cursor:pointer;transition:all 0.2s;user-select:none;white-space:nowrap}
+.toggle-btn:hover{border-color:var(--border-strong)}
+.toggle-btn.active{background:rgba(79,195,247,0.12);border-color:rgba(79,195,247,0.4);color:var(--accent)}
+.toggle-switch{width:30px;height:17px;background:rgba(120,180,255,0.15);border-radius:20px;position:relative;transition:0.25s;flex-shrink:0}
+.toggle-switch::after{content:'';position:absolute;width:13px;height:13px;background:var(--text-1);border-radius:50%;top:2px;left:2px;transition:0.25s cubic-bezier(0.16,1,0.3,1)}
+.toggle-btn.active .toggle-switch{background:var(--accent)}
+.toggle-btn.active .toggle-switch::after{left:15px;background:#0a1020}
+.icon-btn{display:inline-flex;align-items:center;gap:7px;padding:7px 13px;border-radius:12px;background:rgba(0,0,0,0.25);border:1px solid var(--border);font-size:0.74rem;font-weight:600;color:var(--text-1);cursor:pointer;transition:all 0.2s;white-space:nowrap}
+.icon-btn:hover{border-color:var(--border-strong);color:var(--text-0)}
+.icon-btn.paused{background:rgba(251,146,60,0.12);border-color:rgba(251,146,60,0.3);color:var(--orange)}
+.canvas-wrap{position:relative;border-radius:var(--radius-md);overflow:hidden;background:#060a12;border:1px solid var(--border);box-shadow:inset 0 0 40px rgba(0,0,0,0.5);aspect-ratio:16/10;min-height:300px}
+.canvas-wrap canvas{transition:opacity 0.3s ease}
+.canvas-wrap.fading canvas{opacity:0}
+#physicsCanvas{display:block;width:100%;height:100%;cursor:grab}
+#physicsCanvas:active{cursor:grabbing}
+.controls-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:11px;margin-top:18px}
+@media(max-width:600px){.controls-grid{grid-template-columns:repeat(2,1fr)}}
+.param{background:rgba(0,0,0,0.25);border-radius:var(--radius-sm);padding:11px 13px;border:1px solid var(--border)}
+.param:hover{border-color:var(--border-strong)}
+.param-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.param-label{display:flex;align-items:center;gap:5px;font-size:0.71rem;font-weight:600;color:var(--text-1)}
+.param-label i{color:var(--accent);font-size:0.72rem;width:13px;text-align:center}
+.param-value{font-size:0.75rem;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums;background:rgba(79,195,247,0.1);padding:2px 7px;border-radius:7px;border:1px solid rgba(79,195,247,0.2);min-width:42px;text-align:center}
+input[type="range"]{width:100%;height:5px;background:rgba(120,180,255,0.12);border-radius:10px;-webkit-appearance:none;appearance:none;outline:none;cursor:pointer}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:15px;height:15px;background:linear-gradient(135deg,var(--accent),var(--accent-2));border-radius:50%;cursor:grab;box-shadow:0 2px 8px var(--accent-glow),0 0 0 3px rgba(79,195,247,0.15);border:2px solid #0a1020}
+input[type="range"]:disabled{opacity:0.4;cursor:not-allowed}
+.report{background:var(--glass-strong);backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;position:relative;overflow:hidden;max-height:calc(100vh - 120px);overflow-y:auto}
+.report::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(120,180,255,0.3),transparent)}
+.report-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-shrink:0}
+.report-title{display:flex;align-items:center;gap:9px;font-size:1rem;font-weight:700}
+.report-title i{color:var(--accent);font-size:0.9rem}
+.status-pill{font-size:0.66rem;padding:4px 11px;border-radius:100px;font-weight:700;display:flex;align-items:center;gap:4px}
+.status-pill.running{background:rgba(52,211,153,0.12);color:var(--green);border:1px solid rgba(52,211,153,0.25)}
+.status-pill.paused{background:rgba(251,146,60,0.12);color:var(--orange);border:1px solid rgba(251,146,60,0.25)}
+.energy-list{display:flex;flex-direction:column;gap:10px;margin-bottom:14px;flex-shrink:0}
+.energy-item{background:rgba(0,0,0,0.25);border-radius:var(--radius-sm);padding:10px 12px;border:1px solid var(--border)}
+.energy-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.energy-item-name{display:flex;align-items:center;gap:7px;font-size:0.73rem;font-weight:600;color:var(--text-1)}
+.energy-dot{width:6px;height:6px;border-radius:50%}
+.energy-dot.kinetic{background:var(--orange);box-shadow:0 0 8px var(--orange)}
+.energy-dot.potential{background:var(--blue);box-shadow:0 0 8px var(--blue)}
+.energy-dot.mechanical{background:var(--green);box-shadow:0 0 8px var(--green)}
+.energy-number{font-size:0.88rem;font-weight:800;font-variant-numeric:tabular-nums}
+.energy-number .unit{font-size:0.62rem;font-weight:600;color:var(--text-2);margin-left:2px}
+.energy-bar{height:4px;background:rgba(120,180,255,0.08);border-radius:10px;overflow:hidden}
+.energy-fill{height:100%;border-radius:10px;transition:width 0.15s ease}
+.energy-fill.kinetic{background:linear-gradient(90deg,#fb923c,#fdba74)}
+.energy-fill.potential{background:linear-gradient(90deg,#60a5fa,#93c5fd)}
+.energy-fill.mechanical{background:linear-gradient(90deg,#34d399,#6ee7b7)}
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px;flex-shrink:0}
+.stat-item{background:rgba(0,0,0,0.2);border-radius:var(--radius-sm);padding:7px 10px;border:1px solid var(--border);display:flex;flex-direction:column;gap:1px}
+.stat-label{font-size:0.6rem;font-weight:600;color:var(--text-2);text-transform:uppercase}
+.stat-value{font-size:0.8rem;font-weight:700;font-variant-numeric:tabular-nums}
+.chart-container{background:rgba(0,0,0,0.25);border-radius:var(--radius-sm);padding:9px;border:1px solid var(--border);margin-bottom:14px;flex-shrink:0}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.chart-title{font-size:0.68rem;font-weight:600;color:var(--text-1)}
+.chart-legend{display:flex;gap:7px;font-size:0.58rem;color:var(--text-2)}
+.chart-legend span{display:flex;align-items:center;gap:3px}
+#energyChart{display:block;width:100%;height:90px;border-radius:7px}
+.actions{display:flex;flex-direction:column;gap:8px;margin-top:auto;flex-shrink:0}
+.btn{display:flex;align-items:center;justify-content:center;gap:9px;padding:12px 18px;border-radius:13px;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all 0.25s;border:none}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#0a1020;box-shadow:0 8px 24px -6px var(--accent-glow)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px -6px var(--accent-glow)}
+.btn-secondary{background:rgba(120,180,255,0.06);color:var(--text-1);border:1px solid var(--border)}
+.btn-secondary:hover{background:rgba(120,180,255,0.1);border-color:var(--border-strong)}
+.lock-hint{display:flex;align-items:center;justify-content:center;gap:5px;font-size:0.62rem;color:var(--text-2);margin-top:3px}
+.mode-badge{font-size:0.6rem;padding:2px 9px;border-radius:100px;font-weight:700;background:rgba(52,211,153,0.12);color:var(--green);border:1px solid rgba(52,211,153,0.25);margin-left:6px}
+.footer-hint{display:flex;align-items:center;justify-content:center;gap:7px;font-size:0.64rem;color:var(--text-2);padding-top:12px;margin-top:12px;border-top:1px solid var(--border);flex-shrink:0}
+.hidden{display:none!important}
 </style>
 </head>
 <body>
-
-<div class="football-bg">
-  <div class="main-ball">
-    <div class="pattern">
-      <div class="pentagon"></div><div class="pentagon"></div><div class="pentagon"></div>
-      <div class="pentagon"></div><div class="pentagon"></div><div class="pentagon"></div>
-      <div class="pentagon"></div><div class="pentagon"></div><div class="pentagon"></div>
-      <div class="pentagon"></div><div class="pentagon"></div><div class="pentagon"></div>
-      <div class="pentagon"></div><div class="pentagon"></div><div class="pentagon"></div>
-      <div class="line"></div><div class="line"></div><div class="line"></div>
-    </div>
-  </div>
+<div class="app">
+<header class="header">
+<div class="brand">
+<div class="brand-icon"><i class="fas fa-atom"></i></div>
+<div class="brand-text"><h1>物理沙盒</h1><p>板块 · 传送带 · 能量 · 做功</p></div>
 </div>
-
-<h1>
-  <span class="live-dot"></span>
-  ⚽ 足球数据中心
-  <span class="badge" id="pageBadge">比赛数据</span>
-</h1>
-
-<div class="main-nav">
-<a href="#" onclick="switchPage('match');return false;" class="on" id="navMatch">📊 比赛数据</a>
-<a href="#" onclick="switchPage('transfer');return false;" id="navTransfer">📰 足球新闻</a>
+<div class="badge-pro"><i class="fas fa-crown"></i><span>Pro 专业版</span></div>
+</header>
+<div class="main-layout">
+<div class="stage">
+<div class="stage-toolbar">
+<div class="toolbar-left">
+<div class="mode-tabs" id="modelSelector">
+<button class="active" data-model="bounce">自由落体</button>
+<button data-model="pendulum">单摆</button>
+<button data-model="spring">弹簧振子</button>
+<button data-model="block">板块模型</button>
+<button data-model="conveyor">水平传送带</button>
+<button data-model="conveyorTilt">倾斜传送带</button>
 </div>
-
-<div class="page active" id="pageMatch">
-<div class="league-nav" id="leagueNav">
-  <button class="on" onclick="setLeague('bl1')"><span class="icon">🇩🇪</span> 德甲</button>
-  <button onclick="setLeague('bl2')"><span class="icon">🇩🇪</span> 德乙</button>
-  <button onclick="setLeague('bl3')"><span class="icon">🇩🇪</span> 德丙</button>
-  <button onclick="setLeague('ENG.1')"><span class="icon">🏴</span> 英超</button>
-  <button onclick="setLeague('ESP.1')"><span class="icon">🇪🇸</span> 西甲</button>
-  <button onclick="setLeague('ITA.1')"><span class="icon">🇮🇹</span> 意甲</button>
-  <button onclick="setLeague('FRA.1')"><span class="icon">🇫🇷</span> 法甲</button>
-  <button onclick="setLeague('UCL')"><span class="icon">🏆</span> 欧冠</button>
-  <button onclick="setLeague('UEL')"><span class="icon">🏆</span> 欧联</button>
+<div class="toggle-btn" id="idealToggle"><i class="fas fa-star"></i><span>理想</span><div class="toggle-switch"></div></div>
+<button class="icon-btn" id="pauseBtn"><i class="fas fa-pause"></i><span>暂停</span></button>
+<div class="toggle-btn" id="trajectoryToggle"><i class="fas fa-wave-square"></i><span>轨迹</span><div class="toggle-switch"></div></div>
 </div>
-
-<div class="bar">
-<input id="searchInput" placeholder="🔍 搜索球队..." oninput="filterMatches()">
-<button onclick="refreshMatches()">🔄 刷新</button>
-<button id="autoRefreshBtn" onclick="toggleAutoRefresh()">
-  <span id="autoStatus" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#444;transition:all 0.3s;"></span>
-  <span id="autoLabel">⏸️ 直播</span>
-  <span id="autoCountdown" style="color:#444;font-weight:400;font-size:11px;"></span>
-</button>
+<button class="icon-btn" id="resetSimBtn"><i class="fas fa-rotate-right"></i><span>重置</span></button>
 </div>
-
-<div class="tz-row">
-  <span class="tz-label">🇩🇪 德甲/德乙/德丙:</span>
-  <div class="tz-group">
-    <button onclick="adjustG(-1)">−1</button>
-    <button onclick="adjustG(1)">+1</button>
-    <button onclick="resetG()" style="color:#444;font-size:11px;">重置</button>
-  </div>
-  <span class="tz-display" id="tzDisplayG">+8h</span>
-  <span class="tz-divider">│</span>
-  <span class="tz-label">🏆 五大联赛/欧战:</span>
-  <div class="tz-group">
-    <button onclick="adjustESPN(-1)">−1</button>
-    <button onclick="adjustESPN(1)">+1</button>
-    <button onclick="resetESPN()" style="color:#444;font-size:11px;">重置</button>
-  </div>
-  <span class="tz-display" id="tzDisplayESPN">+8h</span>
+<div class="canvas-wrap" id="canvasWrap">
+<canvas id="physicsCanvas" width="900" height="560"></canvas>
 </div>
-
-<div id="matchMain"><div class="ld"><div class="spinner"></div><br>加载比赛数据...</div></div>
-</div>
-
-<div class="page" id="pageTransfer">
-<div class="league-nav" id="rumorNav">
-<button class="on" onclick="switchRumorTab('all')">🌍 全部</button>
-<button onclick="switchRumorTab('bundesliga')">🇩🇪 德甲</button>
-<button onclick="switchRumorTab('premier')">🏴 英超</button>
-<button onclick="switchRumorTab('laliga')">🇪🇸 西甲</button>
-<button onclick="switchRumorTab('seriea')">🇮🇹 意甲</button>
-<button onclick="switchRumorTab('ligue1')">🇫🇷 法甲</button>
-</div>
-
-<div class="league-nav" id="rumorTags" style="margin-top:4px;gap:4px;">
-<button class="on" onclick="switchRumorTag('all')">📰 全部</button>
-<button onclick="switchRumorTag('transfer')">🔄 转会</button>
-<button onclick="switchRumorTag('match')">⚽ 比赛</button>
-<button onclick="switchRumorTag('injury')">🏥 伤病</button>
-<button onclick="switchRumorTag('title')">🏆 冠军</button>
-<button onclick="switchRumorTag('club')">🎯 俱乐部</button>
-</div>
-
-<div class="bar">
-<input id="rumorSearchInput" placeholder="🔍 搜索球队或球员..." oninput="filterRumors()">
-<button onclick="fetchAllRumors()">🔄 刷新</button>
-<span class="count" id="rumorCount">0 条新闻</span>
-<span class="status" id="rumorStatus"></span>
-</div>
-
-<div id="rumorMain"><div class="ld"><div class="spinner"></div><br>加载足球新闻...</div></div>
-
-<div class="footer-note">
-<p>📰 本页仅显示新闻摘要（不超过150字），完整内容请点击「阅读原文」跳转查看。<br>
-数据来源: <a href="https://www.skysports.com/" target="_blank" rel="noopener">Sky Sports</a> |
-<a href="https://www.transfermarkt.com/" target="_blank" rel="noopener">Transfermarkt</a> |
-<a href="https://www.bbc.com/sport/football" target="_blank" rel="noopener">BBC Sport</a> |
-<a href="https://www.espn.com/soccer/" target="_blank" rel="noopener">ESPN</a> |
-<a href="https://www.openligadb.de/" target="_blank" rel="noopener">OpenLigaDB</a><br>
-队徽来源于 ESPN 公开数据 · 仅供个人学习参考<br>
-版权归各俱乐部及其授权方所有</p>
+<div class="controls-grid" id="controlsGrid">
+<div class="param" id="paramMass"><div class="param-header"><div class="param-label"><i class="fas fa-weight-scale"></i>质量 m</div><div class="param-value" id="massVal">1.0</div></div><input type="range" id="massSlider" min="0.3" max="3.0" step="0.1" value="1.0"></div>
+<div class="param" id="paramVelocity"><div class="param-header"><div class="param-label"><i class="fas fa-arrow-right"></i>初速度 v₀</div><div class="param-value" id="velVal">3.0</div></div><input type="range" id="velocitySlider" min="0.0" max="6.0" step="0.2" value="3.0"></div>
+<div class="param hidden" id="paramAngle"><div class="param-header"><div class="param-label"><i class="fas fa-arrows-spin"></i>摆角 θ</div><div class="param-value" id="angleVal">30°</div></div><input type="range" id="angleSlider" min="5" max="75" step="1" value="30"></div>
+<div class="param hidden" id="paramLength"><div class="param-header"><div class="param-label"><i class="fas fa-ruler"></i>摆长 L</div><div class="param-value" id="lengthVal">1.5m</div></div><input type="range" id="lengthSlider" min="0.5" max="2.5" step="0.05" value="1.5"></div>
+<div class="param hidden" id="paramAmplitude"><div class="param-header"><div class="param-label"><i class="fas fa-arrows-left-right"></i>振幅 A</div><div class="param-value" id="amplitudeVal">80px</div></div><input type="range" id="amplitudeSlider" min="20" max="150" step="5" value="80"></div>
+<div class="param hidden" id="paramStiffness"><div class="param-header"><div class="param-label"><i class="fas fa-spring"></i>劲度系数 k</div><div class="param-value" id="stiffnessVal">2.0</div></div><input type="range" id="stiffnessSlider" min="0.5" max="5.0" step="0.1" value="2.0"></div>
+<div class="param hidden" id="paramFriction"><div class="param-header"><div class="param-label"><i class="fas fa-hand"></i>动摩擦因数 μ</div><div class="param-value" id="frictionVal">0.30</div></div><input type="range" id="frictionSlider" min="0.05" max="0.80" step="0.01" value="0.30"></div>
+<div class="param hidden" id="paramBeltSpeed"><div class="param-header"><div class="param-label"><i class="fas fa-gauge-high"></i>传送带速度 v</div><div class="param-value" id="beltSpeedVal">2.0</div></div><input type="range" id="beltSpeedSlider" min="0.5" max="5.0" step="0.1" value="2.0"></div>
+<div class="param hidden" id="paramBeltAngle"><div class="param-header"><div class="param-label"><i class="fas fa-mountain"></i>传送带倾角 θ</div><div class="param-value" id="beltAngleVal">30°</div></div><input type="range" id="beltAngleSlider" min="10" max="50" step="1" value="30"></div>
+<div class="param hidden" id="paramBoardVel"><div class="param-header"><div class="param-label"><i class="fas fa-arrow-right"></i>木板初速度 v板</div><div class="param-value" id="boardVelVal">2.0</div></div><input type="range" id="boardVelSlider" min="0.0" max="5.0" step="0.1" value="2.0"></div>
 </div>
 </div>
-
-<button id="backTop" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
-
+<aside class="report">
+<div class="report-header"><div class="report-title"><i class="fas fa-chart-line"></i>实验报告<span id="modeIndicator" class="mode-badge">实际</span></div><div class="status-pill running" id="statusBadge"><i class="fas fa-circle"></i><span>运行中</span></div></div>
+<div class="energy-list">
+<div class="energy-item"><div class="energy-item-header"><div class="energy-item-name"><span class="energy-dot kinetic"></span>动能 Ek</div><div class="energy-number"><span id="reportKinetic">0.00</span><span class="unit">J</span></div></div><div class="energy-bar"><div class="energy-fill kinetic" id="kineticBar" style="width:0%"></div></div></div>
+<div class="energy-item"><div class="energy-item-header"><div class="energy-item-name"><span class="energy-dot potential"></span>势能 Ep</div><div class="energy-number"><span id="reportPotential">0.00</span><span class="unit">J</span></div></div><div class="energy-bar"><div class="energy-fill potential" id="potentialBar" style="width:0%"></div></div></div>
+<div class="energy-item"><div class="energy-item-header"><div class="energy-item-name"><span class="energy-dot mechanical"></span>机械能 E</div><div class="energy-number"><span id="reportMechanical">0.00</span><span class="unit">J</span></div></div><div class="energy-bar"><div class="energy-fill mechanical" id="mechanicalBar" style="width:0%"></div></div></div>
+</div>
+<div class="stats-row">
+<div class="stat-item"><span class="stat-label">损失 ΔE</span><span class="stat-value"><span id="energyLoss">0.000</span> J</span></div>
+<div class="stat-item"><span class="stat-label">步数</span><span class="stat-value" id="stepCounter">0</span></div>
+<div class="stat-item"><span class="stat-label" id="heightLabel">高度 h</span><span class="stat-value"><span id="heightDisplay">0.00</span> m</span></div>
+<div class="stat-item" id="angleDisplayRow" style="display:none;"><span class="stat-label">摆角 θ</span><span class="stat-value"><span id="angleDisplay">0.0</span>°</span></div>
+<div class="stat-item" id="displacementDisplayRow" style="display:none;"><span class="stat-label">位移 x</span><span class="stat-value"><span id="displacementDisplay">0.00</span> m</span></div>
+<div class="stat-item" id="blockVelDisplayRow" style="display:none;"><span class="stat-label">物块速度</span><span class="stat-value"><span id="blockVelDisplay">0.00</span> m/s</span></div>
+<div class="stat-item" id="boardVelDisplayRow" style="display:none;"><span class="stat-label">木板速度</span><span class="stat-value"><span id="boardVelDisplay">0.00</span> m/s</span></div>
+<div class="stat-item" id="scratchDisplayRow" style="display:none;"><span class="stat-label">划痕长度</span><span class="stat-value"><span id="scratchDisplay">0.00</span> m</span></div>
+<div class="stat-item" id="heatDisplayRow" style="display:none;"><span class="stat-label">摩擦生热 Q</span><span class="stat-value"><span id="heatDisplay">0.00</span> J</span></div>
+<div class="stat-item" id="workDisplayRow" style="display:none;"><span class="stat-label">摩擦力做功</span><span class="stat-value"><span id="workDisplay">0.00</span> J</span></div>
+<div class="stat-item" id="motorDisplayRow" style="display:none;"><span class="stat-label">电动机多耗</span><span class="stat-value"><span id="motorDisplay">0.00</span> J</span></div>
+</div>
+<div class="chart-container"><div class="chart-header"><span class="chart-title">能量变化</span><div class="chart-legend"><span><span class="energy-dot kinetic" style="width:5px;height:5px;"></span>Ek</span><span><span class="energy-dot potential" style="width:5px;height:5px;"></span>Ep</span><span><span class="energy-dot mechanical" style="width:5px;height:5px;"></span>E</span></div></div><canvas id="energyChart" width="640" height="240"></canvas></div>
+<div class="actions"><button class="btn btn-primary" id="exportReportBtn"><i class="fas fa-file-arrow-down"></i>导出完整报告</button><button class="btn btn-secondary" id="exportQuestionBtn"><i class="fas fa-file-export"></i>导出题目 & 数据</button><div class="lock-hint"><i class="fas fa-lock"></i>高级导出需订阅 Pro</div></div>
+<div class="footer-hint"><i class="fas fa-hand-pointer"></i>拖拽小球改变位置 · 观察能量转化</div>
+</aside>
+</div>
+</div>
 <script>
-/* ================================================================
- * 工具函数
- * ================================================================ */
-function escapeHtml(s) {
-  if (s === null || s === undefined) return '';
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
-}
-
-function getTeamBadge(name, size) {
-  if (!name || name === '?' || name === 'Unknown') return '';
-  size = size || 24;
-  var fontSize = size >= 24 ? 10 : 8;
-  var letter = name.charAt(0).toUpperCase();
-  var colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e84393','#00b894','#6c5ce7','#fd79a8','#0984e3','#fdcb6e','#e17055','#00cec9'];
-  var idx = 0;
-  for (var i = 0; i < name.length; i++) idx += name.charCodeAt(i);
-  var color = colors[idx % colors.length];
-  return '<span class="team-badge" style="background:' + color + ';width:' + size + 'px;height:' + size + 'px;font-size:' + fontSize + 'px;">' + escapeHtml(letter) + '</span>';
-}
-
-function showModal(title, html) {
-  var old = document.querySelector('.modal-overlay');
-  if (old) old.remove();
-  var div = document.createElement('div');
-  div.className = 'modal-overlay';
-  div.innerHTML = '<div class="modal-box"><button class="close" type="button">✕</button><h3>' + escapeHtml(title) + '</h3><div id="modalBody">' + html + '</div></div>';
-  document.body.appendChild(div);
-  div.querySelector('.close').addEventListener('click', function() { div.remove(); });
-  div.addEventListener('click', function(e) { if (e.target === this) this.remove(); });
-}
-
-/* ================================================================
- * 核心数据
- * ================================================================ */
-var matchData = { m: [], t: [] };
-var currentLeague = 'bl1';
-var offsetG = 8;
-var offsetESPN = 8;
-
-// 修复 #1：请求序号，防止竞态
-var matchRequestId = 0;
-
-/* ================================================================
- * 球队 Logo 缓存
- * ================================================================ */
-var teamLogoCache = {};
-try {
-  var savedLogos = JSON.parse(localStorage.getItem('teamLogoCache') || '{}');
-  for (var _k in savedLogos) {
-    if (savedLogos[_k]) teamLogoCache[_k] = savedLogos[_k];
-  }
-  console.log('已恢复队徽缓存 ' + Object.keys(teamLogoCache).length + ' 条');
-} catch(e) { console.warn('恢复队徽缓存失败:', e.message); }
-
-function saveTeamLogoCache() {
-  try {
-    localStorage.setItem('teamLogoCache', JSON.stringify(teamLogoCache));
-  } catch(e) { console.warn('保存队徽缓存失败:', e.message); }
-}
-
-/* ================================================================
- * 球队名翻译
- * 修复 #16：改为精确匹配 + 长名优先，避免曼联变曼城
- * ================================================================ */
-var TEAM_NAME_MAP = {
-  'Manchester City':'曼城','Arsenal':'阿森纳','Liverpool':'利物浦','Chelsea':'切尔西',
-  'Tottenham':'热刺','Newcastle':'纽卡斯尔','Manchester United':'曼联',
-  'Aston Villa':'阿斯顿维拉','West Ham':'西汉姆联','Brighton':'布莱顿','Wolves':'狼队',
-  'Crystal Palace':'水晶宫','Fulham':'富勒姆','Brentford':'布伦特福德','Everton':'埃弗顿',
-  'Bournemouth':'伯恩茅斯','Nottingham Forest':'诺丁汉森林','Ipswich':'伊普斯维奇',
-  'Leicester':'莱斯特城','Southampton':'南安普顿',
-  'Real Madrid':'皇家马德里','Barcelona':'巴塞罗那','Atletico Madrid':'马德里竞技',
-  'Athletic Club':'毕尔巴鄂','Real Sociedad':'皇家社会','Sevilla':'塞维利亚',
-  'Valencia':'瓦伦西亚','Villarreal':'比利亚雷亚尔','Real Betis':'贝蒂斯','Girona':'赫罗纳',
-  'Osasuna':'奥萨苏纳','Celta Vigo':'塞尔塔','Mallorca':'马略卡','Rayo Vallecano':'巴列卡诺',
-  'Las Palmas':'拉斯帕尔马斯','Alaves':'阿拉维斯','Leganes':'莱加内斯','Espanyol':'西班牙人',
-  'Getafe':'赫塔菲','Valladolid':'巴拉多利德',
-  'Inter Milan':'国际米兰','AC Milan':'AC米兰','Juventus':'尤文图斯','Roma':'罗马',
-  'Napoli':'那不勒斯','Lazio':'拉齐奥','Atalanta':'亚特兰大','Fiorentina':'佛罗伦萨',
-  'Bologna':'博洛尼亚','Torino':'都灵','Genoa':'热那亚','Monza':'蒙扎','Verona':'维罗纳',
-  'Lecce':'莱切','Udinese':'乌迪内斯','Cagliari':'卡利亚里','Empoli':'恩波利',
-  'Parma':'帕尔马','Como':'科莫','Venezia':'威尼斯',
-  'PSG':'巴黎圣日耳曼','Monaco':'摩纳哥','Lyon':'里昂','Marseille':'马赛','Lille':'里尔',
-  'Nice':'尼斯','Lens':'朗斯','Rennes':'雷恩','Strasbourg':'斯特拉斯堡','Nantes':'南特',
-  'Reims':'兰斯','Brest':'布雷斯特','Toulouse':'图卢兹','Montpellier':'蒙彼利埃',
-  'Clermont':'克莱蒙','Lorient':'洛里昂','Troyes':'特鲁瓦','Ajaccio':'阿雅克肖',
-  'Auxerre':'欧塞尔','Angers':'昂热',
-  'Dortmund':'多特蒙德','Bayern Munich':'拜仁慕尼黑','Leverkusen':'勒沃库森','Benfica':'本菲卡'
-};
-
-// 按 key 长度降序排列，保证长名优先匹配
-var TEAM_NAME_KEYS_SORTED = Object.keys(TEAM_NAME_MAP).sort(function(a, b) {
-  return b.length - a.length;
-});
-
-function translateTeamName(en) {
-  if (!en) return '';
-  // 1) 精确匹配
-  if (TEAM_NAME_MAP[en]) return TEAM_NAME_MAP[en];
-  // 2) 长名优先的包含匹配（用词边界避免误匹配）
-  for (var i = 0; i < TEAM_NAME_KEYS_SORTED.length; i++) {
-    var k = TEAM_NAME_KEYS_SORTED[i];
-    // 用 \b 或首尾边界，避免 "Manchester" 命中 "Manchester United"
-    var re = new RegExp('(^|[^A-Za-z])' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^A-Za-z]|$)');
-    if (re.test(en)) return TEAM_NAME_MAP[k];
-  }
-  return en;
-}
-
-/* ================================================================
- * 队徽提取
- * ================================================================ */
-function extractLogosFromMatches() {
-  var m = matchData.m || [];
-  for (var i = 0; i < m.length; i++) {
-    var c = m[i].competitions ? m[i].competitions[0] : null;
-    if (!c || !c.competitors) continue;
-    for (var j = 0; j < c.competitors.length; j++) {
-      var team = c.competitors[j].team;
-      if (team && team.logo) {
-        if (team.displayName && !teamLogoCache[team.displayName]) teamLogoCache[team.displayName] = team.logo;
-        if (team.shortDisplayName && team.shortDisplayName !== team.displayName && !teamLogoCache[team.shortDisplayName]) {
-          teamLogoCache[team.shortDisplayName] = team.logo;
-        }
-      }
-    }
-  }
-  saveTeamLogoCache();
-}
-
-/* ================================================================
- * 预抓全联赛队徽
- * ================================================================ */
-var prefetchedLeagues = {};
-
-async function prefetchLeagueLogos(leagueCode) {
-  if (prefetchedLeagues[leagueCode]) return;
-  try {
-    var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams';
-    var resp = await fetch(url);
-    var data = await resp.json();
-
-    var teams = null;
-    if (data.sports && data.sports[0] && data.sports[0].leagues && data.sports[0].leagues[0]) {
-      teams = data.sports[0].leagues[0].teams;
-    }
-    if (!teams) return;
-
-    var added = 0;
-    for (var i = 0; i < teams.length; i++) {
-      var t = teams[i].team;
-      if (!t || !t.logos || t.logos.length === 0) continue;
-      var logoUrl = t.logos[0].href || t.logos[0].url;
-      if (!logoUrl) continue;
-
-      if (t.displayName && !teamLogoCache[t.displayName]) { teamLogoCache[t.displayName] = logoUrl; added++; }
-      if (t.shortDisplayName && t.shortDisplayName !== t.displayName && !teamLogoCache[t.shortDisplayName]) {
-        teamLogoCache[t.shortDisplayName] = logoUrl;
-      }
-      if (t.name && !teamLogoCache[t.name]) { teamLogoCache[t.name] = logoUrl; }
-      if (t.abbreviation && !teamLogoCache[t.abbreviation]) { teamLogoCache[t.abbreviation] = logoUrl; }
-    }
-
-    prefetchedLeagues[leagueCode] = true;
-
-    if (added > 0) {
-      saveTeamLogoCache();
-      console.log('预抓队徽 [' + leagueCode + '] 新增 ' + added + ' 条');
-      if (['bl1','bl2','bl3'].indexOf(currentLeague) === -1) {
-        renderCustomMatches();
-      }
-    }
-  } catch(e) {
-    console.warn('预抓队徽失败 [' + leagueCode + ']:', e.message);
-  }
-}
-
-// 修复 #6：优先精确匹配，模糊匹配加长度约束
-function getTeamLogoUrl(teamName) {
-  if (!teamName) return null;
-  // 1) 精确匹配
-  if (teamLogoCache[teamName]) return teamLogoCache[teamName];
-  // 2) 大小写不敏感精确匹配
-  var lowerName = teamName.toLowerCase();
-  for (var key in teamLogoCache) {
-    if (key.toLowerCase() === lowerName) return teamLogoCache[key];
-  }
-  // 3) 模糊匹配：双向 indexOf，但要求长度差 >= 3，避免 "Inter" 命中 "Inter Miami"
-  for (var key2 in teamLogoCache) {
-    var keyLower = key2.toLowerCase();
-    if (Math.abs(keyLower.length - lowerName.length) < 3) {
-      // 长度接近，允许双向包含
-      if (lowerName.indexOf(keyLower) !== -1 || keyLower.indexOf(lowerName) !== -1) {
-        return teamLogoCache[key2];
-      }
-    }
-  }
-  return null;
-}
-
-function getTeamLogoHtml(teamName, size) {
-  size = size || 22;
-  var logo = getTeamLogoUrl(teamName);
-  if (logo) {
-    return '<img src="' + escapeHtml(logo) + '" class="team-logo-img" style="width:' + size + 'px;height:' + size + 'px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">';
-  }
-  var colors = ['#e74c3c','#3498db','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#e84393','#00b894','#6c5ce7','#fd79a8','#0984e3','#fdcb6e','#e17055','#00cec9'];
-  var idx = 0;
-  for (var i = 0; i < teamName.length; i++) idx += teamName.charCodeAt(i);
-  var color = colors[idx % colors.length];
-  var letter = teamName.charAt(0).toUpperCase();
-  var fontSize = size >= 24 ? 10 : 8;
-  return '<span class="team-logo-fallback" style="background:' + color + ';width:' + size + 'px;height:' + size + 'px;font-size:' + fontSize + 'px;">' + escapeHtml(letter) + '</span>';
-}
-
-/* ================================================================
- * 时区格式化
- * 修复 #8：显式处理 null/undefined
- * ================================================================ */
-function fmt(dateStr, offset) {
-  if (dateStr === null || dateStr === undefined || dateStr === '') {
-    return { date: '--/--', time: '--:--' };
-  }
-  var d = new Date(dateStr);
-  if (isNaN(d.getTime())) {
-    return { date: '--/--', time: '--:--' };
-  }
-  var d2 = new Date(d.getTime() + offset * 3600000);
-  var month = String(d2.getUTCMonth() + 1).padStart(2, '0');
-  var day = String(d2.getUTCDate()).padStart(2, '0');
-  var hours = String(d2.getUTCHours()).padStart(2, '0');
-  var minutes = String(d2.getUTCMinutes()).padStart(2, '0');
-  return { date: month + '/' + day, time: hours + ':' + minutes };
-}
-
-/* ================================================================
- * 联赛切换
- * ================================================================ */
-function setLeague(l) {
-  currentLeague = l;
-  var btns = document.querySelectorAll('#leagueNav button');
-  for (var i = 0; i < btns.length; i++) btns[i].className = '';
-  var target = document.querySelector('#leagueNav button[onclick="setLeague(\'' + l + '\')"]');
-  if (target) target.className = 'on';
-  document.getElementById('searchInput').value = '';
-  refreshMatches();
-}
-
-// 修复 #15：时区上下限
-var MIN_OFFSET = -12, MAX_OFFSET = 14;
-function clampOffset(v) {
-  if (v < MIN_OFFSET) return MIN_OFFSET;
-  if (v > MAX_OFFSET) return MAX_OFFSET;
-  return v;
-}
-function adjustG(delta) {
-  offsetG = clampOffset(offsetG + delta);
-  updateDisplay('tzDisplayG', offsetG);
-  if (['bl1','bl2','bl3'].indexOf(currentLeague) !== -1) renderGermanMatches();
-}
-function resetG() { offsetG = 8; updateDisplay('tzDisplayG', 8); if (['bl1','bl2','bl3'].indexOf(currentLeague) !== -1) renderGermanMatches(); }
-function adjustESPN(delta) {
-  offsetESPN = clampOffset(offsetESPN + delta);
-  updateDisplay('tzDisplayESPN', offsetESPN);
-  if (['ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].indexOf(currentLeague) !== -1) renderCustomMatches();
-}
-function resetESPN() { offsetESPN = 8; updateDisplay('tzDisplayESPN', 8); if (['ENG.1','ESP.1','ITA.1','FRA.1','UCL','UEL'].indexOf(currentLeague) !== -1) renderCustomMatches(); }
-function updateDisplay(id, val) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  if (val === 0) el.textContent = '+0h';
-  else if (val > 0) el.textContent = '+' + val + 'h';
-  else el.textContent = val + 'h';
-}
-
-/* ================================================================
- * 直播检测
- * ================================================================ */
-function hasLiveMatches() {
-  var m = matchData.m || [];
-  var isGerman = ['bl1','bl2','bl3'].indexOf(currentLeague) !== -1;
-  for (var i = 0; i < m.length; i++) {
-    var match = m[i];
-    if (isGerman) {
-      if (!match.matchIsFinished && match.matchResults && match.matchResults.length > 0) return true;
-    } else {
-      if (match.status && match.status.type && match.status.type.state === 'in') return true;
-    }
-  }
-  return false;
-}
-
-// 修复 #11：单向状态更新，避免递归
-function updateLiveButton() {
-  var btn = document.getElementById('autoRefreshBtn');
-  var status = document.getElementById('autoStatus');
-  var label = document.getElementById('autoLabel');
-  var countdown = document.getElementById('autoCountdown');
-  if (!btn) return;
-  var hasLive = hasLiveMatches();
-
-  if (!hasLive) {
-    // 无直播：强制关闭自动刷新（直接清理，不调用 toggleAutoRefresh 避免递归）
-    if (autoRefreshEnabled) {
-      _stopAutoRefresh();
-    }
-    btn.className = 'disabled';
-    status.style.background = '#444';
-    status.className = '';
-    label.textContent = '⏸️ 无直播';
-    countdown.textContent = '';
-  } else {
-    if (!autoRefreshEnabled) {
-      btn.className = '';
-      status.style.background = '#444';
-      status.className = '';
-      label.textContent = '⏸️ 直播';
-      countdown.textContent = '';
-    }
-  }
-}
-
-/* ================================================================
- * 数据获取
- * 修复 #1：加 requestId 防竞态
- * ================================================================ */
-async function refreshMatches() {
-  var myRequestId = ++matchRequestId;
-  document.getElementById('matchMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载比赛数据...</div>';
-  try {
-    if (['bl1','bl2','bl3'].indexOf(currentLeague) !== -1) {
-      var year = new Date().getFullYear();
-      var r1 = await fetch('https://api.openligadb.de/getmatchdata/' + currentLeague);
-      var r2 = await fetch('https://api.openligadb.de/getbltable/' + currentLeague + '/' + year);
-      var m1 = await r1.json();
-      var t1 = await r2.json();
-      // 竞态检查：如果在等待期间用户切换了联赛，丢弃本次结果
-      if (myRequestId !== matchRequestId) return;
-      matchData.m = m1;
-      matchData.t = t1;
-      renderGermanMatches();
-    } else {
-      var leagueCode = currentLeague;
-      if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
-      else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
-
-      var r3 = fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
-      var r4 = fetch('https://site.api.espn.com/apis/v2/sports/soccer/' + leagueCode + '/standings');
-
-      var results = await Promise.all([r3, r4]);
-      var scoreboardData = await results[0].json();
-      var standingsData = await results[1].json();
-
-      // 竞态检查
-      if (myRequestId !== matchRequestId) return;
-
-      matchData.m = scoreboardData.events || [];
-      matchData.t = standingsData.children || [];
-
-      extractLogosFromMatches();
-      renderCustomMatches();
-
-      prefetchLeagueLogos(leagueCode);
-    }
-    updateLiveButton();
-  } catch(e) {
-    if (myRequestId !== matchRequestId) return;
-    document.getElementById('matchMain').innerHTML = '<div class="ld">❌ 错误: ' + escapeHtml(e.message) + '<br><span style="color:#666;font-size:12px;">请检查网络连接后刷新</span><br><button onclick="refreshMatches()" style="margin-top:14px;padding:10px 28px;background:linear-gradient(135deg,#4caf50,#2e7d32);border:none;border-radius:30px;color:#fff;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(76,175,80,0.15)">🔄 重试</button></div>';
-  }
-}
-
-async function refreshLiveMatches() {
-  try {
-    if (!hasLiveMatches()) {
-      if (autoRefreshEnabled) _stopAutoRefresh();
-      updateLiveButton();
-      return;
-    }
-    if (['bl1','bl2','bl3'].indexOf(currentLeague) !== -1) {
-      var r = await fetch('https://api.openligadb.de/getmatchdata/' + currentLeague);
-      var newData = await r.json();
-      for (var i = 0; i < matchData.m.length; i++) {
-        var matchId = matchData.m[i].matchID;
-        if (!matchId) continue;
-        for (var j = 0; j < newData.length; j++) {
-          if (newData[j].matchID === matchId) { matchData.m[i] = newData[j]; break; }
-        }
-      }
-      renderGermanMatches();
-    } else {
-      var leagueCode = currentLeague;
-      if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
-      else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
-      var resp = await fetch('https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/scoreboard');
-      var data = await resp.json();
-      var newEvents = data.events || [];
-      for (var i2 = 0; i2 < matchData.m.length; i2++) {
-        var oldId = matchData.m[i2].id;
-        if (!oldId) continue;
-        for (var j2 = 0; j2 < newEvents.length; j2++) {
-          if (newEvents[j2].id === oldId) { matchData.m[i2] = newEvents[j2]; break; }
-        }
-      }
-      extractLogosFromMatches();
-      renderCustomMatches();
-    }
-    updateLiveButton();
-  } catch(e) { console.warn('直播刷新失败:', e.message); }
-}
-
-/* ================================================================
- * 自动刷新
- * 修复 #14：用时间戳计算倒计时，避免跳变
- * ================================================================ */
-var autoRefreshEnabled = false;
-var autoRefreshTimer = null;
-var countdownTimer = null;
-var nextRefreshAt = 0;
-var REFRESH_INTERVAL_MS = 15000;
-
-function _startAutoRefresh() {
-  autoRefreshEnabled = true;
-  var btn = document.getElementById('autoRefreshBtn');
-  var status = document.getElementById('autoStatus');
-  var label = document.getElementById('autoLabel');
-  var countdown = document.getElementById('autoCountdown');
-  btn.className = 'active';
-  status.style.background = '#4caf50';
-  status.className = 'pulse';
-  label.textContent = '● 直播中';
-  countdown.textContent = '15s';
-
-  nextRefreshAt = Date.now() + REFRESH_INTERVAL_MS;
-  refreshLiveMatches();
-
-  autoRefreshTimer = setInterval(function() {
-    refreshLiveMatches();
-    nextRefreshAt = Date.now() + REFRESH_INTERVAL_MS;
-  }, REFRESH_INTERVAL_MS);
-
-  countdownTimer = setInterval(function() {
-    var remain = Math.max(0, Math.ceil((nextRefreshAt - Date.now()) / 1000));
-    var el = document.getElementById('autoCountdown');
-    if (el) el.textContent = remain + 's';
-  }, 500);
-}
-
-function _stopAutoRefresh() {
-  autoRefreshEnabled = false;
-  var btn = document.getElementById('autoRefreshBtn');
-  var status = document.getElementById('autoStatus');
-  var label = document.getElementById('autoLabel');
-  var countdown = document.getElementById('autoCountdown');
-  if (btn) btn.className = '';
-  if (status) { status.style.background = '#444'; status.className = ''; }
-  if (label) label.textContent = '⏸️ 直播';
-  if (countdown) countdown.textContent = '';
-  if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
-  if (countdownTimer) { clearInterval(countdownTimer); countdownTimer = null; }
-}
-
-function toggleAutoRefresh() {
-  if (!hasLiveMatches() && !autoRefreshEnabled) return;
-  if (autoRefreshEnabled) {
-    _stopAutoRefresh();
-    updateLiveButton();
-  } else {
-    _startAutoRefresh();
-  }
-}
-
-/* ================================================================
- * 渲染入口
- * ================================================================ */
-function renderMatches() {
-  if (['bl1','bl2','bl3'].indexOf(currentLeague) !== -1) {
-    renderGermanMatches();
-  } else {
-    renderCustomMatches();
-  }
-  updateLiveButton();
-}
-
-/* ================================================================
- * 德甲/德乙/德丙 渲染
- * ================================================================ */
-function renderGermanMatches() {
-  var s = document.getElementById('searchInput').value.toLowerCase();
-  var m = matchData.m || [], t = matchData.t || [];
-  if (s) {
-    m = m.filter(function(x) {
-      return (x.team1 && x.team1.teamName || '').toLowerCase().indexOf(s) !== -1 ||
-             (x.team2 && x.team2.teamName || '').toLowerCase().indexOf(s) !== -1;
-    });
-  }
-  var h = '';
-
-  if (t && t.length) {
-    h += '<details class="details" open><summary>📈 积分榜</summary><div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
-    for (var i = 0; i < t.length; i++) {
-      var r = t[i];
-      var icon = '';
-      if (r.teamIconUrl) {
-        icon = '<img src="' + escapeHtml(r.teamIconUrl) + '" style="width:22px;height:22px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" loading="lazy" onerror="this.style.display=\'none\'">';
-      }
-      if (!icon && r.teamName) {
-        icon = getTeamBadge(r.teamName, 22);
-      }
-      var rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
-      var gdClass = r.goalDiff > 0 ? 'gd-positive' : r.goalDiff < 0 ? 'gd-negative' : 'gd-zero';
-      h += '<tr><td><span class="rank ' + rankClass + '">' + (i + 1) + '</span></td><td><div class="team-cell">' + icon + '<span>' + escapeHtml(r.teamName) + '</span></div></td><td class="stat">' + r.matches + '</td><td class="stat">' + r.won + '</td><td class="stat">' + r.draw + '</td><td class="stat">' + r.lost + '</td><td class="stat">' + r.goals + '</td><td class="stat">' + r.opponentGoals + '</td><td class="' + gdClass + '">' + (r.goalDiff > 0 ? '+' : '') + r.goalDiff + '</td><td class="points">' + r.points + '</td></tr>';
-    }
-    h += '</table></div></div></details>';
-  }
-
-  m = m.slice().sort(function(a, b) {
-    return new Date(a.matchDateTime) - new Date(b.matchDateTime);
-  });
-
-  var live = m.filter(function(x) { return !x.matchIsFinished && x.matchResults && x.matchResults.length > 0; });
-  var done = m.filter(function(x) { return x.matchIsFinished; });
-  var up = m.filter(function(x) { return !x.matchIsFinished && (!x.matchResults || x.matchResults.length === 0); });
-
-  // 修复 #10：搜索时不做 slice 截断
-  var limitUp = s ? up.length : 12;
-  var limitDone = s ? done.length : 12;
-
-  if (live.length) h += '<div class="section-title"><span class="dot" style="background:#ff5252;animation:blink 1.2s infinite;"></span> 直播中</div><div class="grid">' + live.map(function(x) { return cardGerman(x, 'live'); }).join('') + '</div>';
-  if (up.length) h += '<div class="section-title"><span class="dot" style="background:#4caf50;"></span> 即将开始</div><div class="grid">' + up.slice(0, limitUp).map(function(x) { return cardGerman(x, 'upcoming'); }).join('') + '</div>';
-  if (done.length) h += '<div class="section-title"><span class="dot" style="background:#333;"></span> 已结束</div><div class="grid">' + done.slice(-limitDone).map(function(x) { return cardGerman(x, 'finished'); }).join('') + '</div>';
-
-  document.getElementById('matchMain').innerHTML = h || '<div class="ld">暂无数据</div>';
-}
-
-function cardGerman(m, status) {
-  var ft = fmt(m.matchDateTime, offsetG);
-  var ds = ft.date, ts = ft.time;
-  var live = status === 'live';
-  var done = status === 'finished';
-  var sc = 'VS', cl = '';
-  var name1 = m.team1 ? m.team1.teamName : '?';
-  var name2 = m.team2 ? m.team2.teamName : '?';
-  var teamId1 = m.team1 ? m.team1.teamId : null;
-  var teamId2 = m.team2 ? m.team2.teamId : null;
-
-  function findGermanLogo(teamName) {
-    if (!teamName || teamName === '?') return '';
-    if (m.team1 && m.team1.teamName === teamName && m.team1.teamIconUrl) return m.team1.teamIconUrl;
-    if (m.team2 && m.team2.teamName === teamName && m.team2.teamIconUrl) return m.team2.teamIconUrl;
-    var table = matchData.t || [];
-    var clean = teamName.replace(/[^a-zA-Z0-9äöüÄÖÜß]/g, '').toLowerCase();
-    // 修复 #9：先精确匹配，再模糊匹配
-    for (var i = 0; i < table.length; i++) {
-      var row = table[i];
-      if (row.teamName === teamName && row.teamIconUrl) return row.teamIconUrl;
-    }
-    for (var i2 = 0; i2 < table.length; i2++) {
-      var row2 = table[i2];
-      if (!row2.teamIconUrl || !row2.teamName) continue;
-      var rowClean = row2.teamName.replace(/[^a-zA-Z0-9äöüÄÖÜß]/g, '').toLowerCase();
-      if (rowClean === clean) return row2.teamIconUrl;
-    }
-    return '';
-  }
-
-  var icon1 = '', icon2 = '';
-  var logo1 = findGermanLogo(name1);
-  var logo2 = findGermanLogo(name2);
-  if (logo1) {
-    icon1 = '<img src="' + escapeHtml(logo1) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" loading="lazy" onerror="this.style.display=\'none\'">';
-  } else if (name1 !== '?') {
-    icon1 = getTeamBadge(name1, 24);
-  }
-  if (logo2) {
-    icon2 = '<img src="' + escapeHtml(logo2) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" loading="lazy" onerror="this.style.display=\'none\'">';
-  } else if (name2 !== '?') {
-    icon2 = getTeamBadge(name2, 24);
-  }
-
-  var display1 = icon1 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + escapeHtml(name1) + '\')">' + escapeHtml(name1) + ' <span class="info-icon">ℹ️</span></span>';
-  var display2 = icon2 + ' <span class="team-link" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + escapeHtml(name2) + '\')">' + escapeHtml(name2) + ' <span class="info-icon">ℹ️</span></span>';
-
-  if (done || live) {
-    var r = null;
-    if (m.matchResults) {
-      for (var i = 0; i < m.matchResults.length; i++) {
-        if (m.matchResults[i].resultName === 'Endergebnis') { r = m.matchResults[i]; break; }
-      }
-      if (!r) r = m.matchResults[0];
-    }
-    var hs = r ? (r.pointsTeam1 || 0) : 0, as = r ? (r.pointsTeam2 || 0) : 0;
-    sc = hs + '-' + as;
-    if (done) {
-      if (hs > as) {
-        display1 = icon1 + ' <span class="team-link" style="color:#4caf50;font-weight:700;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + escapeHtml(name1) + '\')">' + escapeHtml(name1) + ' ✔ <span class="info-icon">ℹ️</span></span>';
-        display2 = icon2 + ' <span style="color:#555;">' + escapeHtml(name2) + '</span>';
-        cl = 'score-finished';
-      } else if (hs < as) {
-        display1 = icon1 + ' <span style="color:#555;">' + escapeHtml(name1) + '</span>';
-        display2 = icon2 + ' <span class="team-link" style="color:#4caf50;font-weight:700;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + escapeHtml(name2) + '\')">' + escapeHtml(name2) + ' ✔ <span class="info-icon">ℹ️</span></span>';
-        cl = 'score-finished';
-      } else {
-        display1 = icon1 + ' <span class="team-link" style="color:#ffd740;font-weight:700;" onclick="showTeamInfo(\'' + teamId1 + '\',\'' + escapeHtml(name1) + '\')">' + escapeHtml(name1) + ' <span class="info-icon">ℹ️</span></span>';
-        display2 = icon2 + ' <span class="team-link" style="color:#ffd740;font-weight:700;" onclick="showTeamInfo(\'' + teamId2 + '\',\'' + escapeHtml(name2) + '\')">' + escapeHtml(name2) + ' <span class="info-icon">ℹ️</span></span>';
-        cl = 'score-finished';
-      }
-    } else { cl = 'score-live'; }
-  }
-  var statusTag = live ? '<span class="status-tag live">● 直播中</span>' : done ? '<span class="status-tag finished">✓ 已结束</span>' : '<span class="status-tag upcoming">⏰ 即将开始</span>';
-
-  var rosterBtns = '';
-  if (currentLeague === 'bl1') {
-    rosterBtns = '<button onclick="showBundesligaRoster(\'' + escapeHtml(name1) + '\')">📋 ' + escapeHtml(name1) + '</button><button onclick="showBundesligaRoster(\'' + escapeHtml(name2) + '\')">📋 ' + escapeHtml(name2) + '</button>';
-  }
-
-  var botText = live ? '● 直播中' : done ? '✓ 已结束' : '';
-  return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + (m.group && m.group.groupName ? ' · ' + escapeHtml(m.group.groupName) : '') + '</span>' + statusTag + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid ' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + ' ' + rosterBtns + '</div></div>';
-}
-
-/* ================================================================
- * ESPN 积分榜字段辅助
- * ================================================================ */
-function getStat(stats, names) {
-  if (!stats) return null;
-  for (var i = 0; i < stats.length; i++) {
-    var n = (stats[i].name || '').toLowerCase();
-    var ab = (stats[i].abbreviation || '').toLowerCase();
-    for (var j = 0; j < names.length; j++) {
-      if (n === names[j] || ab === names[j]) return stats[i];
-    }
-  }
-  return null;
-}
-
-function statVal(stats, names, fallback) {
-  var s = getStat(stats, names);
-  if (!s) return fallback !== undefined ? fallback : '0';
-  var v = s.displayValue !== undefined ? s.displayValue : s.value;
-  if (v === undefined || v === null) return fallback !== undefined ? fallback : '0';
-  return String(v);
-}
-
-/* ================================================================
- * 赛季判断
- * 修复 #3：优先看数据源是否返回积分榜，日期仅作兜底
- * ================================================================ */
-function isSeasonStarted(hasStandingsData) {
-  // 如果数据源已经有积分榜数据，说明赛季已经开始
-  if (hasStandingsData) return true;
-  // 兜底：8月15日之后算赛季开始
-  var now = new Date();
-  var month = now.getMonth() + 1;
-  var day = now.getDate();
-  if (month > 8 || (month === 8 && day >= 15)) return true;
-  return false;
-}
-
-/* ================================================================
- * 五大联赛 + 欧战 渲染
- * ================================================================ */
-function renderCustomMatches() {
-  var s = document.getElementById('searchInput').value.toLowerCase();
-  var m = matchData.m || [], t = matchData.t || [];
-
-  if (s && m.length > 0) {
-    m = m.filter(function(x) {
-      var c = x.competitions ? x.competitions[0] : null;
-      if (!c || !c.competitors || c.competitors.length < 2) return false;
-      return c.competitors[0].team.displayName.toLowerCase().indexOf(s) !== -1 ||
-             c.competitors[1].team.displayName.toLowerCase().indexOf(s) !== -1;
-    });
-  }
-
-  var h = '';
-  var isKnockout = (currentLeague === 'UCL' || currentLeague === 'UEL');
-
-  if (isKnockout) {
-    var competitionName = currentLeague === 'UCL' ? '欧冠' : '欧联';
-    // 修复 #2：动态年份
-    var nowY = new Date().getFullYear();
-    var nowM = new Date().getMonth() + 1;
-    // 如果当前是 1-8 月，说明本赛季从去年开始；否则从今年开始
-    var seasonStartYear = nowM >= 9 ? nowY : nowY - 1;
-    var seasonEndYear = seasonStartYear + 1;
-    var startDate = currentLeague === 'UCL' ? (seasonStartYear + '年9月15日') : (seasonStartYear + '年9月16日');
-    h += '<div class="season-notice" style="margin:12px 0;"><span class="icon">🏆</span>' + competitionName + ' ' + seasonStartYear + '-' + String(seasonEndYear).slice(-2) + ' 赛季为淘汰赛制<br><span class="sub">小组赛阶段将于 <span class="date">' + startDate + '</span> 开赛 · 敬请期待</span></div>';
-  } else {
-    // 先看数据源有没有积分榜数据
-    var hasEspnStandings = false;
-    var espnEntries = [];
-    var leagueName = '积分榜';
-    for (var gi = 0; gi < t.length; gi++) {
-      var group = t[gi];
-      if (group.standings && group.standings.entries && group.standings.entries.length > 0) {
-        hasEspnStandings = true;
-        espnEntries = group.standings.entries;
-        leagueName = group.name || '积分榜';
-        break;
-      }
-    }
-    // 修复 #3：赛季判断改为数据优先
-    var seasonStarted = isSeasonStarted(hasEspnStandings);
-
-    if (hasEspnStandings && seasonStarted) {
-      h += '<details class="details" open><summary>📈 积分榜 - ' + escapeHtml(leagueName) + '</summary>';
-      h += '<div class="standings-wrap"><div class="table-scroll"><table><tr><th>#</th><th>球队</th><th>赛</th><th>胜</th><th>平</th><th>负</th><th>进球</th><th>失球</th><th>净胜</th><th>积分</th></tr>';
-      var logoDirty = false;
-      for (var i = 0; i < espnEntries.length; i++) {
-        var e = espnEntries[i];
-        var stats = e.stats || [];
-        var rawName = e.team ? (e.team.displayName || e.team.shortDisplayName || '未知') : '未知';
-        var teamName = translateTeamName(rawName);
-        var teamId = e.team ? e.team.id : null;
-
-        if (e.team && e.team.logos && e.team.logos.length > 0) {
-          var logoUrl = e.team.logos[0].href || e.team.logos[0].url;
-          if (logoUrl && rawName && !teamLogoCache[rawName]) {
-            teamLogoCache[rawName] = logoUrl;
-            logoDirty = true;
-          }
-        }
-
-        var played = statVal(stats, ['gamesplayed','gp','played'], '0');
-        var won = statVal(stats, ['wins','w'], '0');
-        var drawn = statVal(stats, ['ties','draws','d'], '0');
-        var lost = statVal(stats, ['losses','l'], '0');
-        var goalsFor = statVal(stats, ['pointsfor','goalsfor','gf','pf'], '0');
-        var goalsAgainst = statVal(stats, ['pointsagainst','goalsagainst','ga','pa'], '0');
-        var points = statVal(stats, ['points','pts','p'], '0');
-        var goalDiffRaw = statVal(stats, ['pointdifferential','goaldifference','gd','diff'], '0');
-
-        points = points.replace(/\+/g, '');
-        goalDiffRaw = goalDiffRaw.replace(/\+/g, '');
-        var gdNum = parseInt(goalDiffRaw, 10);
-        if (isNaN(gdNum)) gdNum = 0;
-
-        var rankClass = i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : 'normal';
-        var gdClass = gdNum > 0 ? 'gd-positive' : gdNum < 0 ? 'gd-negative' : 'gd-zero';
-        var logoHtml = getTeamLogoHtml(rawName, 22);
-
-        var leagueCode = currentLeague;
-        if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
-        else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
-
-        h += '<tr><td><span class="rank ' + rankClass + '">' + (i + 1) + '</span></td>';
-        h += '<td><div class="team-cell">' + logoHtml + '<span style="cursor:pointer;border-bottom:2px solid transparent;transition:all 0.25s ease;" onclick="showEspnRoster(\'' + leagueCode + '\',\'' + teamId + '\',\'' + escapeHtml(teamName) + '\')" onmouseover="this.style.borderBottomColor=\'#4caf50\';this.style.color=\'#a5d6a7\'" onmouseout="this.style.borderBottomColor=\'transparent\';this.style.color=\'#eee\'">' + escapeHtml(teamName) + ' ℹ️</span></div></td>';
-        h += '<td class="stat">' + escapeHtml(played) + '</td>';
-        h += '<td class="stat">' + escapeHtml(won) + '</td>';
-        h += '<td class="stat">' + escapeHtml(drawn) + '</td>';
-        h += '<td class="stat">' + escapeHtml(lost) + '</td>';
-        h += '<td class="stat">' + escapeHtml(goalsFor) + '</td>';
-        h += '<td class="stat">' + escapeHtml(goalsAgainst) + '</td>';
-        h += '<td class="' + gdClass + '">' + (gdNum > 0 ? '+' : '') + gdNum + '</td>';
-        h += '<td class="points">' + escapeHtml(points) + '</td></tr>';
-      }
-      h += '</table></div></div></details>';
-      if (logoDirty) saveTeamLogoCache();
-    } else if (!seasonStarted) {
-      h += '<div class="season-notice" style="margin:12px 0;"><span class="icon">⏳</span>' + new Date().getFullYear() + ' 赛季尚未开始<br><span class="sub">当前为赛季备战期 · 积分榜暂为空</span></div>';
-    } else {
-      h += '<div class="season-notice" style="margin:12px 0;"><span class="icon">📊</span>积分榜数据加载中...<br><span class="sub">请稍后刷新页面</span></div>';
-    }
-  }
-
-  // 修复 #12：兼容 postponed / canceled / suspended，避免比赛消失
-  var live = [], done = [], up = [], other = [];
-  for (var mi = 0; mi < m.length; mi++) {
-    var x = m[mi];
-    var state = x.status && x.status.type ? x.status.type.state : null;
-    var completed = x.status && x.status.type ? x.status.type.completed === true : false;
-    if (state === 'in') live.push(x);
-    else if (state === 'post' || completed) done.push(x);
-    else if (state === 'pre') up.push(x);
-    else other.push(x);  // postponed / canceled / suspended 等
-  }
-
-  // 修复 #10：搜索时不做 slice 截断
-  var limitUp = s ? up.length : 12;
-  var limitDone = s ? done.length : 12;
-
-  if (live.length) h += '<div class="section-title"><span class="dot" style="background:#ff5252;animation:blink 1.2s infinite;"></span> 直播中</div><div class="grid">' + live.map(function(x) { return cardCustom(x, 'live'); }).join('') + '</div>';
-  if (up.length) h += '<div class="section-title"><span class="dot" style="background:#4caf50;"></span> 即将开始</div><div class="grid">' + up.slice(0, limitUp).map(function(x) { return cardCustom(x, 'upcoming'); }).join('') + '</div>';
-  if (done.length) h += '<div class="section-title"><span class="dot" style="background:#333;"></span> 已结束</div><div class="grid">' + done.slice(-limitDone).map(function(x) { return cardCustom(x, 'finished'); }).join('') + '</div>';
-  if (other.length) h += '<div class="section-title"><span class="dot" style="background:#666;"></span> 其他状态</div><div class="grid">' + other.map(function(x) { return cardCustom(x, 'other'); }).join('') + '</div>';
-
-  document.getElementById('matchMain').innerHTML = h || '<div class="ld">暂无数据</div>';
-}
-
-function cardCustom(m, status) {
-  var c = m.competitions ? m.competitions[0] : null;
-  if (!c || !c.competitors || c.competitors.length < 2) return '';
-  var hh = c.competitors[0], aa = c.competitors[1];
-  var live = status === 'live';
-  var done = status === 'finished';
-  var ft = fmt(m.date, offsetESPN);
-  var ds = ft.date, ts = ft.time;
-
-  var hsRaw = '0', asRaw = '0';
-  if (hh.score) {
-    if (typeof hh.score === 'object') hsRaw = hh.score.displayValue || hh.score.value || '0';
-    else hsRaw = hh.score || '0';
-  }
-  if (aa.score) {
-    if (typeof aa.score === 'object') asRaw = aa.score.displayValue || aa.score.value || '0';
-    else asRaw = aa.score || '0';
-  }
-  var hScore = parseInt(hsRaw, 10) || 0, aScore = parseInt(asRaw, 10) || 0;
-
-  var isCompleted = done || (m.status && m.status.type && m.status.type.completed === true);
-  var isLive = live || (m.status && m.status.type && m.status.type.state === 'in');
-
-  var sc = (isCompleted || isLive) ? hScore + '-' + aScore : 'VS';
-  var rawName1 = hh.team.displayName || hh.team.shortDisplayName || '?';
-  var rawName2 = aa.team.displayName || aa.team.shortDisplayName || '?';
-  var name1 = translateTeamName(rawName1);
-  var name2 = translateTeamName(rawName2);
-  var teamId1 = hh.team.id, teamId2 = aa.team.id;
-
-  var logo1 = hh.team.logo
-    ? '<img src="' + escapeHtml(hh.team.logo) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">'
-    : getTeamLogoHtml(rawName1, 24);
-  var logo2 = aa.team.logo
-    ? '<img src="' + escapeHtml(aa.team.logo) + '" style="width:24px;height:24px;border-radius:50%;object-fit:contain;background:rgba(255,255,255,0.02);padding:2px;flex-shrink:0;" onerror="this.style.display=\'none\'">'
-    : getTeamLogoHtml(rawName2, 24);
-
-  var leagueCode = currentLeague;
-  if (currentLeague === 'UCL') leagueCode = 'UEFA.CHAMPIONS';
-  else if (currentLeague === 'UEL') leagueCode = 'UEFA.EUROPA';
-
-  var display1 = logo1 + ' <span style="font-weight:600;">' + escapeHtml(name1) + '</span>';
-  var display2 = logo2 + ' <span style="font-weight:600;">' + escapeHtml(name2) + '</span>';
-
-  var cl = isCompleted ? 'score-finished' : (isLive ? 'score-live' : '');
-  if (isCompleted) {
-    if (hScore > aScore) { display1 = logo1 + ' <span style="color:#4caf50;font-weight:700;">' + escapeHtml(name1) + ' ✔</span>'; display2 = logo2 + ' <span style="color:#555;">' + escapeHtml(name2) + '</span>'; }
-    else if (hScore < aScore) { display1 = logo1 + ' <span style="color:#555;">' + escapeHtml(name1) + '</span>'; display2 = logo2 + ' <span style="color:#4caf50;font-weight:700;">' + escapeHtml(name2) + ' ✔</span>'; }
-    else { display1 = logo1 + ' <span style="color:#ffd740;font-weight:700;">' + escapeHtml(name1) + '</span>'; display2 = logo2 + ' <span style="color:#ffd740;font-weight:700;">' + escapeHtml(name2) + '</span>'; }
-  }
-
-  var isPenalty = false;
-  if (m.status && m.status.type && m.status.type.detail) {
-    if (m.status.type.detail.toLowerCase().indexOf('penalty') !== -1) isPenalty = true;
-  }
-
-  var statusTag = isLive ? '<span class="status-tag live">● 直播中</span>' : isCompleted ? '<span class="status-tag finished">✓ 已结束</span>' : '<span class="status-tag upcoming">⏰ 即将开始</span>';
-  var botText = isLive ? '● 直播中' : isCompleted ? '✓ 已结束' : '';
-  if (isCompleted && isPenalty) botText += ' ⚽点球';
-
-  var rosterBtns = '<button onclick="showEspnRoster(\'' + leagueCode + '\', \'' + teamId1 + '\', \'' + escapeHtml(name1) + '\')">📋 ' + escapeHtml(name1) + '</button><button onclick="showEspnRoster(\'' + leagueCode + '\', \'' + teamId2 + '\', \'' + escapeHtml(name2) + '\')">📋 ' + escapeHtml(name2) + '</button>';
-
-  return '<div class="card"><div class="top"><span>' + ds + ' ' + ts + '</span>' + statusTag + '</div><div class="row"><div class="side">' + display1 + '</div><div class="mid ' + cl + '">' + sc + '</div><div class="side r">' + display2 + '</div></div><div class="bot">' + botText + ' ' + rosterBtns + '</div></div>';
-}
-
-function filterMatches() { renderMatches(); }
-
-/* ================================================================
- * ESPN 阵容
- * ================================================================ */
-var rosterCache = {};
-
-async function fetchEspnRoster(leagueCode, teamId) {
-  var key = 'roster_' + leagueCode + '_' + teamId;
-  if (rosterCache[key]) return rosterCache[key];
-  try {
-    var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams/' + teamId + '/roster';
-    var response = await fetch(url);
-    var data = await response.json();
-    rosterCache[key] = data;
-    return data;
-  } catch(e) {
-    return null;
-  }
-}
-
-async function showEspnRoster(leagueCode, teamId, teamName) {
-  var data = await fetchEspnRoster(leagueCode, teamId);
-  if (!data || !data.athletes || data.athletes.length === 0) {
-    showModal('阵容 ' + teamName, '<div style="color:#444;">暂无阵容数据</div>');
-    return;
-  }
-  var html = '';
-  html += '<div style="color:#4caf50;font-weight:700;margin:8px 0 6px;">👤 球员名单 (' + data.athletes.length + '人)</div>';
-  data.athletes.forEach(function(a) {
-    var num = a.jersey || '?';
-    var pos = a.position ? a.position.abbreviation : '';
-    var name = a.displayName || a.fullName || '未知';
-    html += '<div class="player-item"><span class="num">#' + escapeHtml(num) + '</span>' + escapeHtml(name) + '<span class="pos">' + escapeHtml(pos) + '</span></div>';
-  });
-  showModal('阵容 ' + teamName, html);
-}
-
-function showTeamInfo(teamId, teamName) {
-  var table = matchData.t || [];
-  if (!table || table.length === 0) {
-    showModal('ℹ️ ' + teamName, '<div style="color:#444;">积分榜数据未加载</div>');
-    return;
-  }
-  var found = null;
-  var cleanName = teamName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-  for (var i = 0; i < table.length; i++) {
-    var row = table[i];
-    var rowClean = row.teamName ? row.teamName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase() : '';
-    if (row.teamId == teamId || row.teamInfoId == teamId || row.teamName === teamName || rowClean === cleanName) {
-      found = row; break;
-    }
-  }
-  if (!found) {
-    showModal('ℹ️ ' + teamName, '<div style="color:#444;">未找到球队数据</div>');
-    return;
-  }
-  var html = '';
-  html += '<div class="info-item"><span class="label">名称</span>' + escapeHtml(found.teamName || '未知') + '</div>';
-  if (found.teamIconUrl) {
-    html += '<div class="info-item"><span class="label">队徽</span><img src="' + escapeHtml(found.teamIconUrl) + '" onerror="this.style.display=\'none\'"></div>';
-  } else {
-    html += '<div class="info-item"><span class="label">队徽</span>' + getTeamBadge(found.teamName, 48) + '</div>';
-  }
-  html += '<div class="info-item"><span class="label">场次</span>' + (found.matches || 0) + '</div>';
-  html += '<div class="info-item"><span class="label">进球</span>' + (found.goals || 0) + '</div>';
-  html += '<div class="info-item"><span class="label">失球</span>' + (found.opponentGoals || 0) + '</div>';
-  html += '<div class="info-item"><span class="label">净胜球</span>' + (found.goalDiff > 0 ? '+' : '') + (found.goalDiff || 0) + '</div>';
-  html += '<div class="info-item"><span class="label">积分</span>' + (found.points || 0) + '</div>';
-  showModal('ℹ️ ' + found.teamName, html);
-}
-
-/* ================================================================
- * 德甲阵容
- * ================================================================ */
-async function findEspnTeamId(leagueCode, teamName) {
-  try {
-    var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + leagueCode + '/teams?search=' + encodeURIComponent(teamName);
-    var response = await fetch(url);
-    var data = await response.json();
-    if (data.sports && data.sports[0] && data.sports[0].leagues && data.sports[0].leagues[0] && data.sports[0].leagues[0].teams) {
-      var teams = data.sports[0].leagues[0].teams;
-      for (var i = 0; i < teams.length; i++) {
-        var displayName = teams[i].team.displayName || '';
-        var shortName = teams[i].team.shortDisplayName || '';
-        if (displayName.toLowerCase().indexOf(teamName.toLowerCase()) !== -1 ||
-            teamName.toLowerCase().indexOf(displayName.toLowerCase()) !== -1 ||
-            shortName.toLowerCase().indexOf(teamName.toLowerCase()) !== -1) {
-          return teams[i].team.id;
-        }
-      }
-    }
-    return null;
-  } catch(e) {
-    console.warn('查找球队ID失败:', teamName);
-    return null;
-  }
-}
-
-async function showBundesligaRoster(teamName) {
-  var teamId = await findEspnTeamId('GER.1', teamName);
-  if (teamId) {
-    await showEspnRoster('GER.1', teamId, teamName);
-  } else {
-    showModal('阵容 ' + teamName, '<div style="color:#444;">未找到该球队的阵容数据</div>');
-  }
-}
-
-/* ================================================================
- * 足球新闻模块
- * ================================================================ */
-var allRumors = [];
-var rumorTab = 'all';
-var currentRumorTag = 'all';
-var isLoadingRumors = false;
-
-var RSS_SOURCES = [
-  { name: 'Sky Sports', url: 'https://www.skysports.com/rss/12040' },
-  { name: 'Transfermarkt', url: 'https://www.transfermarkt.de/rss/news' },
-  { name: 'BBC Sport', url: 'http://newsrss.bbc.co.uk/rss/sportonline_uk_edition/football/rss.xml' }
-];
-
-var ESPN_NEWS_LEAGUES = [
-  { name: 'ESPN - 英超', league: 'eng.1' },
-  { name: 'ESPN - 西甲', league: 'esp.1' },
-  { name: 'ESPN - 德甲', league: 'ger.1' },
-  { name: 'ESPN - 意甲', league: 'ita.1' },
-  { name: 'ESPN - 法甲', league: 'fra.1' }
-];
-
-var TAG_KEYWORDS = {
-  transfer: ['transfer','deal','bid','sign','loan','contract','agent','fee','million','swap','done deal'],
-  match: ['match','game','fixture','result','score','goal','win','loss','victory','defeat','draw','comeback','clean sheet','hat-trick','penalty'],
-  injury: ['injury','injured','fitness','recovery','suspended','suspension','red card','yellow card'],
-  title: ['champion','title','cup','final','semifinal','quarterfinal','promotion','relegation','playoff','qualify','record','milestone'],
-  club: ['manager','coach','appoint','sack','dismiss','resign','president','chairman','owner','takeover']
-};
-
-var FOOTBALL_KEYWORDS = [
-  'transfer','rumour','deal','bid','sign','loan','contract','agent',
-  'match','game','result','score','goal','win','loss','victory','defeat','draw',
-  'injury','injured','suspended','ban','red card','yellow card',
-  'champion','title','league','cup','final','promotion','relegation',
-  'manager','coach','appoint','sack','dismiss','resign','club','president','owner',
-  'football','soccer','premier','bundesliga','laliga','seriea','ligue1',
-  'uefa','champions','europa','world cup','euro'
-];
-
-var LEAGUE_TEAMS = {
-  bundesliga: ['Bayern','Dortmund','Leipzig','Frankfurt','Gladbach','Wolfsburg','Stuttgart','Hoffenheim','Freiburg','Koln','Mainz','Augsburg','Bochum','Darmstadt','Heidenheim'],
-  premier: ['Arsenal','Liverpool','Man City','Manchester','Chelsea','Tottenham','Newcastle','Aston Villa','West Ham','Everton','Wolves','Crystal Palace','Fulham','Brentford','Brighton'],
-  laliga: ['Barcelona','Real Madrid','Atletico','Sevilla','Real Sociedad','Villarreal','Athletic','Valencia','Betis','Getafe','Celta','Mallorca','Rayo','Espanyol','Alaves'],
-  seriea: ['Juventus','Milan','Inter','Roma','Napoli','Lazio','Atalanta','Fiorentina','Torino','Bologna','Genoa','Sassuolo','Udinese','Empoli','Salernitana'],
-  ligue1: ['PSG','Marseille','Lyon','Monaco','Lille','Nice','Rennes','Lens','Strasbourg','Montpellier','Nantes','Reims','Troyes','Clermont','Brest']
-};
-
-function switchRumorTag(tag) {
-  currentRumorTag = tag;
-  var btns = document.querySelectorAll('#rumorTags button');
-  for (var i = 0; i < btns.length; i++) btns[i].className = '';
-  var target = document.querySelector('#rumorTags button[onclick="switchRumorTag(\'' + tag + '\')"]');
-  if (target) target.className = 'on';
-  renderRumors();
-}
-
-/* ================================================================
- * 修复 #5：多代理 + 备用
- * ================================================================ */
-async function fetchWithProxy(url) {
-  var proxies = [
-    'https://api.allorigins.win/raw?url=',
-    'https://corsproxy.io/?url=',
-    'https://api.codetabs.com/v1/proxy?quest='
-  ];
-  for (var p = 0; p < proxies.length; p++) {
-    try {
-      var proxyUrl = proxies[p] + encodeURIComponent(url);
-      var controller = new AbortController();
-      var timeout = setTimeout(function() { controller.abort(); }, 15000);
-      var response = await fetch(proxyUrl, { signal: controller.signal });
-      clearTimeout(timeout);
-      if (response.ok) {
-        var text = await response.text();
-        if (text && (text.indexOf('<rss') !== -1 || text.indexOf('<feed') !== -1 || text.indexOf('<item') !== -1)) {
-          return text;
-        }
-      }
-    } catch(e) { console.warn('代理 ' + p + ' 失败: ' + e.message); }
-  }
-  return null;
-}
-
-function parseRSS(xml, sourceName) {
-  if (!xml) return [];
-  var parser = new DOMParser();
-  var doc = parser.parseFromString(xml, 'text/xml');
-  // 修复 #18：同时兼容 RSS 2.0 的 <item> 和 Atom 的 <entry>
-  var items = doc.querySelectorAll('item');
-  if (items.length === 0) {
-    items = doc.querySelectorAll('entry');
-  }
-  var results = [];
-  items.forEach(function(item) {
-    var titleEl = item.querySelector('title');
-    var linkEl = item.querySelector('link');
-    var dateEl = item.querySelector('pubDate') || item.querySelector('updated');
-    var descEl = item.querySelector('description') || item.querySelector('summary') || item.querySelector('content');
-    var title = titleEl ? titleEl.textContent : '';
-    var link = '';
-    if (linkEl) {
-      link = linkEl.textContent || linkEl.getAttribute('href') || '';
-    }
-    var pubDate = dateEl ? dateEl.textContent : '';
-    var description = descEl ? descEl.textContent : '';
-    var cleanDesc = description.replace(/<[^>]*>/g, '').trim();
-    var summary = cleanDesc || title;
-    if (summary.length > 150) summary = summary.substring(0, 150) + '...';
-    var isFootball = FOOTBALL_KEYWORDS.some(function(kw) {
-      return title.toLowerCase().indexOf(kw.toLowerCase()) !== -1 || summary.toLowerCase().indexOf(kw.toLowerCase()) !== -1;
-    });
-    if (isFootball && title && link) {
-      results.push({ title: title, link: link, pubDate: pubDate, summary: summary, source: sourceName });
-    }
-  });
-  return results;
-}
-
-async function fetchRSSSource(source) {
-  try {
-    var xml = await fetchWithProxy(source.url);
-    return parseRSS(xml, source.name);
-  } catch(e) { return []; }
-}
-
-// 修复 #17：ESPN 新闻加足球关键词过滤
-async function fetchESPNNews(source) {
-  try {
-    var url = 'https://site.api.espn.com/apis/site/v2/sports/soccer/' + source.league + '/news';
-    var resp = await fetch(url);
-    var data = await resp.json();
-
-    if (!data.articles || !Array.isArray(data.articles)) return [];
-
-    var results = [];
-    for (var i = 0; i < data.articles.length; i++) {
-      var a = data.articles[i];
-      if (!a.headline || !a.links) continue;
-
-      var link = '';
-      if (a.links && a.links.web && a.links.web.href) link = a.links.web.href;
-      if (!link && a.links && a.links.mobile && a.links.mobile.href) link = a.links.mobile.href;
-      if (!link) continue;
-
-      var summary = a.description || a.headline;
-      if (summary.length > 150) summary = summary.substring(0, 150) + '...';
-
-      // 足球关键词过滤
-      var text = (a.headline + ' ' + summary).toLowerCase();
-      var isFootball = FOOTBALL_KEYWORDS.some(function(kw) {
-        return text.indexOf(kw.toLowerCase()) !== -1;
-      });
-      if (!isFootball) continue;
-
-      results.push({
-        title: a.headline,
-        link: link,
-        pubDate: a.published || a.lastModified || new Date().toUTCString(),
-        summary: summary,
-        source: source.name
-      });
-    }
-    return results;
-  } catch(e) {
-    console.warn('ESPN 新闻抓取失败 [' + source.league + ']:', e.message);
-    return [];
-  }
-}
-
-async function fetchAllRumors() {
-  if (isLoadingRumors) return;
-  isLoadingRumors = true;
-  var statusEl = document.getElementById('rumorStatus');
-  if (statusEl) statusEl.textContent = '加载 RSS...';
-  document.getElementById('rumorMain').innerHTML = '<div class="ld"><div class="spinner"></div><br>加载足球新闻...</div>';
-  allRumors = [];
-
-  var rssPromises = RSS_SOURCES.map(function(source) { return fetchRSSSource(source); });
-  var espnPromises = ESPN_NEWS_LEAGUES.map(function(source) { return fetchESPNNews(source); });
-
-  var allResults = await Promise.all(rssPromises.concat(espnPromises));
-  allResults.forEach(function(items) { allRumors = allRumors.concat(items); });
-
-  var seen = new Set();
-  allRumors = allRumors.filter(function(item) {
-    var key = item.title.substring(0, 60).toLowerCase();
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
-  allRumors.sort(function(a, b) {
-    var da = new Date(a.pubDate);
-    var db = new Date(b.pubDate);
-    if (isNaN(da.getTime())) return 1;
-    if (isNaN(db.getTime())) return -1;
-    return db - da;
-  });
-  if (allRumors.length === 0) {
-    allRumors = [
-      { title: 'Sky Sports Football - Latest News', link: 'https://www.skysports.com/football', pubDate: new Date().toUTCString(), summary: 'Latest football news, transfers, scores and more from Sky Sports.', source: 'Sky Sports' },
-      { title: 'Transfermarkt - Latest Transfer News', link: 'https://www.transfermarkt.com/', pubDate: new Date().toUTCString(), summary: 'Latest transfer rumors, done deals and market values.', source: 'Transfermarkt' }
-    ];
-  }
-  renderRumors();
-  isLoadingRumors = false;
-  if (statusEl) statusEl.textContent = '已更新 (' + allRumors.length + '条)';
-  document.getElementById('rumorCount').textContent = allRumors.length + ' 条新闻';
-}
-
-function renderRumors() {
-  var main = document.getElementById('rumorMain');
-  var filtered = getFilteredRumors();
-  if (filtered.length === 0) {
-    var tagNames = { 'all': '全部', 'transfer': '转会', 'match': '比赛', 'injury': '伤病', 'title': '冠军', 'club': '俱乐部' };
-    var tagDisplay = tagNames[currentRumorTag] || '全部';
-    main.innerHTML = '<div class="empty">暂无 ' + tagDisplay + ' 新闻<br><span style="font-size:12px;color:#222;">点击「刷新」获取最新 RSS</span></div>';
-    return;
-  }
-  var html = '<div class="grid">';
-  filtered.forEach(function(item) {
-    var date = new Date(item.pubDate);
-    var timeStr = isNaN(date.getTime()) ? '' : date.toLocaleDateString('zh-CN', {month:'short', day:'numeric'}) + ' ' + date.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit'});
-    var safeLink = escapeHtml(item.link || '#');
-    var icons = { 'Sky Sports': '🎯', 'Transfermarkt': '⚽', 'BBC Sport': '📺' };
-    var icon = icons[item.source] || (item.source.indexOf('ESPN') === 0 ? '📡' : '📰');
-    var detectedTag = detectNewsTag(item.title + ' ' + item.summary);
-    var tagDisplay = detectedTag ? '<span class="news-tag">' + detectedTag + '</span>' : '';
-    html += '<div class="card"><div class="source-row"><span class="source">' + icon + ' ' + escapeHtml(item.source) + '</span>' + (timeStr ? '<span class="source-tag">' + escapeHtml(timeStr) + '</span>' : '') + '</div><div class="title"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(item.title) + '</a></div>' + (item.summary ? '<div class="summary">' + escapeHtml(item.summary) + '</div>' : '') + '<div class="meta"><a href="' + safeLink + '" target="_blank" rel="noopener noreferrer" class="read-link">📖 阅读原文 →</a>' + tagDisplay + '</div></div>';
-  });
-  html += '</div>';
-  main.innerHTML = html;
-  document.getElementById('rumorCount').textContent = filtered.length + ' 条新闻';
-}
-
-// 修复 #4：改用更宽松的匹配，避免 \b 失效
-function detectNewsTag(text) {
-  var lower = ' ' + text.toLowerCase() + ' ';
-  var tagNames = { 'transfer': '🔄 转会', 'match': '⚽ 比赛', 'injury': '🏥 伤病', 'title': '🏆 冠军', 'club': '🎯 俱乐部' };
-  for (var tag in TAG_KEYWORDS) {
-    var keywords = TAG_KEYWORDS[tag];
-    for (var i = 0; i < keywords.length; i++) {
-      var kw = keywords[i].toLowerCase();
-      if (lower.indexOf(kw) !== -1) return tagNames[tag] || tag;
-    }
-  }
-  return null;
-}
-
-function getFilteredRumors() {
-  var search = document.getElementById('rumorSearchInput').value.toLowerCase();
-  var filtered = allRumors;
-  if (rumorTab !== 'all') {
-    var teams = LEAGUE_TEAMS[rumorTab] || [];
-    filtered = filtered.filter(function(item) {
-      var text = (item.title + ' ' + item.summary).toLowerCase();
-      return teams.some(function(team) { return text.indexOf(team.toLowerCase()) !== -1; });
-    });
-  }
-  if (currentRumorTag !== 'all') {
-    var keywords = TAG_KEYWORDS[currentRumorTag] || [];
-    filtered = filtered.filter(function(item) {
-      var text = ' ' + (item.title + ' ' + item.summary).toLowerCase() + ' ';
-      return keywords.some(function(kw) {
-        var k = kw.toLowerCase();
-        return text.indexOf(k) !== -1;
-      });
-    });
-  }
-  if (search) {
-    filtered = filtered.filter(function(item) {
-      return (item.title + ' ' + item.summary + ' ' + item.source).toLowerCase().indexOf(search) !== -1;
-    });
-  }
-  return filtered;
-}
-
-function switchRumorTab(tab) {
-  rumorTab = tab;
-  var btns = document.querySelectorAll('#rumorNav button');
-  for (var i = 0; i < btns.length; i++) btns[i].className = '';
-  var target = document.querySelector('#rumorNav button[onclick="switchRumorTab(\'' + tab + '\')"]');
-  if (target) target.className = 'on';
-  renderRumors();
-}
-
-function filterRumors() { renderRumors(); }
-
-/* ================================================================
- * 页面切换
- * 修复 #19：兼容老浏览器
- * ================================================================ */
-function forEachNodeList(list, fn) {
-  for (var i = 0; i < list.length; i++) fn(list[i], i);
-}
-
-function switchPage(page) {
-  if (autoRefreshEnabled) _stopAutoRefresh();
-  forEachNodeList(document.querySelectorAll('.page'), function(el) { el.className = 'page'; });
-  var pageEl = document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1));
-  if (pageEl) pageEl.className = 'page active';
-  forEachNodeList(document.querySelectorAll('.main-nav a'), function(el) { el.className = ''; });
-  var navEl = document.getElementById('nav' + page.charAt(0).toUpperCase() + page.slice(1));
-  if (navEl) navEl.className = 'on';
-  document.getElementById('pageBadge').textContent = page === 'match' ? '比赛数据' : '足球新闻';
-  if (page === 'match' && matchData.m.length === 0) refreshMatches();
-  if (page === 'transfer' && allRumors.length === 0) fetchAllRumors();
-}
-
-window.onscroll = function() {
-  var btn = document.getElementById('backTop');
-  if (document.documentElement.scrollTop > 300) { btn.style.display = 'block'; }
-  else { btn.style.display = 'none'; }
-};
-
-document.addEventListener('DOMContentLoaded', function() {
-  updateDisplay('tzDisplayG', offsetG);
-  updateDisplay('tzDisplayESPN', offsetESPN);
-  refreshMatches();
-});
+(function(){
+const canvas=document.getElementById('physicsCanvas'),ctx=canvas.getContext('2d');
+const canvasWrap=document.getElementById('canvasWrap');
+const energyChart=document.getElementById('energyChart'),ectx=energyChart.getContext('2d');
+const massSlider=document.getElementById('massSlider'),velocitySlider=document.getElementById('velocitySlider'),dampingSlider=document.getElementById('dampingSlider'),restitutionSlider=document.getElementById('restitutionSlider'),angleSlider=document.getElementById('angleSlider'),lengthSlider=document.getElementById('lengthSlider'),amplitudeSlider=document.getElementById('amplitudeSlider'),stiffnessSlider=document.getElementById('stiffnessSlider'),frictionSlider=document.getElementById('frictionSlider'),beltSpeedSlider=document.getElementById('beltSpeedSlider'),beltAngleSlider=document.getElementById('beltAngleSlider'),boardVelSlider=document.getElementById('boardVelSlider');
+const massVal=document.getElementById('massVal'),velVal=document.getElementById('velVal'),dampVal=document.getElementById('dampVal'),restitutionVal=document.getElementById('restitutionVal'),angleVal=document.getElementById('angleVal'),lengthVal=document.getElementById('lengthVal'),amplitudeVal=document.getElementById('amplitudeVal'),stiffnessVal=document.getElementById('stiffnessVal'),frictionVal=document.getElementById('frictionVal'),beltSpeedVal=document.getElementById('beltSpeedVal'),beltAngleVal=document.getElementById('beltAngleVal'),boardVelVal=document.getElementById('boardVelVal');
+const reportKinetic=document.getElementById('reportKinetic'),reportPotential=document.getElementById('reportPotential'),reportMechanical=document.getElementById('reportMechanical'),energyLossSpan=document.getElementById('energyLoss'),stepCounterSpan=document.getElementById('stepCounter'),heightDisplay=document.getElementById('heightDisplay'),heightLabel=document.getElementById('heightLabel'),angleDisplay=document.getElementById('angleDisplay'),angleDisplayRow=document.getElementById('angleDisplayRow'),displacementDisplay=document.getElementById('displacementDisplay'),displacementDisplayRow=document.getElementById('displacementDisplayRow'),blockVelDisplay=document.getElementById('blockVelDisplay'),blockVelDisplayRow=document.getElementById('blockVelDisplayRow'),boardVelDisplay=document.getElementById('boardVelDisplay'),boardVelDisplayRow=document.getElementById('boardVelDisplayRow'),scratchDisplay=document.getElementById('scratchDisplay'),scratchDisplayRow=document.getElementById('scratchDisplayRow'),heatDisplay=document.getElementById('heatDisplay'),heatDisplayRow=document.getElementById('heatDisplayRow'),workDisplay=document.getElementById('workDisplay'),workDisplayRow=document.getElementById('workDisplayRow'),motorDisplay=document.getElementById('motorDisplay'),motorDisplayRow=document.getElementById('motorDisplayRow');
+const kineticBar=document.getElementById('kineticBar'),potentialBar=document.getElementById('potentialBar'),mechanicalBar=document.getElementById('mechanicalBar');
+const resetBtn=document.getElementById('resetSimBtn'),exportReportBtn=document.getElementById('exportReportBtn'),exportQuestionBtn=document.getElementById('exportQuestionBtn'),idealToggle=document.getElementById('idealToggle'),modeIndicator=document.getElementById('modeIndicator'),pauseBtn=document.getElementById('pauseBtn'),statusBadge=document.getElementById('statusBadge'),trajectoryToggle=document.getElementById('trajectoryToggle'),modelSelector=document.getElementById('modelSelector');
+const paramVelocity=document.getElementById('paramVelocity'),paramAngle=document.getElementById('paramAngle'),paramLength=document.getElementById('paramLength'),paramAmplitude=document.getElementById('paramAmplitude'),paramStiffness=document.getElementById('paramStiffness'),paramFriction=document.getElementById('paramFriction'),paramBeltSpeed=document.getElementById('paramBeltSpeed'),paramBeltAngle=document.getElementById('paramBeltAngle'),paramBoardVel=document.getElementById('paramBoardVel'),paramDamping=document.getElementById('paramDamping'),paramRestitution=document.getElementById('paramRestitution');
+let currentModel='bounce',isPaused=false,showTrajectory=false,trajectoryPoints=[];
+let mass=1.0,initialVelocity=3.0,damping=0.02,restitution=0.85,isIdealMode=false,frictionCoeff=0.30,beltSpeed=2.0,beltAngle=30,boardInitVel=2.0;
+const GRAVITY=0.45,GROUND_Y=480,LEFT_WALL=50,RIGHT_WALL=850,PENDULUM_PIVOT_X=450,PENDULUM_PIVOT_Y=70,SPRING_REST_X=600,SPRING_Y=300;
+const PX_PER_METER=100,G_ACCEL=9.8;
+let ball={x:240,y:300,vx:3.0,vy:-0.8,radius:18,mass:1.0};
+let pendulumState={angle:0,omega:0,length:150},pendulumInitialAngle=30*Math.PI/180,pendulumTime=0;
+let springState={displacement:80,velocity:0,stiffness:2.0,amplitude:80},springTime=0;
+let blockState={blockX:300,blockV:0,boardX:200,boardV:200,boardW:400,blockW:50,blockH:50,boardH:18,together:false,scratchStart:null};
+let conveyorState={blockX:150,blockV:0,blockW:50,blockH:50,beltDashOffset:0,beltLeft:100,beltRight:800};
+let tiltConveyorState={blockX:150,blockY:0,blockV:0,blockW:50,blockH:50,beltDashOffset:0,beltLeft:100,beltRight:750,scratchStart:null,scratchMin:0,scratchMax:0};
+let stepCount=0,initialMechanicalEnergy=0,isDragging=false,dragOffsetX=0,dragOffsetY=0;
+let displayKinetic=0,displayPotential=0,displayMechanical=0,displayLoss=0,isStopped=false;
+let scratchLength=0,heatQ=0,frictionWork=0,motorEnergy=0;
+const REST_THRESHOLD=0.02,ZERO_THRESHOLD=0.04,MAX_HISTORY=300;
+let energyHistory=[],ballTrail=[];
+function recordEnergy(){energyHistory.push({ek:displayKinetic,ep:displayPotential,e:displayMechanical});if(energyHistory.length>MAX_HISTORY)energyHistory.shift()}
+function clearEnergyHistory(){energyHistory=[]}
+function resetScratchMetrics(){scratchLength=0;heatQ=0;frictionWork=0;motorEnergy=0;blockState.scratchStart=null;tiltConveyorState.scratchStart=null;tiltConveyorState.scratchMin=0;tiltConveyorState.scratchMax=0}
+const PENDULUM_G=9.8*100;
+function updatePendulum(){const len=pendulumState.length,omega0=Math.sqrt(PENDULUM_G/len);pendulumTime+=1/60;pendulumState.angle=pendulumInitialAngle*Math.cos(omega0*pendulumTime);pendulumState.omega=-pendulumInitialAngle*omega0*Math.sin(omega0*pendulumTime);ball.x=PENDULUM_PIVOT_X+len*Math.sin(pendulumState.angle);ball.y=PENDULUM_PIVOT_Y+len*Math.cos(pendulumState.angle);const speed=len*Math.abs(pendulumState.omega);ball.vx=speed*Math.cos(pendulumState.angle);ball.vy=-speed*Math.sin(pendulumState.angle)}
+function updateSpring(){const k=springState.stiffness*100,omega0=Math.sqrt(k/mass);springTime+=1/60;springState.displacement=springState.amplitude*Math.cos(omega0*springTime);springState.velocity=-springState.amplitude*omega0*Math.sin(omega0*springTime);ball.x=SPRING_REST_X-springState.displacement;ball.y=SPRING_Y;ball.vx=-springState.velocity;ball.vy=0}
+function updateBlock(){const dt=1/60,mu=frictionCoeff,g=G_ACCEL*PX_PER_METER;const blockMass=mass,boardMass=2.0;const relVel=blockState.blockV-blockState.boardV;let frictionOnBlock=0;if(Math.abs(relVel)>0.5){const f=Math.sign(relVel)*mu*blockMass*g;frictionOnBlock=-f;const fBoard=-frictionOnBlock;const fGround=-Math.sign(blockState.boardV)*mu*(blockMass+boardMass)*g;const oldBlockV=blockState.blockV,oldBoardV=blockState.boardV;blockState.blockV+=(frictionOnBlock/blockMass)*dt;blockState.boardV+=((fBoard+fGround)/boardMass)*dt;blockState.together=false;const relDisp=Math.abs((blockState.blockV+oldBlockV)/2*dt-(blockState.boardV+oldBoardV)/2*dt);scratchLength+=relDisp/PX_PER_METER;heatQ+=Math.abs(f)*relDisp/PX_PER_METER/PX_PER_METER;frictionWork+=frictionOnBlock*(blockState.blockV+oldBlockV)/2*dt/PX_PER_METER/PX_PER_METER;if((relVel>0&&blockState.blockV<blockState.boardV)||(relVel<0&&blockState.blockV>blockState.boardV)){blockState.blockV=blockState.boardV;blockState.together=true}}else{blockState.together=true;const totalMass=blockMass+boardMass;const gf=-Math.sign(blockState.boardV)*mu*totalMass*g;const accel=gf/totalMass;blockState.blockV+=accel*dt;blockState.boardV+=accel*dt;if(Math.abs(blockState.boardV)<2){blockState.blockV=0;blockState.boardV=0}}blockState.blockX+=blockState.blockV*dt;blockState.boardX+=blockState.boardV*dt;if(blockState.boardX<LEFT_WALL){blockState.boardX=LEFT_WALL;blockState.boardV=0;blockState.blockV=0}if(blockState.boardX+blockState.boardW>RIGHT_WALL){blockState.boardX=RIGHT_WALL-blockState.boardW;blockState.boardV=0;blockState.blockV=0}if(blockState.blockX<blockState.boardX){blockState.blockX=blockState.boardX;blockState.blockV=blockState.boardV}if(blockState.blockX+blockState.blockW>blockState.boardX+blockState.boardW){blockState.blockX=blockState.boardX+blockState.boardW-blockState.blockW;blockState.blockV=blockState.boardV}ball.x=blockState.blockX+blockState.blockW/2;ball.y=GROUND_Y-blockState.boardH-blockState.blockH/2;ball.vx=blockState.blockV/PX_PER_METER;ball.vy=0}
+function updateConveyor(){const dt=1/60,mu=frictionCoeff,g=G_ACCEL*PX_PER_METER,beltVelPx=beltSpeed*PX_PER_METER;const relVel=conveyorState.blockV-beltVelPx;if(Math.abs(relVel)>0.5){const f=-Math.sign(relVel)*mu*mass*g;const oldV=conveyorState.blockV;conveyorState.blockV+=(f/mass)*dt;const relDisp=Math.abs((conveyorState.blockV+oldV)/2*dt-beltVelPx*dt);scratchLength+=relDisp/PX_PER_METER;heatQ+=Math.abs(f)*relDisp/PX_PER_METER/PX_PER_METER;frictionWork+=f*(conveyorState.blockV+oldV)/2*dt/PX_PER_METER/PX_PER_METER;if((relVel>0&&conveyorState.blockV<beltVelPx)||(relVel<0&&conveyorState.blockV>beltVelPx))conveyorState.blockV=beltVelPx}else{conveyorState.blockV=beltVelPx}conveyorState.blockX+=conveyorState.blockV*dt;conveyorState.beltDashOffset-=beltVelPx*dt;if(conveyorState.blockX+conveyorState.blockW>conveyorState.beltRight){conveyorState.blockX=conveyorState.beltRight-conveyorState.blockW;conveyorState.blockV=0}ball.x=conveyorState.blockX+conveyorState.blockW/2;ball.y=380-conveyorState.blockH/2;ball.vx=conveyorState.blockV/PX_PER_METER;ball.vy=0;const finalV=conveyorState.blockV/PX_PER_METER;motorEnergy=0.5*mass*finalV*finalV+heatQ}
+function updateConveyorTilt(){const dt=1/60,mu=frictionCoeff,g=G_ACCEL*PX_PER_METER;const rad=beltAngle*Math.PI/180;const gSin=g*Math.sin(rad),gCos=g*Math.cos(rad);const beltVelPx=beltSpeed*PX_PER_METER;const relVel=tiltConveyorState.blockV-beltVelPx;let frictionForce=0;if(Math.abs(relVel)>0.5){frictionForce=-Math.sign(relVel)*mu*mass*gCos;const oldV=tiltConveyorState.blockV;const netForce=frictionForce-mass*gSin;tiltConveyorState.blockV+=(netForce/mass)*dt;const relDisp=Math.abs((tiltConveyorState.blockV+oldV)/2*dt-beltVelPx*dt);scratchLength+=relDisp/PX_PER_METER;heatQ+=Math.abs(frictionForce)*relDisp/PX_PER_METER/PX_PER_METER;frictionWork+=frictionForce*(tiltConveyorState.blockV+oldV)/2*dt/PX_PER_METER/PX_PER_METER}else{tiltConveyorState.blockV=beltVelPx;frictionForce=-mass*gSin}tiltConveyorState.blockX+=tiltConveyorState.blockV*dt;tiltConveyorState.beltDashOffset-=beltVelPx*dt;if(tiltConveyorState.blockX<0){tiltConveyorState.blockX=0;tiltConveyorState.blockV=0}if(tiltConveyorState.blockX+tiltConveyorState.blockW>tiltConveyorState.beltRight){tiltConveyorState.blockX=tiltConveyorState.beltRight-tiltConveyorState.blockW;tiltConveyorState.blockV=0}const baseY=380;tiltConveyorState.blockY=baseY-tiltConveyorState.blockX*Math.tan(rad);ball.x=tiltConveyorState.blockX+tiltConveyorState.blockW/2;ball.y=tiltConveyorState.blockY-tiltConveyorState.blockH/2;ball.vx=tiltConveyorState.blockV/PX_PER_METER;ball.vy=0;const finalV=tiltConveyorState.blockV/PX_PER_METER;motorEnergy=0.5*mass*finalV*finalV+mass*G_ACCEL*Math.max(0,(baseY-tiltConveyorState.blockY)/PX_PER_METER)+heatQ}
+function switchModel(model){canvasWrap.classList.add('fading');setTimeout(()=>canvasWrap.classList.remove('fading'),50);currentModel=model;document.querySelectorAll('.mode-tabs button').forEach(btn=>btn.classList.toggle('active',btn.dataset.model===model));const isBounce=model==='bounce',isPendulum=model==='pendulum',isSpring=model==='spring',isBlock=model==='block',isConveyor=model==='conveyor',isTilt=model==='conveyorTilt';paramVelocity.classList.toggle('hidden',!isBounce);paramDamping.classList.toggle('hidden',!isBounce);paramRestitution.classList.toggle('hidden',!isBounce);paramAngle.classList.toggle('hidden',!isPendulum);paramLength.classList.toggle('hidden',!isPendulum);paramAmplitude.classList.toggle('hidden',!isSpring);paramStiffness.classList.toggle('hidden',!isSpring);paramFriction.classList.toggle('hidden',!(isBlock||isConveyor||isTilt));paramBeltSpeed.classList.toggle('hidden',!(isConveyor||isTilt));paramBeltAngle.classList.toggle('hidden',!isTilt);paramBoardVel.classList.toggle('hidden',!isBlock);idealToggle.style.display=isBounce?'':'none';if(isPendulum)modeIndicator.textContent='理想单摆';else if(isSpring)modeIndicator.textContent='理想弹簧';else if(isBlock)modeIndicator.textContent='板块模型';else if(isConveyor)modeIndicator.textContent='水平传送带';else if(isTilt)modeIndicator.textContent='倾斜传送带';else modeIndicator.textContent=isIdealMode?'理想':'实际';heightLabel.textContent=isBounce?'高度 h':(isPendulum?'高度 h':'位移 x');angleDisplayRow.style.display=isPendulum?'':'none';displacementDisplayRow.style.display=isSpring?'':'none';blockVelDisplayRow.style.display=(isBlock||isConveyor||isTilt)?'':'none';boardVelDisplayRow.style.display=(isBlock||isConveyor||isTilt)?'':'none';scratchDisplayRow.style.display=(isBlock||isConveyor||isTilt)?'':'none';heatDisplayRow.style.display=(isBlock||isConveyor||isTilt)?'':'none';workDisplayRow.style.display=(isBlock||isConveyor||isTilt)?'':'none';motorDisplayRow.style.display=(isConveyor||isTilt)?'':'none';isStopped=false;resetSimulation()}
+modelSelector.addEventListener('click',e=>{const btn=e.target.closest('button');if(btn&&btn.dataset.model)switchModel(btn.dataset.model)});
+function calcMechanicalEnergy(ballState){const v=Math.sqrt(ballState.vx*ballState.vx+ballState.vy*ballState.vy);let h,potential,kinetic;if(currentModel==='block'){const blockKE=0.5*mass*Math.pow(blockState.blockV/PX_PER_METER,2);const boardKE=0.5*2.0*Math.pow(blockState.boardV/PX_PER_METER,2);kinetic=blockKE+boardKE;potential=0}else if(currentModel==='conveyor'||currentModel==='conveyorTilt'){kinetic=0.5*mass*Math.pow((currentModel==='conveyor'?conveyorState.blockV:tiltConveyorState.blockV)/PX_PER_METER,2);potential=currentModel==='conveyorTilt'?mass*G_ACCEL*Math.max(0,(380-tiltConveyorState.blockY)/PX_PER_METER):0}else if(currentModel==='pendulum'){kinetic=0.5*ballState.mass*v*v;const len=pendulumState.length,angle=pendulumState.angle;h=(len/100)*(1-Math.cos(angle));potential=ballState.mass*GRAVITY*h*100}else if(currentModel==='spring'){kinetic=0.5*ballState.mass*v*v;const k=springState.stiffness*100,x=springState.displacement/100;potential=0.5*k*x*x}else{kinetic=0.5*ballState.mass*v*v;h=Math.max(0,(GROUND_Y-ballState.y-ballState.radius)/100);potential=ballState.mass*GRAVITY*h*100}return{kinetic,potential,total:kinetic+potential}}
+function updateInitialEnergy(){const e=calcMechanicalEnergy(ball);initialMechanicalEnergy=e.total;displayKinetic=e.kinetic;displayPotential=e.potential;displayMechanical=e.total;displayLoss=0;isStopped=false}
+function forceBallRest(){ball.vx=0;ball.vy=0;if(currentModel!=='spring'&&currentModel!=='block'&&currentModel!=='conveyor'&&currentModel!=='conveyorTilt')ball.y=GROUND_Y-ball.radius;isStopped=true;displayKinetic=0;displayPotential=0;displayMechanical=0;displayLoss=initialMechanicalEnergy}
+function resetSimulation(){mass=parseFloat(massSlider.value);initialVelocity=parseFloat(velocitySlider.value);frictionCoeff=parseFloat(frictionSlider.value);beltSpeed=parseFloat(beltSpeedSlider.value);beltAngle=parseFloat(beltAngleSlider.value);boardInitVel=parseFloat(boardVelSlider.value);if(!isIdealMode){damping=parseFloat(dampingSlider.value);restitution=parseFloat(restitutionSlider.value)}else{damping=0;restitution=1}ball.mass=mass;ball.radius=16+mass*3.5;ballTrail=[];resetScratchMetrics();if(currentModel==='bounce'){ball.x=200;ball.y=GROUND_Y-ball.radius-20;ball.vx=initialVelocity*0.9;ball.vy=-1.5}else if(currentModel==='pendulum'){const a=parseFloat(angleSlider.value)*Math.PI/180,len=parseFloat(lengthSlider.value)*100;pendulumState.length=len;pendulumInitialAngle=a;pendulumTime=0;pendulumState.angle=a;pendulumState.omega=0;ball.x=PENDULUM_PIVOT_X+len*Math.sin(a);ball.y=PENDULUM_PIVOT_Y+len*Math.cos(a);ball.vx=0;ball.vy=0}else if(currentModel==='spring'){const amp=parseFloat(amplitudeSlider.value);springState.stiffness=parseFloat(stiffnessSlider.value);springState.amplitude=amp;springState.displacement=amp;springState.velocity=0;springTime=0;ball.x=SPRING_REST_X-amp;ball.y=SPRING_Y;ball.vx=0;ball.vy=0}else if(currentModel==='block'){blockState.blockX=250;blockState.blockV=0;blockState.boardX=150;blockState.boardV=boardInitVel*PX_PER_METER;blockState.together=false;ball.x=blockState.blockX+blockState.blockW/2;ball.y=GROUND_Y-blockState.boardH-blockState.blockH/2;ball.vx=0;ball.vy=0}else if(currentModel==='conveyor'){conveyorState.blockX=150;conveyorState.blockV=0;conveyorState.beltDashOffset=0;ball.x=conveyorState.blockX+conveyorState.blockW/2;ball.y=380-conveyorState.blockH/2;ball.vx=0;ball.vy=0}else if(currentModel==='conveyorTilt'){tiltConveyorState.blockX=150;tiltConveyorState.blockV=0;tiltConveyorState.beltDashOffset=0;const rad=beltAngle*Math.PI/180;tiltConveyorState.blockY=380-tiltConveyorState.blockX*Math.tan(rad);ball.x=tiltConveyorState.blockX+tiltConveyorState.blockW/2;ball.y=tiltConveyorState.blockY-tiltConveyorState.blockH/2;ball.vx=0;ball.vy=0}stepCount=0;trajectoryPoints=[];clearEnergyHistory();updateInitialEnergy();updateReportAndBars();drawEnergyChart()}
+function physicsUpdate(){if(isPaused||isStopped)return;if(currentModel==='pendulum'){updatePendulum();if(showTrajectory){trajectoryPoints.push({x:ball.x,y:ball.y});if(trajectoryPoints.length>5000)trajectoryPoints.splice(0,100)}stepCount++;updateReportAndBars();return}if(currentModel==='spring'){updateSpring();if(showTrajectory){trajectoryPoints.push({x:ball.x,y:ball.y});if(trajectoryPoints.length>5000)trajectoryPoints.splice(0,100)}stepCount++;updateReportAndBars();return}if(currentModel==='block'){updateBlock();if(showTrajectory){trajectoryPoints.push({x:ball.x,y:ball.y});if(trajectoryPoints.length>5000)trajectoryPoints.splice(0,100)}stepCount++;updateReportAndBars();return}if(currentModel==='conveyor'){updateConveyor();if(showTrajectory){trajectoryPoints.push({x:ball.x,y:ball.y});if(trajectoryPoints.length>5000)trajectoryPoints.splice(0,100)}stepCount++;updateReportAndBars();return}if(currentModel==='conveyorTilt'){updateConveyorTilt();if(showTrajectory){trajectoryPoints.push({x:ball.x,y:ball.y});if(trajectoryPoints.length>5000)trajectoryPoints.splice(0,100)}stepCount++;updateReportAndBars();return}let dampCoeff=isIdealMode?0:damping,restCoeff=isIdealMode?1.0:restitution;if(!isIdealMode){ball.vx*=(1-dampCoeff*0.4);ball.vy*=(1-dampCoeff*0.4)}ball.vy+=GRAVITY;ball.x+=ball.vx;ball.y+=ball.vy;ballTrail.push({x:ball.x,y:ball.y,life:1});if(ballTrail.length>20)ballTrail.shift();if(ball.y+ball.radius>GROUND_Y){ball.y=GROUND_Y-ball.radius;if(Math.abs(ball.vy)>0.05){ball.vy=-ball.vy*restCoeff;if(!isIdealMode)ball.vx*=(1-dampCoeff*0.2)}else{ball.vy=0}}if(ball.x-ball.radius<LEFT_WALL){ball.x=LEFT_WALL+ball.radius;ball.vx=-ball.vx*restCoeff}else if(ball.x+ball.radius>RIGHT_WALL){ball.x=RIGHT_WALL-ball.radius;ball.vx=-ball.vx*restCoeff}if(ball.y-ball.radius<20){ball.y=20+ball.radius;ball.vy=-ball.vy*restCoeff}const speedSq=ball.vx*ball.vx+ball.vy*ball.vy;if(!isIdealMode&&speedSq<REST_THRESHOLD){ball.vx=0;ball.vy=0;if(ball.y+ball.radius>GROUND_Y-1)ball.y=GROUND_Y-ball.radius}if(showTrajectory&&stepCount%2===0){trajectoryPoints.push({x:ball.x,y:ball.y});if(trajectoryPoints.length>5000)trajectoryPoints.splice(0,100)}stepCount++;updateReportAndBars()}
+function updateReportAndBars(){if(isStopped){updateDisplay(0,0,0,initialMechanicalEnergy);recordEnergy();drawEnergyChart();return}if(currentModel==='pendulum'||currentModel==='spring'){const e=calcMechanicalEnergy(ball);displayKinetic=e.kinetic;displayPotential=e.potential;displayMechanical=e.total;displayLoss=0;updateDisplay(displayKinetic,displayPotential,displayMechanical,displayLoss);recordEnergy();drawEnergyChart();return}if(currentModel==='block'||currentModel==='conveyor'||currentModel==='conveyorTilt'){const e=calcMechanicalEnergy(ball);displayKinetic=e.kinetic;displayPotential=e.potential;displayMechanical=e.total;displayLoss=Math.max(0,initialMechanicalEnergy-e.total);updateDisplay(displayKinetic,displayPotential,displayMechanical,displayLoss);recordEnergy();drawEnergyChart();return}if(!isIdealMode&&currentModel==='bounce'){const sq=ball.vx*ball.vx+ball.vy*ball.vy;if(ball.y+ball.radius>=GROUND_Y-0.5&&sq<REST_THRESHOLD){forceBallRest();updateDisplay(0,0,0,initialMechanicalEnergy);recordEnergy();drawEnergyChart();return}}let e=calcMechanicalEnergy(ball),rk=e.kinetic,rp=e.potential,rm=e.total;if(isIdealMode){displayLoss=0}else{displayLoss=Math.max(0,initialMechanicalEnergy-rm)}if(!isIdealMode){if(rm>displayMechanical&&displayMechanical>0.001){rm=displayMechanical;rk=displayKinetic;rp=displayPotential}if(rm<ZERO_THRESHOLD){forceBallRest();updateDisplay(0,0,0,initialMechanicalEnergy);recordEnergy();drawEnergyChart();return}}displayKinetic=rk;displayPotential=rp;displayMechanical=rm;updateDisplay(displayKinetic,displayPotential,displayMechanical,displayLoss);recordEnergy();drawEnergyChart()}
+function updateDisplay(kinetic,potential,mechanical,loss){let h=0,angleDeg=0;if(currentModel==='pendulum'){const len=pendulumState.length,a=pendulumState.angle;h=(len/100)*(1-Math.cos(a));angleDeg=a*180/Math.PI;angleDisplay.textContent=angleDeg.toFixed(1);heightDisplay.textContent=h.toFixed(2)}else if(currentModel==='spring'){const x=springState.displacement/100;displacementDisplay.textContent=x.toFixed(2);heightDisplay.textContent=Math.abs(x).toFixed(2)}else if(currentModel==='block'){blockVelDisplay.textContent=(blockState.blockV/PX_PER_METER).toFixed(2);boardVelDisplay.textContent=(blockState.boardV/PX_PER_METER).toFixed(2);heightDisplay.textContent='0.00';scratchDisplay.textContent=scratchLength.toFixed(2);heatDisplay.textContent=heatQ.toFixed(2);workDisplay.textContent=frictionWork.toFixed(2)}else if(currentModel==='conveyor'){blockVelDisplay.textContent=(conveyorState.blockV/PX_PER_METER).toFixed(2);boardVelDisplay.textContent=beltSpeed.toFixed(2);heightDisplay.textContent='0.00';scratchDisplay.textContent=scratchLength.toFixed(2);heatDisplay.textContent=heatQ.toFixed(2);workDisplay.textContent=frictionWork.toFixed(2);motorDisplay.textContent=motorEnergy.toFixed(2)}else if(currentModel==='conveyorTilt'){blockVelDisplay.textContent=(tiltConveyorState.blockV/PX_PER_METER).toFixed(2);boardVelDisplay.textContent=beltSpeed.toFixed(2);heightDisplay.textContent=((380-tiltConveyorState.blockY)/PX_PER_METER).toFixed(2);scratchDisplay.textContent=scratchLength.toFixed(2);heatDisplay.textContent=heatQ.toFixed(2);workDisplay.textContent=frictionWork.toFixed(2);motorDisplay.textContent=motorEnergy.toFixed(2)}else{h=Math.max(0,(GROUND_Y-ball.y-ball.radius)/100);heightDisplay.textContent=h.toFixed(2)}reportKinetic.textContent=kinetic.toFixed(2);reportPotential.textContent=potential.toFixed(2);reportMechanical.textContent=mechanical.toFixed(2);energyLossSpan.textContent=loss.toFixed(3);stepCounterSpan.textContent=stepCount;const maxScale=Math.max(mechanical,initialMechanicalEnergy,5);kineticBar.style.width=(Math.min(kinetic/maxScale,1)*100)+'%';potentialBar.style.width=(Math.min(potential/maxScale,1)*100)+'%';mechanicalBar.style.width=(Math.min(mechanical/maxScale,1)*100)+'%'}
+function drawEnergyChart(){const w=energyChart.width,h=energyChart.height;ectx.clearRect(0,0,w,h);const grad=ectx.createLinearGradient(0,0,0,h);grad.addColorStop(0,'#0a1020');grad.addColorStop(1,'#060a12');ectx.fillStyle=grad;ectx.fillRect(0,0,w,h);ectx.strokeStyle='rgba(120,180,255,0.06)';ectx.lineWidth=1;for(let i=1;i<4;i++){const y=(h/4)*i;ectx.beginPath();ectx.moveTo(0,y);ectx.lineTo(w,y);ectx.stroke()}if(energyHistory.length<2){ectx.fillStyle='rgba(168,184,212,0.4)';ectx.font='12px -apple-system,sans-serif';ectx.textAlign='center';ectx.fillText('数据采集中...',w/2,h/2);ectx.textAlign='left';return}let maxE=1;for(let i=0;i<energyHistory.length;i++){const p=energyHistory[i];maxE=Math.max(maxE,p.ek,p.ep,p.e)}maxE=Math.ceil(maxE*1.15);const padLeft=30,padRight=10,padTop=10,padBottom=16,plotW=w-padLeft-padRight,plotH=h-padTop-padBottom;ectx.fillStyle='rgba(168,184,212,0.5)';ectx.font='10px -apple-system,sans-serif';ectx.textAlign='right';ectx.fillText(maxE.toFixed(1),padLeft-6,padTop+8);ectx.fillText((maxE/2).toFixed(1),padLeft-6,padTop+plotH/2+3);ectx.fillText('0',padLeft-6,padTop+plotH);ectx.textAlign='left';const drawArea=(key,lineColor,fillTop,fillBottom)=>{ectx.beginPath();ectx.moveTo(padLeft,padTop+plotH);for(let i=0;i<energyHistory.length;i++){const x=padLeft+(i/(MAX_HISTORY-1))*plotW;const y=padTop+plotH-(energyHistory[i][key]/maxE)*plotH;ectx.lineTo(x,y)}ectx.lineTo(padLeft+((energyHistory.length-1)/(MAX_HISTORY-1))*plotW,padTop+plotH);ectx.closePath();const ag=ectx.createLinearGradient(0,padTop,0,padTop+plotH);ag.addColorStop(0,fillTop);ag.addColorStop(1,fillBottom);ectx.fillStyle=ag;ectx.fill();ectx.beginPath();ectx.strokeStyle=lineColor;ectx.lineWidth=1.8;ectx.lineJoin='round';for(let i=0;i<energyHistory.length;i++){const x=padLeft+(i/(MAX_HISTORY-1))*plotW;const y=padTop+plotH-(energyHistory[i][key]/maxE)*plotH;if(i===0)ectx.moveTo(x,y);else ectx.lineTo(x,y)}ectx.stroke()};drawArea('ek','#fb923c','rgba(251,146,60,0.25)','rgba(251,146,60,0.02)');drawArea('ep','#60a5fa','rgba(96,165,250,0.25)','rgba(96,165,250,0.02)');drawArea('e','#34d399','rgba(52,211,153,0.25)','rgba(52,211,153,0.02)')}
+function updateSlidersDisplay(){massVal.textContent=massSlider.value;velVal.textContent=velocitySlider.value;dampVal.textContent=isIdealMode?'0.00':dampingSlider.value;restitutionVal.textContent=isIdealMode?'1.00':restitutionSlider.value;angleVal.textContent=angleSlider.value+'°';lengthVal.textContent=lengthSlider.value+'m';amplitudeVal.textContent=amplitudeSlider.value+'px';stiffnessVal.textContent=stiffnessSlider.value;frictionVal.textContent=frictionSlider.value;beltSpeedVal.textContent=beltSpeedSlider.value;beltAngleVal.textContent=beltAngleSlider.value+'°';boardVelVal.textContent=boardVelSlider.value}
+function setIdealMode(enable){isIdealMode=enable;if(enable){dampingSlider.value='0.00';restitutionSlider.value='1.00';dampingSlider.disabled=true;restitutionSlider.disabled=true;dampVal.textContent='0.00';restitutionVal.textContent='1.00';idealToggle.classList.add('active');modeIndicator.textContent='理想';damping=0;restitution=1}else{dampingSlider.disabled=false;restitutionSlider.disabled=false;damping=parseFloat(dampingSlider.value);restitution=parseFloat(restitutionSlider.value);dampVal.textContent=damping.toFixed(3);restitutionVal.textContent=restitution.toFixed(2);idealToggle.classList.remove('active');modeIndicator.textContent='实际'}isStopped=false;resetSimulation()}
+idealToggle.addEventListener('click',e=>{e.stopPropagation();setIdealMode(!isIdealMode)});
+function onSliderChange(){mass=parseFloat(massSlider.value);initialVelocity=parseFloat(velocitySlider.value);frictionCoeff=parseFloat(frictionSlider.value);beltSpeed=parseFloat(beltSpeedSlider.value);beltAngle=parseFloat(beltAngleSlider.value);boardInitVel=parseFloat(boardVelSlider.value);if(!isIdealMode){damping=parseFloat(dampingSlider.value);restitution=parseFloat(restitutionSlider.value)}ball.mass=mass;ball.radius=16+mass*3.5;if(currentModel==='pendulum'){const a=parseFloat(angleSlider.value)*Math.PI/180;pendulumState.length=parseFloat(lengthSlider.value)*100;pendulumInitialAngle=a;pendulumTime=0;pendulumState.angle=a;pendulumState.omega=0;ball.x=PENDULUM_PIVOT_X+pendulumState.length*Math.sin(a);ball.y=PENDULUM_PIVOT_Y+pendulumState.length*Math.cos(a)}else if(currentModel==='spring'){const amp=parseFloat(amplitudeSlider.value);springState.stiffness=parseFloat(stiffnessSlider.value);springState.amplitude=amp;springState.displacement=amp;springState.velocity=0;springTime=0;ball.x=SPRING_REST_X-amp;ball.y=SPRING_Y}else if(currentModel==='block'){blockState.boardV=boardInitVel*PX_PER_METER;blockState.blockV=0;blockState.together=false}else if(currentModel==='conveyor'){conveyorState.blockX=150;conveyorState.blockV=0}else if(currentModel==='conveyorTilt'){tiltConveyorState.blockX=150;tiltConveyorState.blockV=0;const rad=beltAngle*Math.PI/180;tiltConveyorState.blockY=380-tiltConveyorState.blockX*Math.tan(rad)}isStopped=false;updateInitialEnergy();updateSlidersDisplay();updateReportAndBars()}
+[massSlider,velocitySlider,dampingSlider,restitutionSlider,angleSlider,lengthSlider,amplitudeSlider,stiffnessSlider,frictionSlider,beltSpeedSlider,beltAngleSlider,boardVelSlider].forEach(s=>s.addEventListener('input',onSliderChange));
+trajectoryToggle.addEventListener('click',e=>{e.stopPropagation();showTrajectory=!showTrajectory;trajectoryToggle.classList.toggle('active',showTrajectory);trajectoryPoints=[]});
+function togglePause(){isPaused=!isPaused;if(isPaused){pauseBtn.innerHTML='<i class="fas fa-play"></i><span>继续</span>';pauseBtn.classList.add('paused');statusBadge.className='status-pill paused';statusBadge.innerHTML='<i class="fas fa-circle"></i><span>已暂停</span>'}else{pauseBtn.innerHTML='<i class="fas fa-pause"></i><span>暂停</span>';pauseBtn.classList.remove('paused');statusBadge.className='status-pill running';statusBadge.innerHTML='<i class="fas fa-circle"></i><span>运行中</span>'}}
+pauseBtn.addEventListener('click',togglePause);resetBtn.addEventListener('click',resetSimulation);
+function getMousePos(e){const rect=canvas.getBoundingClientRect(),sx=canvas.width/rect.width,sy=canvas.height/rect.height;let cx,cy;if(e.touches){cx=e.touches[0].clientX;cy=e.touches[0].clientY;e.preventDefault()}else{cx=e.clientX;cy=e.clientY}return{x:(cx-rect.left)*sx,y:(cy-rect.top)*sy}}
+function onPointerDown(e){if(currentModel==='block'||currentModel==='conveyor'||currentModel==='conveyorTilt')return;const p=getMousePos(e),dx=p.x-ball.x,dy=p.y-ball.y,hr=ball.radius+30;if(dx*dx+dy*dy<hr*hr){isDragging=true;dragOffsetX=dx;dragOffsetY=dy;canvas.style.cursor='grabbing';isStopped=false;e.preventDefault()}}
+function onPointerMove(e){if(!isDragging)return;const p=getMousePos(e);let nx=p.x-dragOffsetX,ny=p.y-dragOffsetY;if(currentModel==='pendulum'){const dx=nx-PENDULUM_PIVOT_X,dy=ny-PENDULUM_PIVOT_Y,dist=Math.sqrt(dx*dx+dy*dy),len=pendulumState.length;if(dist>0.1){const r=len/dist;nx=PENDULUM_PIVOT_X+dx*r;ny=PENDULUM_PIVOT_Y+dy*r}const a=Math.atan2(nx-PENDULUM_PIVOT_X,ny-PENDULUM_PIVOT_Y);pendulumState.angle=a;pendulumInitialAngle=a;pendulumTime=0;pendulumState.omega=0;ball.x=nx;ball.y=ny}else if(currentModel==='spring'){let d=SPRING_REST_X-nx;const ma=parseFloat(amplitudeSlider.max);d=Math.max(-ma,Math.min(ma,d));springState.displacement=d;springState.amplitude=Math.abs(d);springState.velocity=0;springTime=0;ball.x=SPRING_REST_X-d;ball.y=SPRING_Y}else{nx=Math.min(RIGHT_WALL-ball.radius,Math.max(LEFT_WALL+ball.radius,nx));ny=Math.min(GROUND_Y-ball.radius,Math.max(20+ball.radius,ny));ball.x=nx;ball.y=ny;ball.vx=0;ball.vy=0}const e2=calcMechanicalEnergy(ball);displayKinetic=e2.kinetic;displayPotential=e2.potential;displayMechanical=e2.total;displayLoss=Math.max(0,initialMechanicalEnergy-displayMechanical);updateReportAndBars();drawScene();e.preventDefault()}
+function onPointerUp(e){if(isDragging){isDragging=false;canvas.style.cursor='grab';if(currentModel==='pendulum'){const deg=Math.abs(pendulumInitialAngle*180/Math.PI),cd=Math.max(5,Math.min(75,deg));angleSlider.value=cd.toFixed(0);angleVal.textContent=angleSlider.value+'°';pendulumTime=0}else if(currentModel==='spring'){const amp=Math.abs(springState.displacement),ca=Math.max(20,Math.min(150,amp));amplitudeSlider.value=ca.toFixed(0);amplitudeVal.textContent=amplitudeSlider.value+'px';springState.amplitude=ca;springTime=0}else{ball.vx=(Math.random()-0.5)*1.5;ball.vy=-1.2}stepCount=0;trajectoryPoints=[];clearEnergyHistory();isStopped=false;updateInitialEnergy();updateReportAndBars();e.preventDefault()}}
+canvas.addEventListener('mousedown',onPointerDown);window.addEventListener('mousemove',onPointerMove);window.addEventListener('mouseup',onPointerUp);canvas.addEventListener('touchstart',onPointerDown,{passive:false});window.addEventListener('touchmove',onPointerMove,{passive:false});window.addEventListener('touchend',onPointerUp,{passive:false});
+function drawScene(){const grad=ctx.createLinearGradient(0,0,0,560);grad.addColorStop(0,'#0d1526');grad.addColorStop(1,'#060a12');ctx.fillStyle=grad;ctx.fillRect(0,0,900,560);ctx.strokeStyle='rgba(120,180,255,0.04)';ctx.lineWidth=1;for(let x=0;x<900;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,560);ctx.stroke()}for(let y=0;y<560;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(900,y);ctx.stroke()}if(showTrajectory&&trajectoryPoints.length>1){ctx.beginPath();ctx.moveTo(trajectoryPoints[0].x,trajectoryPoints[0].y);for(let i=1;i<trajectoryPoints.length;i++)ctx.lineTo(trajectoryPoints[i].x,trajectoryPoints[i].y);ctx.strokeStyle='rgba(251,146,60,0.5)';ctx.lineWidth=2;ctx.stroke()}if(currentModel==='bounce'&&ballTrail.length>1){for(let i=0;i<ballTrail.length;i++){const t=ballTrail[i],alpha=(i/ballTrail.length)*0.35,r=ball.radius*(0.3+(i/ballTrail.length)*0.7);ctx.beginPath();ctx.arc(t.x,t.y,r,0,Math.PI*2);ctx.fillStyle='rgba(251,146,60,'+alpha+')';ctx.fill()}}if(currentModel==='pendulum'){ctx.beginPath();ctx.arc(PENDULUM_PIVOT_X,PENDULUM_PIVOT_Y,8,0,Math.PI*2);ctx.fillStyle='#4fc3f7';ctx.shadowColor='rgba(79,195,247,0.6)';ctx.shadowBlur=12;ctx.fill();ctx.shadowBlur=0;ctx.beginPath();ctx.moveTo(PENDULUM_PIVOT_X,PENDULUM_PIVOT_Y);ctx.lineTo(ball.x,ball.y);ctx.strokeStyle='rgba(120,180,255,0.4)';ctx.lineWidth=2;ctx.stroke();const len=pendulumState.length;ctx.beginPath();ctx.arc(PENDULUM_PIVOT_X,PENDULUM_PIVOT_Y,len,-Math.PI/2.5,Math.PI/2.5);ctx.strokeStyle='rgba(120,180,255,0.08)';ctx.setLineDash([3,5]);ctx.stroke();ctx.setLineDash([])}else if(currentModel==='spring'){const ax=850,bx=ball.x,y=SPRING_Y;ctx.fillStyle='rgba(120,180,255,0.15)';ctx.fillRect(ax,y-30,6,60);ctx.strokeStyle='rgba(120,180,255,0.3)';ctx.strokeRect(ax,y-30,6,60);const cc=12,cw=ax-bx-ball.radius,amp=18;ctx.beginPath();ctx.moveTo(bx+ball.radius,y);const sx=cw/cc;for(let i=0;i<cc;i++){const cx=bx+ball.radius+sx*(i+0.5),cy=y+(i%2===0?-amp:amp);ctx.lineTo(cx,cy)}ctx.lineTo(ax,y);ctx.strokeStyle='rgba(79,195,247,0.5)';ctx.lineWidth=2;ctx.shadowColor='rgba(79,195,247,0.3)';ctx.shadowBlur=6;ctx.stroke();ctx.shadowBlur=0;ctx.strokeStyle='rgba(120,180,255,0.15)';ctx.setLineDash([4,6]);ctx.beginPath();ctx.moveTo(SPRING_REST_X,y-60);ctx.lineTo(SPRING_REST_X,y+60);ctx.stroke();ctx.setLineDash([])}else if(currentModel==='block'){const g2=ctx.createLinearGradient(0,GROUND_Y,0,560);g2.addColorStop(0,'rgba(120,180,255,0.15)');g2.addColorStop(1,'rgba(120,180,255,0.02)');ctx.fillStyle=g2;ctx.fillRect(0,GROUND_Y,900,560-GROUND_Y);ctx.strokeStyle='rgba(120,180,255,0.4)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,GROUND_Y);ctx.lineTo(900,GROUND_Y);ctx.stroke();const by=GROUND_Y-blockState.boardH;ctx.fillStyle='rgba(124,108,255,0.3)';ctx.strokeStyle='rgba(124,108,255,0.6)';ctx.lineWidth=1.5;ctx.fillRect(blockState.boardX,by,blockState.boardW,blockState.boardH);ctx.strokeRect(blockState.boardX,by,blockState.boardW,blockState.boardH);const bly=by-blockState.blockH;ctx.fillStyle='rgba(251,146,60,0.35)';ctx.strokeStyle='rgba(251,146,60,0.7)';ctx.fillRect(blockState.blockX,bly,blockState.blockW,blockState.blockH);ctx.strokeRect(blockState.blockX,bly,blockState.blockW,blockState.blockH);ctx.fillStyle='rgba(168,184,212,0.7)';ctx.font='10px -apple-system,sans-serif';ctx.fillText('物块',blockState.blockX+13,bly-5);ctx.fillText('木板',blockState.boardX+blockState.boardW/2-12,by-5);const drawArrow=(x,y,v)=>{if(Math.abs(v)<5)return;const l=Math.min(60,Math.abs(v)/5),d=Math.sign(v);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+d*l,y);ctx.strokeStyle=d>0?'rgba(52,211,153,0.8)':'rgba(248,113,113,0.8)';ctx.lineWidth=2;ctx.stroke();ctx.beginPath();ctx.moveTo(x+d*l,y);ctx.lineTo(x+d*l-d*6,y-4);ctx.moveTo(x+d*l,y);ctx.lineTo(x+d*l-d*6,y+4);ctx.stroke()};drawArrow(blockState.blockX+blockState.blockW/2,bly-15,blockState.blockV);drawArrow(blockState.boardX+blockState.boardW/2,by+blockState.boardH+15,blockState.boardV);if(blockState.together){ctx.fillStyle='rgba(52,211,153,0.8)';ctx.font='600 12px -apple-system,sans-serif';ctx.fillText('✓ 已共速',blockState.boardX+blockState.boardW/2-25,by-40)}}else if(currentModel==='conveyor'){ctx.strokeStyle='rgba(120,180,255,0.3)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,GROUND_Y);ctx.lineTo(900,GROUND_Y);ctx.stroke();const by=380,bh=20,lx=conveyorState.beltLeft,rx=conveyorState.beltRight;ctx.fillStyle='rgba(79,195,247,0.15)';ctx.strokeStyle='rgba(79,195,247,0.4)';ctx.lineWidth=1.5;ctx.fillRect(lx,by,rx-lx,bh);ctx.strokeRect(lx,by,rx-lx,bh);ctx.strokeStyle='rgba(79,195,247,0.3)';ctx.setLineDash([8,8]);ctx.lineDashOffset=conveyorState.beltDashOffset;ctx.beginPath();ctx.moveTo(lx,by+bh/2);ctx.lineTo(rx,by+bh/2);ctx.stroke();ctx.setLineDash([]);ctx.lineDashOffset=0;ctx.beginPath();ctx.arc(lx,by+bh/2,10,0,Math.PI*2);ctx.fillStyle='rgba(124,108,255,0.4)';ctx.fill();ctx.beginPath();ctx.arc(rx,by+bh/2,10,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(168,184,212,0.6)';ctx.font='11px -apple-system,sans-serif';ctx.fillText('v = '+beltSpeed.toFixed(1)+' m/s →',rx-120,by-8);const bly=by-conveyorState.blockH;ctx.fillStyle='rgba(251,146,60,0.35)';ctx.strokeStyle='rgba(251,146,60,0.7)';ctx.lineWidth=1.5;ctx.fillRect(conveyorState.blockX,bly,conveyorState.blockW,conveyorState.blockH);ctx.strokeRect(conveyorState.blockX,bly,conveyorState.blockW,conveyorState.blockH);ctx.fillStyle='rgba(168,184,212,0.7)';ctx.fillText('物块',conveyorState.blockX+13,bly-5);if(scratchLength>0.01){ctx.fillStyle='rgba(248,113,113,0.3)';ctx.fillRect(conveyorState.beltLeft,by+bh/2-2,Math.min(scratchLength*PX_PER_METER,rx-lx),4);ctx.fillStyle='rgba(248,113,113,0.7)';ctx.font='10px -apple-system,sans-serif';ctx.fillText('划痕 '+scratchLength.toFixed(2)+'m',conveyorState.beltLeft+5,by+bh+15)}}else if(currentModel==='conveyorTilt'){const rad=beltAngle*Math.PI/180,by=380,lx=tiltConveyorState.beltLeft,rx=tiltConveyorState.beltRight;const endY=by-(rx-lx)*Math.tan(rad);ctx.strokeStyle='rgba(120,180,255,0.3)';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(0,GROUND_Y);ctx.lineTo(900,GROUND_Y);ctx.stroke();ctx.beginPath();ctx.moveTo(lx,by);ctx.lineTo(rx,endY);ctx.lineTo(rx,endY+20);ctx.lineTo(lx,by+20);ctx.closePath();ctx.fillStyle='rgba(79,195,247,0.15)';ctx.fill();ctx.strokeStyle='rgba(79,195,247,0.4)';ctx.stroke();ctx.strokeStyle='rgba(79,195,247,0.3)';ctx.setLineDash([8,8]);ctx.lineDashOffset=tiltConveyorState.beltDashOffset;ctx.beginPath();ctx.moveTo(lx,by+10);ctx.lineTo(rx,endY+10);ctx.stroke();ctx.setLineDash([]);ctx.lineDashOffset=0;ctx.beginPath();ctx.arc(lx,by+10,9,0,Math.PI*2);ctx.fillStyle='rgba(124,108,255,0.4)';ctx.fill();ctx.beginPath();ctx.arc(rx,endY+10,9,0,Math.PI*2);ctx.fill();ctx.fillStyle='rgba(168,184,212,0.6)';ctx.font='11px -apple-system,sans-serif';ctx.fillText('θ='+beltAngle+'°',lx+10,by-15);ctx.fillText('v = '+beltSpeed.toFixed(1)+' m/s',rx-100,endY-10);const bly=tiltConveyorState.blockY-tiltConveyorState.blockH;ctx.fillStyle='rgba(251,146,60,0.35)';ctx.strokeStyle='rgba(251,146,60,0.7)';ctx.lineWidth=1.5;ctx.fillRect(tiltConveyorState.blockX,bly,tiltConveyorState.blockW,tiltConveyorState.blockH);ctx.strokeRect(tiltConveyorState.blockX,bly,tiltConveyorState.blockW,tiltConveyorState.blockH);ctx.fillStyle='rgba(168,184,212,0.7)';ctx.fillText('物块',tiltConveyorState.blockX+13,bly-5);if(scratchLength>0.01){ctx.fillStyle='rgba(248,113,113,0.3)';ctx.fillRect(lx,by+8,Math.min(scratchLength*PX_PER_METER,rx-lx),3);ctx.fillStyle='rgba(248,113,113,0.7)';ctx.fillText('划痕 '+scratchLength.toFixed(2)+'m',lx+5,by+35)}}else{const g2=ctx.createLinearGradient(0,GROUND_Y,0,560);g2.addColorStop(0,'rgba(120,180,255,0.15)');g2.addColorStop(1,'rgba(120,180,255,0.02)');ctx.fillStyle=g2;ctx.fillRect(0,GROUND_Y,900,560-GROUND_Y);ctx.strokeStyle='rgba(120,180,255,0.4)';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,GROUND_Y);ctx.lineTo(900,GROUND_Y);ctx.stroke();ctx.fillStyle='rgba(120,180,255,0.1)';ctx.fillRect(LEFT_WALL-4,20,4,GROUND_Y-20);ctx.fillRect(RIGHT_WALL,20,4,GROUND_Y-20)}if(currentModel!=='block'&&currentModel!=='conveyor'&&currentModel!=='conveyorTilt'){const r=ball.radius;ctx.shadowColor='rgba(251,146,60,0.6)';ctx.shadowBlur=20;const g3=ctx.createRadialGradient(ball.x-6,ball.y-6,r*0.1,ball.x,ball.y,r);g3.addColorStop(0,'#fdba74');g3.addColorStop(0.5,'#fb923c');g3.addColorStop(1,'#c2410c');ctx.fillStyle=g3;ctx.beginPath();ctx.arc(ball.x,ball.y,r,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='rgba(255,255,230,0.4)';ctx.beginPath();ctx.arc(ball.x-5,ball.y-7,r*0.25,0,Math.PI*2);ctx.fill()}ctx.fillStyle='rgba(234,242,255,0.9)';ctx.font='600 13px -apple-system,sans-serif';if(currentModel==='pendulum'){const a=pendulumState.angle,lm=pendulumState.length/100,T=2*Math.PI*Math.sqrt(lm/9.8);ctx.fillText(`θ = ${(a*180/Math.PI).toFixed(1)}°`,20,30);ctx.fillText(`L = ${lm.toFixed(2)} m`,20,50);ctx.fillText(`T = ${T.toFixed(2)} s`,20,70);ctx.fillStyle='rgba(52,211,153,0.8)';ctx.font='12px -apple-system,sans-serif';ctx.fillText('理想单摆 · 不计空气阻力',20,92)}else if(currentModel==='spring'){const x=springState.displacement/100,k=springState.stiffness,T=2*Math.PI*Math.sqrt(mass/k);ctx.fillText(`x = ${x.toFixed(2)} m`,20,30);ctx.fillText(`k = ${k.toFixed(1)}`,20,50);ctx.fillText(`T = ${T.toFixed(2)} s`,20,70);ctx.fillStyle='rgba(52,211,153,0.8)';ctx.font='12px -apple-system,sans-serif';ctx.fillText('理想弹簧振子 · 不计摩擦',20,92)}else if(currentModel==='block'){ctx.fillText(`μ = ${frictionCoeff.toFixed(2)}`,20,30);ctx.fillStyle='rgba(52,211,153,0.8)';ctx.font='12px -apple-system,sans-serif';ctx.fillText('板块模型 · 摩擦力做功/生热',20,50)}else if(currentModel==='conveyor'){ctx.fillText(`μ = ${frictionCoeff.toFixed(2)}`,20,30);ctx.fillText(`v带 = ${beltSpeed.toFixed(1)} m/s`,20,50);ctx.fillStyle='rgba(52,211,153,0.8)';ctx.font='12px -apple-system,sans-serif';ctx.fillText('水平传送带 · 划痕/生热/电动机',20,72)}else if(currentModel==='conveyorTilt'){ctx.fillText(`μ = ${frictionCoeff.toFixed(2)}`,20,30);ctx.fillText(`v带 = ${beltSpeed.toFixed(1)} m/s`,20,50);ctx.fillText(`θ = ${beltAngle}°`,20,70);ctx.fillStyle='rgba(52,211,153,0.8)';ctx.font='12px -apple-system,sans-serif';ctx.fillText('倾斜传送带 · 重力分量/划痕/生热',20,92)}else{const h=Math.max(0,(GROUND_Y-ball.y-ball.radius)/100);ctx.fillText(`h = ${h.toFixed(2)} m`,20,30);ctx.fillText(`m = ${ball.mass.toFixed(2)} kg`,20,50)}if(isPaused){ctx.fillStyle='rgba(6,10,18,0.6)';ctx.fillRect(0,0,900,560);ctx.fillStyle='rgba(234,242,255,0.9)';ctx.font='700 28px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText('⏸ 已暂停',450,280);ctx.textAlign='left'}}
+function handleExport(type){let ms='';if(currentModel==='pendulum')ms='单摆（理想）';else if(currentModel==='spring')ms='弹簧振子（理想）';else if(currentModel==='block')ms='板块模型';else if(currentModel==='conveyor')ms='水平传送带';else if(currentModel==='conveyorTilt')ms='倾斜传送带';else ms='自由落体';let ex='';if(currentModel==='block'){ex=`物块速度 = ${(blockState.blockV/PX_PER_METER).toFixed(2)} m/s\n木板速度 = ${(blockState.boardV/PX_PER_METER).toFixed(2)} m/s\nμ = ${frictionCoeff.toFixed(2)}\n共速: ${blockState.together?'是':'否'}\n划痕长度 = ${scratchLength.toFixed(2)} m\n摩擦生热 Q = ${heatQ.toFixed(2)} J\n摩擦力做功 = ${frictionWork.toFixed(2)} J\n`}else if(currentModel==='conveyor'){ex=`物块速度 = ${(conveyorState.blockV/PX_PER_METER).toFixed(2)} m/s\n传送带速度 = ${beltSpeed.toFixed(2)} m/s\nμ = ${frictionCoeff.toFixed(2)}\n划痕长度 = ${scratchLength.toFixed(2)} m\n摩擦生热 Q = ${heatQ.toFixed(2)} J\n摩擦力做功 = ${frictionWork.toFixed(2)} J\n电动机多耗 = ${motorEnergy.toFixed(2)} J\n`}else if(currentModel==='conveyorTilt'){ex=`物块速度 = ${(tiltConveyorState.blockV/PX_PER_METER).toFixed(2)} m/s\n传送带速度 = ${beltSpeed.toFixed(2)} m/s\n倾角 θ = ${beltAngle}°\nμ = ${frictionCoeff.toFixed(2)}\n划痕长度 = ${scratchLength.toFixed(2)} m\n摩擦生热 Q = ${heatQ.toFixed(2)} J\n摩擦力做功 = ${frictionWork.toFixed(2)} J\n电动机多耗 = ${motorEnergy.toFixed(2)} J\n`}const rt=`📐 物理实验报告\n==========================\n模型: ${ms}\n质量 m = ${mass.toFixed(2)} kg\n${ex}\n--------------------------------\n动能 Ek = ${displayKinetic.toFixed(2)} J\n势能 Ep = ${displayPotential.toFixed(2)} J\n机械能 E = ${displayMechanical.toFixed(2)} J\n能量损失 ΔE = ${displayLoss.toFixed(3)} J\n模拟步数: ${stepCount}\n==========================`;alert((type==='report'?'🔒 付费功能：导出完整报告\n\n':'📘 付费功能：导出题目 + 数据\n\n')+rt)}
+exportReportBtn.addEventListener('click',()=>handleExport('report'));exportQuestionBtn.addEventListener('click',()=>handleExport('question'));
+updateSlidersDisplay();switchModel('bounce');
+function animate(){physicsUpdate();drawScene();requestAnimationFrame(animate)}animate();
+})();
 </script>
-
 </body>
 </html>
